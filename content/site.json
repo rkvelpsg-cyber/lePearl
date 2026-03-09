@@ -1,0 +1,202 @@
+{
+  "brandName": "LePearl",
+  "brandSubtitle": "NET English Exam Preparation",
+  "navItems": [
+    { "label": "Home", "href": "#home" },
+    { "label": "Online Courses", "href": "#courses" },
+    { "label": "Reasearch Assistance", "href": "#research" },
+    { "label": "PYQs", "href": "#pyqs" },
+    { "label": "LePearl Achievers", "href": "#achievers" },
+    { "label": "Student's Reviews", "href": "#reviews" },
+    { "label": "Mock Test", "href": "#mock" },
+    { "label": "Books", "href": "#books" },
+    { "label": "Live Class", "href": "#live-class" }
+  ],
+  "heroBadge": "New launches + Course banners",
+  "heroTitle": "Sliders of all the courses",
+  "heroDescription": "At least 7–8 banners. Add new launches of books/courses here.",
+  "courses": [
+    { "title": "Course Banner", "tag": "Banner 1" },
+    { "title": "Course Banner", "tag": "Banner 2" },
+    { "title": "Course Banner", "tag": "Banner 3" },
+    { "title": "Course Banner", "tag": "Banner 4" },
+    { "title": "Course Banner", "tag": "Banner 5" },
+    { "title": "Course Banner", "tag": "Banner 6" },
+    { "title": "Course Banner", "tag": "Banner 7" },
+    { "title": "Course Banner", "tag": "Banner 8" }
+  ],
+  "pyqTitle": "Previous-year questions",
+  "pyqDescription": "Clickable blocks (PYQs / topics). The page theme can shift colour when entering this section.",
+  "pyqs": [
+    {
+      "title": "PYQ Topic 1",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 2",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 3",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 4",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 5",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 6",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 7",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    },
+    {
+      "title": "PYQ Topic 8",
+      "subtitle": "Click to open questions",
+      "href": "#"
+    }
+  ],
+  "videosTitle": "Video testimonials",
+  "videosDescription": "Success stories from YouTube — embed videos here.",
+  "videos": [
+    {
+      "title": "YouTube Video 1",
+      "embedUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+    },
+    {
+      "title": "YouTube Video 2",
+      "embedUrl": "https://www.youtube.com/embed/ysz5S6PUM-U"
+    },
+    {
+      "title": "YouTube Video 3",
+      "embedUrl": "https://www.youtube.com/embed/aqz-KE-bpKQ"
+    }
+  ],
+  "missionTitle": "LePearl’s Mission",
+  "missionDescription": "Write the mission statement here (placeholder). Focus on NET English success, guidance, resources, and a student-first approach.",
+  "qualifications": [
+    "NET-qualified / PhD (placeholder)",
+    "10+ years coaching experience",
+    "Certifications, awards, and training (placeholder)"
+  ],
+  "missionImageUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=600&q=80",
+  "facultyTitle": "The Faculty Members",
+  "facultyDescription": "Names and designations (placeholders).",
+  "faculty": [
+    { "name": "Faculty Member 1", "role": "Designation" },
+    { "name": "Faculty Member 2", "role": "Designation" },
+    { "name": "Faculty Member 3", "role": "Designation" },
+    { "name": "Faculty Member 4", "role": "Designation" }
+  ],
+  "whyTitle": "Why choose LePearl?",
+  "whyDescription": "Highlight your differentiators.",
+  "features": [
+    {
+      "title": "Benefit 1",
+      "description": "Short supporting line (placeholder)."
+    },
+    {
+      "title": "Benefit 2",
+      "description": "Short supporting line (placeholder)."
+    },
+    {
+      "title": "Benefit 3",
+      "description": "Short supporting line (placeholder)."
+    },
+    {
+      "title": "Benefit 4",
+      "description": "Short supporting line (placeholder)."
+    },
+    {
+      "title": "Benefit 5",
+      "description": "Short supporting line (placeholder)."
+    },
+    {
+      "title": "Benefit 6",
+      "description": "Short supporting line (placeholder)."
+    }
+  ],
+  "teamTitle": "Our Team",
+  "teamDescription": "Detailed faculty bios, qualifications, and photos.",
+  "teamDetails": [
+    { "name": "Team Member 1", "profile": "Profile summary placeholder." },
+    { "name": "Team Member 2", "profile": "Profile summary placeholder." },
+    { "name": "Team Member 3", "profile": "Profile summary placeholder." }
+  ],
+  "booksTitle": "Books to Consider",
+  "booksDescription": "Slider of books — each card can link to Amazon.",
+  "books": [
+    {
+      "title": "Book 1",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 2",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 3",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 4",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 5",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 6",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 7",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    },
+    {
+      "title": "Book 8",
+      "description": "Classic English literature / exam prep (placeholder).",
+      "amazonUrl": "https://www.amazon.in"
+    }
+  ],
+  "mockTitle": "Ongoing Mock Tests",
+  "mockDescription": "Slider for current mock tests (placeholder cards).",
+  "mockTests": [
+    { "title": "Mock Test", "tag": "Test 1" },
+    { "title": "Mock Test", "tag": "Test 2" },
+    { "title": "Mock Test", "tag": "Test 3" },
+    { "title": "Mock Test", "tag": "Test 4" },
+    { "title": "Mock Test", "tag": "Test 5" },
+    { "title": "Mock Test", "tag": "Test 6" }
+  ],
+  "footerTitle": "Footer",
+  "footerDescription": "FAQs + Calendar blocks as per layout.",
+  "faqs": [
+    { "question": "How do I enroll for a course?" },
+    { "question": "Where can I access PYQs and mock tests?" },
+    { "question": "Do you provide research assistance?" }
+  ],
+  "calendarText": "Upcoming batches, mock test dates, workshops (placeholder).",
+  "copyrightText": "© LePearl — sample layout generated from PPT order."
+}

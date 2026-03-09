@@ -1,0 +1,151 @@
+backend:
+  name: test-repo
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "site"
+    label: "Site Content"
+    files:
+      - label: "Homepage Content"
+        name: "homepage"
+        file: "content/site.json"
+        format: "json"
+        fields:
+          - { label: "Brand Name", name: "brandName", widget: "string" }
+          - { label: "Brand Subtitle", name: "brandSubtitle", widget: "string" }
+          - label: "Navigation Items"
+            name: "navItems"
+            widget: "list"
+            fields:
+              - { label: "Label", name: "label", widget: "string" }
+              - { label: "Href", name: "href", widget: "string" }
+          - { label: "Hero Badge", name: "heroBadge", widget: "string" }
+          - { label: "Hero Title", name: "heroTitle", widget: "string" }
+          - {
+              label: "Hero Description",
+              name: "heroDescription",
+              widget: "text",
+            }
+          - label: "Course Banners"
+            name: "courses"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Tag", name: "tag", widget: "string" }
+          - { label: "PYQ Title", name: "pyqTitle", widget: "string" }
+          - { label: "PYQ Description", name: "pyqDescription", widget: "text" }
+          - label: "PYQ Blocks"
+            name: "pyqs"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Subtitle", name: "subtitle", widget: "string" }
+              - { label: "Href", name: "href", widget: "string" }
+          - { label: "Videos Title", name: "videosTitle", widget: "string" }
+          - {
+              label: "Videos Description",
+              name: "videosDescription",
+              widget: "text",
+            }
+          - label: "Videos"
+            name: "videos"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Embed URL", name: "embedUrl", widget: "string" }
+          - { label: "Mission Title", name: "missionTitle", widget: "string" }
+          - {
+              label: "Mission Description",
+              name: "missionDescription",
+              widget: "text",
+            }
+          - label: "Qualifications"
+            name: "qualifications"
+            widget: "list"
+            field:
+              {
+                label: "Qualification",
+                name: "qualification",
+                widget: "string",
+              }
+          - {
+              label: "Mission Image URL",
+              name: "missionImageUrl",
+              widget: "string",
+            }
+          - { label: "Faculty Title", name: "facultyTitle", widget: "string" }
+          - {
+              label: "Faculty Description",
+              name: "facultyDescription",
+              widget: "string",
+            }
+          - label: "Faculty Members"
+            name: "faculty"
+            widget: "list"
+            fields:
+              - { label: "Name", name: "name", widget: "string" }
+              - { label: "Role", name: "role", widget: "string" }
+          - { label: "Why Section Title", name: "whyTitle", widget: "string" }
+          - {
+              label: "Why Section Description",
+              name: "whyDescription",
+              widget: "string",
+            }
+          - label: "Features"
+            name: "features"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+          - { label: "Team Title", name: "teamTitle", widget: "string" }
+          - {
+              label: "Team Description",
+              name: "teamDescription",
+              widget: "text",
+            }
+          - label: "Team Details"
+            name: "teamDetails"
+            widget: "list"
+            fields:
+              - { label: "Name", name: "name", widget: "string" }
+              - { label: "Profile", name: "profile", widget: "text" }
+          - { label: "Books Title", name: "booksTitle", widget: "string" }
+          - {
+              label: "Books Description",
+              name: "booksDescription",
+              widget: "string",
+            }
+          - label: "Books"
+            name: "books"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "string" }
+              - { label: "Amazon URL", name: "amazonUrl", widget: "string" }
+          - { label: "Mock Title", name: "mockTitle", widget: "string" }
+          - {
+              label: "Mock Description",
+              name: "mockDescription",
+              widget: "string",
+            }
+          - label: "Mock Tests"
+            name: "mockTests"
+            widget: "list"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Tag", name: "tag", widget: "string" }
+          - { label: "Footer Title", name: "footerTitle", widget: "string" }
+          - {
+              label: "Footer Description",
+              name: "footerDescription",
+              widget: "string",
+            }
+          - label: "FAQs"
+            name: "faqs"
+            widget: "list"
+            fields:
+              - { label: "Question", name: "question", widget: "string" }
+          - { label: "Calendar Text", name: "calendarText", widget: "text" }
+          - { label: "Copyright Text", name: "copyrightText", widget: "string" }
