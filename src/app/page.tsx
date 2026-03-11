@@ -112,7 +112,7 @@ export default async function Home() {
                 alignItems: "center",
                 position: "absolute",
                 top: 28,
-                right: 36,
+                right: 52,
                 zIndex: 60,
               }}
             >
@@ -124,7 +124,11 @@ export default async function Home() {
                 <Phone className="h-5 w-5 text-white" aria-hidden="true" />
                 <span className="sr-only">Contact us</span>
               </a>
-              <a className="btn primary header-action-btn" href="/admin">
+              <a
+                className="btn primary header-action-btn"
+                href="/admin"
+                style={{ background: "#fff", color: "#000" }}
+              >
                 Login
               </a>
             </div>
@@ -138,11 +142,12 @@ export default async function Home() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                flexWrap: "wrap",
+                flexWrap: "nowrap",
                 width: "100%",
                 padding: "0 0 12px",
                 position: "relative",
                 zIndex: 2,
+                overflowX: "auto",
               }}
             >
               <nav
@@ -150,7 +155,7 @@ export default async function Home() {
                 style={{
                   display: "flex",
                   gap: 10,
-                  flexWrap: "wrap",
+                  flexWrap: "nowrap",
                   justifyContent: "center",
                 }}
               >
