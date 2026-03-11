@@ -235,22 +235,6 @@ export function WeeklyScheduleSection() {
           })}
         </div>
 
-        <div className="rounded-2xl bg-gradient-to-r from-[#1E3A8A] to-blue-700 p-8 text-center shadow-xl">
-          <h3 className="mb-4 text-2xl font-bold text-white">
-            Need Guidance for These Exams?
-          </h3>
-          <p className="mx-auto mb-6 max-w-2xl text-blue-100">
-            Join our comprehensive courses and get expert guidance from
-            experienced educators.
-          </p>
-          <button
-            type="button"
-            className="rounded-full bg-white px-8 py-4 text-lg font-bold text-[#1E3A8A] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-blue-50"
-          >
-            Explore Courses
-          </button>
-        </div>
-
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {[
             { course: "NET", color: "purple" },

@@ -5,7 +5,10 @@ import { HomeHeroCarousel } from "@/components/HomeHeroCarousel";
 import { FounderContent } from "@/components/FounderContent";
 import { FacultyCarousel } from "@/components/FacultyCarousel";
 import { FounderBooks } from "@/components/FounderBooks";
-import { LiveClassesPortalSection } from "@/components/LiveClassesPortalSection";
+import {
+  LiveClassesPortalSection,
+  NeedHelpSection,
+} from "@/components/LiveClassesPortalSection";
 import { MissionSection } from "@/components/MissionSection";
 import { MockTestsSection } from "@/components/MockTestsSection";
 import { CoursesBooksSection } from "@/components/CoursesBooksSection";
@@ -14,6 +17,7 @@ import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WeeklyScheduleSection } from "@/components/WeeklyScheduleSection";
 import { WhyChooseSection } from "@/components/WhyChooseSection";
+import { FAQSection } from "@/components/FAQSection";
 
 export default async function Home() {
   const content = await getSiteContent();
@@ -24,18 +28,13 @@ export default async function Home() {
         className="page-bg-video relative h-screen w-full overflow-hidden"
         aria-hidden="true"
       >
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 h-full w-full object-cover"
-        >
+        <video autoPlay muted loop playsInline className="page-bg-video-media">
           <source
             src="https://videos.pexels.com/video-files/5198158/5198158-uhd_2560_1440_25fps.mp4"
             type="video/mp4"
           />
         </video>
+        <div className="page-bg-video-overlay" />
       </section>
 
       <div className="page-content-layer">
@@ -112,8 +111,8 @@ export default async function Home() {
                 gap: 18,
                 alignItems: "center",
                 position: "absolute",
-                top: 16,
-                right: 20,
+                top: 28,
+                right: 36,
                 zIndex: 60,
               }}
             >
@@ -122,7 +121,7 @@ export default async function Home() {
                 href="#contact"
                 style={{ marginRight: 8 }}
               >
-                <Phone className="h-5 w-5 text-green-700" aria-hidden="true" />
+                <Phone className="h-5 w-5 text-white" aria-hidden="true" />
                 <span className="sr-only">Contact us</span>
               </a>
               <a className="btn primary header-action-btn" href="/admin">
@@ -216,6 +215,10 @@ export default async function Home() {
           <WeeklyScheduleSection />
         </main>
       </div>
+
+      <FAQSection />
+
+      <NeedHelpSection />
 
       <div className="footer-no-video">
         <SiteFooter />

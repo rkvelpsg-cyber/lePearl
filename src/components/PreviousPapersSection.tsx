@@ -134,56 +134,6 @@ export function PreviousPapersSection() {
             <Archive className="h-4 w-4" />
             <span className="text-sm">Exam Resource Library</span>
           </div>
-          <h2 className="mb-4 text-4xl text-[#1E3A8A] sm:text-5xl">
-            Previous Question Papers
-          </h2>
-          <p className="mx-auto max-w-3xl text-lg text-[#4B5563]">
-            Access previous year question papers for NET, SET, Assistant
-            Professor exams, and other teaching examinations to strengthen your
-            preparation.
-          </p>
-        </div>
-
-        <div className="mx-auto mb-8 max-w-2xl">
-          <div className="relative">
-            <Search
-              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2"
-              style={{ color: COLORS.lightGray }}
-            />
-            <input
-              type="text"
-              placeholder="Search question papers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border py-4 pl-12 pr-4 shadow-sm outline-none"
-              style={{
-                borderColor: COLORS.gray,
-                backgroundColor: COLORS.white,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="mb-12 flex flex-wrap justify-center gap-3">
-          {filterChips.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() =>
-                setActiveFilter(activeFilter === chip ? null : chip)
-              }
-              className="rounded-full border-2 px-6 py-2 transition-all"
-              style={{
-                borderColor:
-                  activeFilter === chip ? COLORS.purple : COLORS.gray,
-                backgroundColor:
-                  activeFilter === chip ? COLORS.purple : COLORS.white,
-                color: activeFilter === chip ? COLORS.white : COLORS.blue,
-              }}
-            >
-              {chip}
-            </button>
-          ))}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-12">
@@ -400,27 +350,6 @@ export function PreviousPapersSection() {
               </div>
             </div>
           </div>
-        </div>
-
-        <div
-          className="mt-16 rounded-3xl p-12 text-center text-white shadow-xl"
-          style={{
-            background: "linear-gradient(135deg, #1E3A8A 0%, #6A0DAD 100%)",
-          }}
-        >
-          <h2 className="mb-4 text-3xl sm:text-4xl">
-            Boost Your Exam Preparation with Authentic Previous Papers
-          </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-lg text-white/90">
-            Start solving previous year papers and improve your confidence,
-            speed, and exam strategy.
-          </p>
-          <button
-            type="button"
-            className="rounded-xl bg-white px-8 py-4 text-[#6A0DAD] transition-transform hover:scale-105"
-          >
-            Start Practicing
-          </button>
         </div>
       </div>
     </section>

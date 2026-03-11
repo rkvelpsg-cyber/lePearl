@@ -134,29 +134,6 @@ export function WhyChooseSection() {
             ))}
           </div>
         </div>
-
-        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 p-8 text-center text-white shadow-2xl md:p-12">
-          <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl" />
-
-          <div className="relative z-10">
-            <h3 className="mb-4 text-2xl font-bold md:text-3xl lg:text-4xl">
-              Choose LePearl Education - Where Knowledge Meets Transformation
-            </h3>
-            <p className="mx-auto mb-8 max-w-3xl text-base leading-relaxed text-blue-100 md:text-lg">
-              You deserve more than just coaching. You deserve a partner that
-              nurtures your mind, sharpens your intellect, and unlocks your
-              highest potential.
-            </p>
-            <a
-              href="#contact"
-              className="inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-8 py-4 text-lg font-semibold text-blue-900 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-            >
-              Join LePearl Today
-              <ArrowRight className="h-5 w-5" />
-            </a>
-          </div>
-        </div>
       </div>
     </section>
   );

@@ -220,7 +220,7 @@ export function CoursesBooksSection() {
       className="min-h-screen"
       style={{
         background:
-          "linear-gradient(to bottom, #E0F2F7 0%, #F0F9FF 50%, #F3F0FF 100%)",
+          "linear-gradient(to bottom, rgba(224, 242, 247, 0.38) 0%, rgba(240, 249, 255, 0.32) 50%, rgba(243, 240, 255, 0.38) 100%)",
       }}
     >
       <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
@@ -352,39 +352,6 @@ export function CoursesBooksSection() {
               );
             })}
           </Slider>
-        </div>
-
-        <div
-          className="rounded-3xl p-8 text-center md:p-12"
-          style={{
-            background:
-              "linear-gradient(135deg, #E0F7FA 0%, #E8F5E9 50%, #F3F0FF 100%)",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-          }}
-        >
-          <div className="mx-auto max-w-3xl">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#6A0DAD]">
-              <GraduationCap className="h-8 w-8 text-white" />
-            </div>
-            <h2 className="mb-4 text-3xl text-[#1E3A8A] md:text-4xl">
-              Choose the Right Course for Your Academic Journey
-            </h2>
-            <p className="mx-auto mb-8 max-w-2xl text-lg text-[#4B5563]">
-              Discover exam preparation courses and access learning materials
-              with minimal effort. Our platform provides a modern educational
-              experience to help you succeed.
-            </p>
-            <button
-              type="button"
-              className="rounded-xl px-8 py-4 text-white transition-all duration-300 hover:scale-105 hover:shadow-xl"
-              style={{
-                background: "linear-gradient(135deg, #6A0DAD 0%, #1E3A8A 100%)",
-                boxShadow: "0 4px 20px rgba(106, 13, 173, 0.3)",
-              }}
-            >
-              Explore All Courses
-            </button>
-          </div>
         </div>
       </div>
     </section>

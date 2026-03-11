@@ -181,7 +181,10 @@ export function SuccessStoriesSection() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#F3F0FF] py-20">
+    <section
+      id="success-stories"
+      className="relative overflow-hidden bg-[#F3F0FF] py-20"
+    >
       <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-[#6A0DAD] opacity-5 blur-3xl" />
       <div className="absolute bottom-20 right-20 h-48 w-48 rounded-full bg-[#1E3A8A] opacity-5 blur-3xl" />
       <div className="absolute left-1/4 top-1/2 h-24 w-24 rounded-full bg-[#6A0DAD] opacity-5 blur-2xl" />

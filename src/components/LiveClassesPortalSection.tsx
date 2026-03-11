@@ -67,6 +67,51 @@ const mockClasses: ClassData[] = [
   },
 ];
 
+export function NeedHelpSection() {
+  return (
+    <section
+      id="need-help"
+      className="w-full bg-slate-100 px-4 py-16 sm:px-6 lg:px-8"
+    >
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-4 flex items-center gap-2">
+          <HelpCircle className="h-5 w-5 text-indigo-700" />
+          <h3 className="text-2xl font-bold text-indigo-900">Need Help?</h3>
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <HelpCircle className="mb-2 h-8 w-8 text-indigo-700" />
+            <h4 className="mb-1 text-lg font-bold text-slate-800">
+              Technical Support
+            </h4>
+            <p className="text-sm text-slate-600">
+              Resolve connection, audio, and video issues quickly.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <FileText className="mb-2 h-8 w-8 text-indigo-700" />
+            <h4 className="mb-1 text-lg font-bold text-slate-800">
+              Class Guidelines
+            </h4>
+            <p className="text-sm text-slate-600">
+              Learn online class etiquette and participation best practices.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <Mail className="mb-2 h-8 w-8 text-indigo-700" />
+            <h4 className="mb-1 text-lg font-bold text-slate-800">
+              Contact Admin
+            </h4>
+            <p className="text-sm text-slate-600">
+              Reach out for schedule, enrollment, and general support.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function LiveClassesPortalSection() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -208,42 +253,6 @@ export function LiveClassesPortalSection() {
                   </div>
                 </article>
               ))}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-4 flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-indigo-700" />
-            <h3 className="text-2xl font-bold text-indigo-900">Need Help?</h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <HelpCircle className="mb-2 h-8 w-8 text-indigo-700" />
-              <h4 className="mb-1 text-lg font-bold text-slate-800">
-                Technical Support
-              </h4>
-              <p className="text-sm text-slate-600">
-                Resolve connection, audio, and video issues quickly.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <FileText className="mb-2 h-8 w-8 text-indigo-700" />
-              <h4 className="mb-1 text-lg font-bold text-slate-800">
-                Class Guidelines
-              </h4>
-              <p className="text-sm text-slate-600">
-                Learn online class etiquette and participation best practices.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <Mail className="mb-2 h-8 w-8 text-indigo-700" />
-              <h4 className="mb-1 text-lg font-bold text-slate-800">
-                Contact Admin
-              </h4>
-              <p className="text-sm text-slate-600">
-                Reach out for schedule, enrollment, and general support.
-              </p>
             </div>
           </div>
         </div>
