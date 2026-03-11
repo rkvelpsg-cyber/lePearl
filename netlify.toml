@@ -1,9 +1,5 @@
 [build]
   command = "npm run build"
-  publish = ".next"
-
-  [build.processing]
-    skip_processing = true
 
   [build.environment]
     NODE_VERSION = "20"
