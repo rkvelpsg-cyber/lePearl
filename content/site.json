@@ -3,10 +3,22 @@
   "brandSubtitle": "NET English Exam Preparation",
   "navItems": [
     { "label": "Home", "href": "#home" },
-    { "label": "Online Courses", "href": "#courses" },
+    {
+      "label": "Online Courses",
+      "href": "#courses",
+      "submenu": [
+        { "label": "MPPSC", "href": "/courses-mppsc" },
+        { "label": "UPHESC", "href": "#courses-uphesc" },
+        { "label": "UP GDC", "href": "#courses-upgdc" },
+        { "label": "NTA NET - Paper 1", "href": "#courses-net-paper1" },
+        { "label": "NTA NET - Paper 2", "href": "#courses-net-paper2" },
+        { "label": "GIC", "href": "#courses-gic" },
+        { "label": "LT Grade", "href": "#courses-ltgrade" }
+      ]
+    },
     { "label": "Reasearch Assistance", "href": "#research" },
     { "label": "PYQs", "href": "#pyqs" },
-    { "label": "LePearl Achievers", "href": "#achievers" },
+    { "label": "LePearl Achievers", "href": "/achievers" },
     { "label": "Student's Reviews", "href": "#reviews" },
     { "label": "Mock Test", "href": "#mock" },
     { "label": "Books", "href": "#books" },
