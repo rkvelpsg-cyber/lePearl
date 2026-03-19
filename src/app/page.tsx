@@ -58,8 +58,8 @@ export default async function Home() {
             style={{ margin: 0, textAlign: "center" }}
           >
             <p className="top-admission-text" style={{ margin: 0 }}>
-              Admission opened for June 2026 NET Exam.{" "}
-              <a href="#contact">Apply here</a>
+              Admission opened for: NTA NET June 2026 | MPPSC | UPHESC | UP GDC
+              | LT GRADE | GIC
             </p>
           </div>
         </div>
@@ -218,6 +218,7 @@ export default async function Home() {
         </header>
 
         <main id="home">
+          <SuccessStoriesSection />
           <section className="hero-home-section">
             <HomeHeroCarousel />
           </section>
@@ -225,8 +226,6 @@ export default async function Home() {
           <CoursesBooksSection />
 
           <PreviousPapersSection />
-
-          <SuccessStoriesSection />
 
           <MissionSection />
 

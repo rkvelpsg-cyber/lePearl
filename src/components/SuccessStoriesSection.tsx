@@ -35,8 +35,8 @@ const successStories: VideoStory[] = [
     videoId: "hcwQpy5Stx0",
     videoUrl:
       "https://www.youtube.com/watch?v=hcwQpy5Stx0&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=5",
-    studentName: "Priya Sharma",
-    achievement: "UGC NET Qualified - JRF Holder",
+    studentName: "Ms Priya Sharma, Assistant Professor, UPHESC Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/hcwQpy5Stx0/maxresdefault.jpg",
   },
   {
@@ -44,8 +44,8 @@ const successStories: VideoStory[] = [
     videoId: "l0Abm1noZIQ",
     videoUrl:
       "https://www.youtube.com/watch?v=l0Abm1noZIQ&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=2",
-    studentName: "Rahul Verma",
-    achievement: "Assistant Professor - State University",
+    studentName: "Ms Sandhya Patel, Assistant Professor, UPHESC Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/l0Abm1noZIQ/maxresdefault.jpg",
   },
   {
@@ -53,8 +53,8 @@ const successStories: VideoStory[] = [
     videoId: "RvN82vHXVVk",
     videoUrl:
       "https://www.youtube.com/watch?v=RvN82vHXVVk&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=4&t=4s",
-    studentName: "Anjali Desai",
-    achievement: "UGC NET - English Literature",
+    studentName: "Dr. Ranjana Agarwal, Assistant Professor, RPSC-2021",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/RvN82vHXVVk/maxresdefault.jpg",
   },
   {
@@ -62,8 +62,8 @@ const successStories: VideoStory[] = [
     videoId: "Ysi39RnFEL4",
     videoUrl:
       "https://www.youtube.com/watch?v=Ysi39RnFEL4&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=4",
-    studentName: "Vikram Singh",
-    achievement: "RPSC 1st Grade - Rank 5",
+    studentName: "Ms Sunita Mohata, Assistant Professor, RPSC- 2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/Ysi39RnFEL4/maxresdefault.jpg",
   },
   {
@@ -71,8 +71,8 @@ const successStories: VideoStory[] = [
     videoId: "rOW5qTfiu1w",
     videoUrl:
       "https://www.youtube.com/watch?v=rOW5qTfiu1w&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=7",
-    studentName: "Neha Patel",
-    achievement: "Assistant Professor - Central University",
+    studentName: "Ms Rashmi Verma, Assistant Professor, UPHESC Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/rOW5qTfiu1w/maxresdefault.jpg",
   },
   {
@@ -80,8 +80,8 @@ const successStories: VideoStory[] = [
     videoId: "GUFJHeMMG10",
     videoUrl:
       "https://www.youtube.com/watch?v=GUFJHeMMG10&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=7",
-    studentName: "Success Story 7",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms Mahima Thakur, Assistant Professor, UPHESC Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/GUFJHeMMG10/maxresdefault.jpg",
   },
   {
@@ -89,8 +89,8 @@ const successStories: VideoStory[] = [
     videoId: "Q3y5vQ-Z004",
     videoUrl:
       "https://www.youtube.com/watch?v=Q3y5vQ-Z004&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=8",
-    studentName: "Success Story 8",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms. Surbhi Satyabha, Assistant Professor, UPHESC-Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/Q3y5vQ-Z004/maxresdefault.jpg",
   },
   {
@@ -98,8 +98,8 @@ const successStories: VideoStory[] = [
     videoId: "YvGREAy7h5M",
     videoUrl:
       "https://www.youtube.com/watch?v=YvGREAy7h5M&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=9",
-    studentName: "Success Story 9",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Dr. Amresh, Assistant Professor, UPHESC, Adv 50- 2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/YvGREAy7h5M/maxresdefault.jpg",
   },
   {
@@ -107,8 +107,8 @@ const successStories: VideoStory[] = [
     videoId: "GGxsz153m64",
     videoUrl:
       "https://www.youtube.com/watch?v=GGxsz153m64&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=10",
-    studentName: "Success Story 10",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms.Asha, Assistant Professor, UPHESC-Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/GGxsz153m64/maxresdefault.jpg",
   },
   {
@@ -116,8 +116,8 @@ const successStories: VideoStory[] = [
     videoId: "RG1R7bZqj58",
     videoUrl:
       "https://www.youtube.com/watch?v=RG1R7bZqj58&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=11",
-    studentName: "Success Story 11",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms. Afroz Jahan, Assistant Professor, UPHESC, Adv 50- 2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/RG1R7bZqj58/maxresdefault.jpg",
   },
   {
@@ -125,8 +125,8 @@ const successStories: VideoStory[] = [
     videoId: "r4D1zpWeoOI",
     videoUrl:
       "https://www.youtube.com/watch?v=r4D1zpWeoOI&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=12",
-    studentName: "Success Story 12",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms. Anindita Bose, Assistant Professor, UPHESC-Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/r4D1zpWeoOI/maxresdefault.jpg",
   },
   {
@@ -134,8 +134,8 @@ const successStories: VideoStory[] = [
     videoId: "WVCRXF6Tll4",
     videoUrl:
       "https://www.youtube.com/watch?v=WVCRXF6Tll4&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=13",
-    studentName: "Success Story 13",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Shanta Surejya, Assistant Professor, UPHESC, Adv 50- 2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/WVCRXF6Tll4/maxresdefault.jpg",
   },
   {
@@ -143,8 +143,8 @@ const successStories: VideoStory[] = [
     videoId: "9-R9Ru0m6qI",
     videoUrl:
       "https://www.youtube.com/watch?v=9-R9Ru0m6qI&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=14",
-    studentName: "Success Story 14",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms. Arju Mishra, Assistant Professor, UPHESC-Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/9-R9Ru0m6qI/maxresdefault.jpg",
   },
   {
@@ -152,8 +152,8 @@ const successStories: VideoStory[] = [
     videoId: "trOTas0tliI",
     videoUrl:
       "https://www.youtube.com/watch?v=trOTas0tliI&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=15",
-    studentName: "Success Story 15",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Mr Neelu Kumar, Assistant Professor, UPHESC-Adv 50-2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/trOTas0tliI/maxresdefault.jpg",
   },
   {
@@ -161,8 +161,9 @@ const successStories: VideoStory[] = [
     videoId: "_X__5pLpQEw",
     videoUrl:
       "https://www.youtube.com/watch?v=_X__5pLpQEw&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=16",
-    studentName: "Success Story 16",
-    achievement: "LePearl Scholar Achievement",
+    studentName:
+      "Ms Mahima Singh, Assistant Professor, Himachal Pradesh Service Commision-2023",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/_X__5pLpQEw/maxresdefault.jpg",
   },
   {
@@ -170,8 +171,8 @@ const successStories: VideoStory[] = [
     videoId: "YkSe5s8P1Qg",
     videoUrl:
       "https://www.youtube.com/watch?v=YkSe5s8P1Qg&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=17",
-    studentName: "Success Story 17",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms. Deepti Dwivedi, NTA-NET English Jun 2023",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/YkSe5s8P1Qg/maxresdefault.jpg",
   },
   {
@@ -179,8 +180,8 @@ const successStories: VideoStory[] = [
     videoId: "CysvSKdL3gM",
     videoUrl:
       "https://www.youtube.com/watch?v=CysvSKdL3gM&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=18",
-    studentName: "Success Story 18",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "MA-II English Students for Post-colonial Poetry",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/CysvSKdL3gM/maxresdefault.jpg",
   },
   {
@@ -188,8 +189,8 @@ const successStories: VideoStory[] = [
     videoId: "cAiBXu7oDoM",
     videoUrl:
       "https://www.youtube.com/watch?v=cAiBXu7oDoM&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=19",
-    studentName: "Success Story 19",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms. Neelu Patel, NET-JRF, Assistant Professor",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/cAiBXu7oDoM/maxresdefault.jpg",
   },
   {
@@ -197,8 +198,8 @@ const successStories: VideoStory[] = [
     videoId: "0KF-VxoZ8C0",
     videoUrl:
       "https://www.youtube.com/watch?v=0KF-VxoZ8C0&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=20",
-    studentName: "Success Story 20",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Vineeta Vijay Sharma\nNTA NET, Dec 2022",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/0KF-VxoZ8C0/maxresdefault.jpg",
   },
   {
@@ -206,8 +207,9 @@ const successStories: VideoStory[] = [
     videoId: "BkkPjBRmBB8",
     videoUrl:
       "https://www.youtube.com/watch?v=BkkPjBRmBB8&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=21",
-    studentName: "Success Story 21",
-    achievement: "LePearl Scholar Achievement",
+    studentName:
+      "Asit Kumar Mohanty\nLecturer, SSB, Odhisha Public Service Commision 2024",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/BkkPjBRmBB8/maxresdefault.jpg",
   },
   {
@@ -215,8 +217,8 @@ const successStories: VideoStory[] = [
     videoId: "5Kli84ncJ94",
     videoUrl:
       "https://www.youtube.com/watch?v=5Kli84ncJ94&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=22",
-    studentName: "Success Story 22",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms Shivani Tiwari\nNTA-JRF English, Dec 2024",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/5Kli84ncJ94/maxresdefault.jpg",
   },
   {
@@ -224,8 +226,8 @@ const successStories: VideoStory[] = [
     videoId: "sz5Va4QyGNg",
     videoUrl:
       "https://www.youtube.com/watch?v=sz5Va4QyGNg&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=23",
-    studentName: "Success Story 23",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms Rekha Bhati, Assistant Professor, RPSC Rank 11, 2025",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/sz5Va4QyGNg/hqdefault.jpg",
   },
   {
@@ -233,8 +235,8 @@ const successStories: VideoStory[] = [
     videoId: "XGYapIjesQE",
     videoUrl:
       "https://www.youtube.com/watch?v=XGYapIjesQE&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=24",
-    studentName: "Success Story 24",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Dr. Babli Mallick, Assistant Professor, MPPSC-2025",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/XGYapIjesQE/hqdefault.jpg",
   },
   {
@@ -242,8 +244,9 @@ const successStories: VideoStory[] = [
     videoId: "sCxQ07TKzc0",
     videoUrl:
       "https://www.youtube.com/watch?v=sCxQ07TKzc0&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=25",
-    studentName: "Success Story 25",
-    achievement: "LePearl Scholar Achievement",
+    studentName:
+      "Mr Balram Mishra, Assistant Professor, Madhya Pradesh Public Service Commission- 2025",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/sCxQ07TKzc0/hqdefault.jpg",
   },
   {
@@ -251,8 +254,8 @@ const successStories: VideoStory[] = [
     videoId: "lUZ-KE_LLkc",
     videoUrl:
       "https://www.youtube.com/watch?v=lUZ-KE_LLkc&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=26",
-    studentName: "Success Story 26",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Shubham Singh, Assistant Professor, MPPSC-2025",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/lUZ-KE_LLkc/hqdefault.jpg",
   },
   {
@@ -260,8 +263,8 @@ const successStories: VideoStory[] = [
     videoId: "4cqnt2DkIPw",
     videoUrl:
       "https://www.youtube.com/watch?v=4cqnt2DkIPw&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=27",
-    studentName: "Success Story 27",
-    achievement: "LePearl Scholar Achievement",
+    studentName: "Ms Kanika Sharma\nNTA-NET English, Dec 2025",
+    achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/4cqnt2DkIPw/hqdefault.jpg",
   },
 ];
@@ -388,14 +391,13 @@ export function SuccessStoriesSection() {
   return (
     <section
       id="success-stories"
-      className="relative overflow-hidden bg-[#F3F0FF] py-20"
+      className="relative overflow-hidden bg-[#F3F0FF] pt-0 pb-6"
     >
       <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-[#6A0DAD] opacity-5 blur-3xl" />
       <div className="absolute bottom-20 right-20 h-48 w-48 rounded-full bg-[#1E3A8A] opacity-5 blur-3xl" />
       <div className="absolute left-1/4 top-1/2 h-24 w-24 rounded-full bg-[#6A0DAD] opacity-5 blur-2xl" />
-
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto mb-12 max-w-4xl text-center">
+        <div className="mx-auto mb-2 max-w-4xl text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm">
             <Star className="h-4 w-4 fill-[#6A0DAD] text-[#6A0DAD]" />
             <span className="text-sm font-semibold text-[#6A0DAD]">
@@ -413,7 +415,6 @@ export function SuccessStoriesSection() {
             Education.
           </p>
         </div>
-
         <div className="relative left-1/2 w-screen -translate-x-1/2 px-1 sm:px-2 md:px-4 lg:px-6 xl:px-8">
           <button
             onClick={handlePrevious}
@@ -423,7 +424,6 @@ export function SuccessStoriesSection() {
           >
             <ChevronLeft className="h-6 w-6 text-[#6A0DAD]" />
           </button>
-
           <button
             onClick={handleNext}
             className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-[#d9d2ff] bg-white/95 p-3 text-[#6A0DAD] shadow-xl transition-all duration-300 hover:scale-110 hover:bg-white md:right-4 lg:right-6"
@@ -432,7 +432,6 @@ export function SuccessStoriesSection() {
           >
             <ChevronRight className="h-6 w-6 text-[#6A0DAD]" />
           </button>
-
           <div
             ref={scrollRef}
             className="success-stories-scroll overflow-x-auto px-12 py-1 sm:px-16 md:px-20 lg:px-24"
@@ -441,48 +440,14 @@ export function SuccessStoriesSection() {
               {[...successStories, ...successStories].map((story, index) => (
                 <VideoCard key={`${story.id}-${index}`} story={story} />
               ))}
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-center gap-2">
-            {successStories.map((story) => (
-              <div
-                key={story.id}
-                className="h-2 w-2 cursor-pointer rounded-full bg-[#6A0DAD] opacity-30 transition-opacity hover:opacity-100"
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="relative mt-16 overflow-hidden rounded-3xl bg-gradient-to-r from-[#6A0DAD] to-[#1E3A8A] p-8 text-center md:p-12">
-          <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-white opacity-5 blur-2xl" />
-          <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-white opacity-5 blur-xl" />
-
-          <div className="relative z-10">
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <GraduationCap className="h-10 w-10 text-white" />
-              <Medal className="h-10 w-10 text-white" />
-            </div>
-
-            <h3 className="mb-3 text-3xl font-bold text-white md:text-4xl">
-              Your Success Story Could Be Next
-            </h3>
-
-            <p className="mx-auto mb-6 max-w-2xl text-lg text-white/90">
-              Join LePearl Education and prepare with expert guidance to achieve
-              your academic dreams.
-            </p>
-
-            <a
-              href="#courses"
-              className="inline-block rounded-full bg-white px-8 py-4 font-semibold text-[#6A0DAD] shadow-lg transition-all duration-300 hover:shadow-xl"
-            >
-              Explore Courses
-            </a>
-          </div>
-        </div>
-      </div>
-
+            </div>{" "}
+            {/* Close flex container */}
+          </div>{" "}
+          {/* Close scroll container */}
+        </div>{" "}
+        {/* Close relative container */}
+      </div>{" "}
+      {/* Close max-w-7xl container */}
       <style jsx global>{`
         .success-stories-scroll {
           scrollbar-width: none;
