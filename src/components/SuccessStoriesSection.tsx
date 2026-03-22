@@ -175,15 +175,7 @@ const successStories: VideoStory[] = [
     achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/YkSe5s8P1Qg/maxresdefault.jpg",
   },
-  {
-    id: "18",
-    videoId: "CysvSKdL3gM",
-    videoUrl:
-      "https://www.youtube.com/watch?v=CysvSKdL3gM&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=18",
-    studentName: "MA-II English Students for Post-colonial Poetry",
-    achievement: "",
-    thumbnailUrl: "https://img.youtube.com/vi/CysvSKdL3gM/maxresdefault.jpg",
-  },
+  // ...removed MA-II English Students for Post-colonial Poetry video
   {
     id: "19",
     videoId: "cAiBXu7oDoM",
