@@ -70,19 +70,24 @@ body {
   background: linear-gradient(90deg, #0a3f4d, #0f5a63);
   color: #f6fff9;
   text-align: center;
-  padding: 9px 14px;
+  padding: clamp(6px, 2vw, 12px) clamp(12px, 3vw, 20px);
 }
 
 .top-admission-text {
   margin: 0;
-  font-size: 14px;
+  font-size: clamp(12px, 2.5vw, 18px);
   font-weight: 700;
   letter-spacing: 0.2px;
   animation: admissionBlink 1.05s ease-in-out infinite;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .top-admission-highlight {
-  display: inline-block;
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(4px, 1vw, 8px);
   animation: admissionBlink 1.05s ease-in-out infinite;
 }
 
@@ -109,17 +114,46 @@ a {
 }
 
 .container {
-  max-width: 1180px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 clamp(16px, 4vw, 40px);
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 100%;
+    padding: 0 clamp(20px, 5vw, 48px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1180px;
+    padding: 0 clamp(24px, 6vw, 56px);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+    padding: 0 clamp(32px, 8vw, 64px);
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1400px;
+    padding: 0 clamp(40px, 10vw, 80px);
+  }
 }
 
 .hero-home-section {
-  padding: 52px 0 24px;
+  padding: clamp(32px, 8vw, 52px) 0 clamp(16px, 4vw, 24px);
 }
 
 .section {
-  padding: 46px 0;
+  padding: clamp(32px, 8vw, 46px) 0;
 }
 
 .card {
@@ -132,14 +166,14 @@ a {
 .badge {
   display: inline-flex;
   width: max-content;
-  gap: 8px;
+  gap: clamp(4px, 1vw, 8px);
   align-items: center;
-  padding: 8px 12px;
+  padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px);
   border-radius: 999px;
   background: rgba(63, 43, 184, 0.1);
   border: 1px solid rgba(63, 43, 184, 0.2);
   font-weight: 700;
-  font-size: 12px;
+  font-size: clamp(10px, 2vw, 14px);
   color: #2a2a33;
 }
 
@@ -147,13 +181,14 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 14px;
+  padding: clamp(8px, 2vw, 14px) clamp(10px, 2.5vw, 20px);
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
   font-weight: 650;
-  font-size: 13px;
+  font-size: clamp(11px, 2vw, 15px);
+  transition: all 0.2s ease;
 }
 
 .btn.primary {
@@ -732,5 +767,128 @@ a {
   .hero-slide-shell button,
   .hero-slide-shell a[class*="px-"] {
     font-size: 0.9rem;
+  }
+}
+
+/* Responsive Typography Utilities */
+h1,
+.h1 {
+  font-size: clamp(1.75rem, 5vw, 3.5rem);
+  line-height: 1.2;
+}
+
+h2,
+.h2 {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  line-height: 1.3;
+}
+
+h3,
+.h3 {
+  font-size: clamp(1.25rem, 3vw, 1.875rem);
+  line-height: 1.4;
+}
+
+h4,
+.h4 {
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  line-height: 1.5;
+}
+
+p {
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  line-height: 1.6;
+}
+
+/* Responsive Image Sizing */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive Card Sizing */
+.card {
+  min-height: auto;
+  height: 100%;
+}
+
+.card-image {
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+
+/* Responsive Flex Grid */
+.flex-grid {
+  display: grid;
+  gap: clamp(12px, 3vw, 24px);
+}
+
+@media (max-width: 640px) {
+  .flex-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .flex-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .flex-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Responsive Container Sizing */
+.responsive-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(12px, 3vw, 24px);
+  padding-right: clamp(12px, 3vw, 24px);
+}
+
+/* Ensure full width respect on all devices */
+body {
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Disable horizontal scroll on small devices */
+@media (max-width: 640px) {
+  * {
+    max-width: 100%;
+  }
+}
+
+/* Responsive Text Alignment */
+@media (max-width: 768px) {
+  .text-left-lg {
+    text-align: left;
+  }
+
+  .text-center-lg {
+    text-align: center;
+  }
+}
+
+/* Ensure consistent display across zoom levels */
+* {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Mobile-first responsive adjustments */
+@media (max-width: 480px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 481px) {
+  .hide-desktop {
+    display: none !important;
   }
 }

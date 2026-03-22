@@ -1,5 +1,6 @@
 ﻿import { getSiteContent } from "@/lib/siteContent";
 import Image from "next/image";
+import Link from "next/link";
 import { Phone } from "lucide-react";
 
 import { HomeHeroCarousel } from "@/components/HomeHeroCarousel";
@@ -33,14 +34,139 @@ export default async function Home() {
           color: "#fff",
           textAlign: "center",
           fontWeight: 700,
-          fontSize: 18,
-          padding: "8px 0",
+          fontSize: "clamp(12px, 2.5vw, 18px)",
+          padding: "clamp(6px, 2vw, 12px) clamp(12px, 3vw, 20px)",
           letterSpacing: 0.2,
+          overflowX: "auto",
         }}
       >
         Admission opened for:{" "}
-        <span className="top-admission-highlight">
-          NTA NET June 2026 | MPPSC | UPHESC | UP GDC | LT GRADE | GIC
+        <span
+          className="top-admission-highlight"
+          style={{
+            display: "inline-flex",
+            gap: "clamp(4px, 1vw, 8px)",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Link
+            href="/courses-net-paper1"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              borderRight: "1px solid #fff",
+              paddingRight: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            NTA NET Jun 2026 Paper 1
+          </Link>
+          <Link
+            href="/courses-net-paper2"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              borderRight: "1px solid #fff",
+              paddingRight: "clamp(4px, 1vw, 8px)",
+              paddingLeft: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            NTA NET Jun 2026 Paper 2 (English)
+          </Link>
+          <Link
+            href="/courses-mppsc"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              borderRight: "1px solid #fff",
+              paddingRight: "clamp(4px, 1vw, 8px)",
+              paddingLeft: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            MPPSC
+          </Link>
+          <Link
+            href="/courses-uphesc"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              borderRight: "1px solid #fff",
+              paddingRight: "clamp(4px, 1vw, 8px)",
+              paddingLeft: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            UPHESC
+          </Link>
+          <Link
+            href="/courses-upgdc"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              borderRight: "1px solid #fff",
+              paddingRight: "clamp(4px, 1vw, 8px)",
+              paddingLeft: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            UP GDC
+          </Link>
+          <Link
+            href="/courses-ltgrade"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              borderRight: "1px solid #fff",
+              paddingRight: "clamp(4px, 1vw, 8px)",
+              paddingLeft: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            LT GRADE
+          </Link>
+          <Link
+            href="/courses-gic"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "none",
+              cursor: "pointer",
+              paddingLeft: "clamp(4px, 1vw, 8px)",
+              fontSize: "clamp(11px, 2.5vw, 16px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            GIC
+          </Link>
         </span>
       </div>
 
@@ -165,7 +291,9 @@ export default async function Home() {
                   ]}
                 />
                 <a
-                  href="#research"
+                  href="/research-assistance"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     color: "#222",
                     fontWeight: 500,
@@ -173,7 +301,7 @@ export default async function Home() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Reasearch Assistance
+                  Research Assistance
                 </a>
                 <a
                   href="#pyqs"
@@ -210,7 +338,7 @@ export default async function Home() {
                   {"Student's Reviews"}
                 </a>
                 <a
-                  href="#mocktest"
+                  href="#mock"
                   style={{
                     color: "#222",
                     fontWeight: 500,
@@ -230,10 +358,12 @@ export default async function Home() {
                 >
                   Books
                 </a>
-                <span
+                <a
+                  href="#live-class"
                   style={{
                     color: "#222",
                     fontWeight: 500,
+                    textDecoration: "none",
                     display: "flex",
                     alignItems: "center",
                     gap: 4,
@@ -251,7 +381,7 @@ export default async function Home() {
                       marginLeft: 2,
                     }}
                   />
-                </span>
+                </a>
               </nav>
 
               {/* Right Buttons */}
