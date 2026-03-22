@@ -1,14 +1,6 @@
 import Image from "next/image";
-import { BookOpen, Brain, Heart, Sparkles } from "lucide-react";
 
 export function MissionSection() {
-  const features = [
-    { icon: BookOpen, label: "Knowledge" },
-    { icon: Sparkles, label: "Personal Growth" },
-    { icon: Brain, label: "Mind Wellness" },
-    { icon: Heart, label: "Leadership" },
-  ];
-
   return (
     <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0a1628] via-[#1e3a5f] to-[#0a1628] px-6 py-20">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -29,69 +21,53 @@ export function MissionSection() {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="space-y-6">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm md:p-10">
+              <h3 className="mb-5 text-3xl font-bold text-[#d4af37]">Aim</h3>
               <div className="space-y-5 text-[#f5f5f0]">
                 <p className="text-lg leading-relaxed">
-                  At{" "}
-                  <span className="font-semibold text-[#d4af37]">
-                    LePearl Education
-                  </span>
-                  , our mission is to ignite a lifelong passion for learning and
-                  empower every student to become a complete, radiant
-                  individual, not just get satisfied with one achievement in
-                  life.
+                  At LePearl Education, we aim to ignite a lifelong passion for
+                  learning and mould every student into an upright, well-rounded
+                  individual and responsible citizen. We go far beyond syllabus
+                  completion and exam scores. Through our carefully designed
+                  holistic programs, we nurture the complete personality of a
+                  truly learned person, building intellectual depth, emotional
+                  resilience, confident and articulate communication, strong
+                  moral character, and inner harmony.
                 </p>
-
                 <p className="text-lg leading-relaxed">
-                  We go beyond syllabus and scores to nurture intellectual
-                  depth, emotional resilience, confident communication, and
-                  inner harmony.
+                  At every stage of your journey, we focus on refining your
+                  personality traits and communication abilities, ensuring you
+                  emerge as a radiant, principled human being equipped not only
+                  for academic success but also for life&apos;s greater
+                  responsibilities and contributions to society.
                 </p>
+              </div>
+            </div>
 
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm md:p-10">
+              <h3 className="mb-5 text-3xl font-bold text-[#4a90e2]">Vision</h3>
+              <div className="space-y-5 text-[#f5f5f0]">
                 <p className="text-lg leading-relaxed">
-                  Through expert guidance, enriched knowledge, personalized
-                  coaching, and our unique{" "}
-                  <span className="font-semibold text-[#4a90e2]">
-                    Mind Healing Therapy
-                  </span>
-                  , we heal mental blocks, dissolve anxiety, and unlock true
-                  potential.
+                  Our vision is to create quality-oriented professors for
+                  colleges and universities across the nation, educators who are
+                  passionately committed to empowering the next generation with
+                  rock-solid conceptual understanding, sharp critical thinking,
+                  and genuine intellectual independence.
                 </p>
-
                 <p className="text-lg leading-relaxed">
-                  Our vision is holistic transformation: producing scholars who
-                  excel in academia, thrive in life, lead with empathy, and
-                  contribute meaningfully to society.
+                  Through expert guidance, enriched knowledge, personalised
+                  coaching, and our unique Mind Healing Therapy, we heal mental
+                  blocks, dissolve anxiety, and unlock the true potential in
+                  every aspirant. We envision producing scholars who excel in
+                  academia, thrive personally, lead with empathy, and make
+                  meaningful, lasting contributions to higher education and
+                  society at large.
                 </p>
-
                 <p className="text-lg italic font-semibold leading-relaxed text-[#d4af37]">
-                  Because success is not a single clearance - it&apos;s a
-                  lifelong, luminous journey of growth.
+                  At LePearl, success is never confined to a single clearance or
+                  qualification; it is a lifelong, luminous journey of
+                  continuous growth, deep transformation, and impactful presence
+                  in the world of education.
                 </p>
-              </div>
-
-              <div className="mt-10 grid grid-cols-2 gap-4 border-t border-white/10 pt-8 sm:grid-cols-4">
-                {features.map((feature) => (
-                  <div
-                    key={feature.label}
-                    className="group flex flex-col items-center gap-2 text-center"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-[#d4af37]/20 to-[#4a90e2]/20 transition-all duration-300 group-hover:scale-110 group-hover:border-[#d4af37]/50">
-                      <feature.icon className="h-6 w-6 text-[#d4af37]" />
-                    </div>
-                    <span className="text-sm text-[#f5f5f0]/80">
-                      {feature.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8">
-                <button
-                  type="button"
-                  className="w-full rounded-full bg-gradient-to-r from-[#d4af37] to-[#c19a2e] px-8 py-4 font-semibold text-[#0a1628] transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#d4af37]/30 sm:w-auto"
-                >
-                  Learn More
-                </button>
               </div>
             </div>
           </div>

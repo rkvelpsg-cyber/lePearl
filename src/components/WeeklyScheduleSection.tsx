@@ -120,19 +120,23 @@ export function WeeklyScheduleSection() {
   return (
     <section
       id="weekly-schedule"
-      className="w-full bg-gradient-to-b from-[#EEF2FF] to-white px-4 py-16 sm:px-6 lg:px-8"
+      className="w-full px-4 py-16 sm:px-6 lg:px-8"
+      style={{
+        background:
+          "linear-gradient(135deg, #14532d 0%, #166534 38%, #b91c1c 100%)",
+      }}
     >
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full bg-[#1E3A8A] p-4">
+            <div className="rounded-full bg-white/20 p-4">
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h2 className="mb-4 text-4xl font-bold text-[#1E3A8A]">
+          <h2 className="mb-4 text-4xl font-bold text-white">
             Weekly Class Schedule
           </h2>
-          <p className="mx-auto max-w-3xl text-lg text-gray-600">
+          <p className="mx-auto max-w-3xl text-lg text-emerald-50">
             Stay updated with our weekly academic sessions designed to help you
             succeed in competitive exams.
           </p>
@@ -247,7 +251,7 @@ export function WeeklyScheduleSection() {
               <div
                 className={`h-4 w-4 rounded-full ${badgeColorClasses[item.color as keyof typeof badgeColorClasses]}`}
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-white">
                 {item.course}
               </span>
             </div>

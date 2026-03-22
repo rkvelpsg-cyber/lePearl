@@ -27,7 +27,7 @@ type ClassData = {
 const mockClasses: ClassData[] = [
   {
     id: "1",
-    subject: "UGC NET English Literature",
+    subject: "MPPSC",
     faculty: "Dr Prem Shankar Pandey",
     date: "Today",
     time: "7:45 PM - 9:00 PM",
@@ -37,7 +37,7 @@ const mockClasses: ClassData[] = [
   },
   {
     id: "2",
-    subject: "Advanced Grammar and Composition",
+    subject: "NTA NET Paper 1 & Paper 2 (English)",
     faculty: "Prof. Sarah Williams",
     date: "Tomorrow",
     time: "6:00 PM - 7:30 PM",
@@ -47,7 +47,7 @@ const mockClasses: ClassData[] = [
   },
   {
     id: "3",
-    subject: "British Romantic Poetry",
+    subject: "LT Grade",
     faculty: "Dr. Rajesh Kumar",
     date: "March 9, 2026",
     time: "8:00 PM - 9:30 PM",
@@ -57,7 +57,7 @@ const mockClasses: ClassData[] = [
   },
   {
     id: "4",
-    subject: "Shakespeare Studies",
+    subject: "UP GDC",
     faculty: "Prof. Emily Thompson",
     date: "March 10, 2026",
     time: "7:00 PM - 8:30 PM",
@@ -65,13 +65,34 @@ const mockClasses: ClassData[] = [
     thumbnail:
       "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&h=500&fit=crop",
   },
+  {
+    id: "5",
+    subject: "UPHESC",
+    faculty: "Prof. Sarah Williams",
+    date: "March 11, 2026",
+    time: "6:30 PM - 8:00 PM",
+    status: "upcoming",
+    thumbnail:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=900&h=500&fit=crop",
+  },
+  {
+    id: "6",
+    subject: "GIC",
+    faculty: "Dr Prem Shankar Pandey",
+    date: "March 12, 2026",
+    time: "7:15 PM - 8:45 PM",
+    status: "upcoming",
+    thumbnail:
+      "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=900&h=500&fit=crop",
+  },
 ];
 
 export function NeedHelpSection() {
   return (
     <section
       id="need-help"
-      className="w-full bg-slate-100 px-4 py-16 sm:px-6 lg:px-8"
+      className="w-full px-4 py-16 sm:px-6 lg:px-8"
+      style={{ background: "rgba(255, 255, 255, 0.22)" }}
     >
       <div className="mx-auto max-w-7xl">
         <div className="mb-4 flex items-center gap-2">
@@ -119,15 +140,15 @@ export function LiveClassesPortalSection() {
   return (
     <section
       id="live-class"
-      className="w-full bg-gradient-to-br from-indigo-50 via-white to-indigo-100 px-4 py-16 sm:px-6 lg:px-8"
+      className="w-full bg-gradient-to-br from-teal-50 via-cyan-50 to-sky-100 px-4 py-16 sm:px-6 lg:px-8"
     >
       <div className="mx-auto max-w-7xl space-y-12">
         <div className="text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-indigo-700 shadow-sm">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white px-4 py-2 text-teal-700 shadow-sm">
             <Video className="h-4 w-4" />
             <span className="text-sm font-semibold">Live Classes Portal</span>
           </div>
-          <h2 className="mb-3 text-4xl font-bold text-indigo-900">
+          <h2 className="mb-3 text-4xl font-bold text-teal-900">
             Join Live Class Sessions
           </h2>
           <p className="mx-auto max-w-3xl text-lg text-slate-600">
@@ -136,9 +157,9 @@ export function LiveClassesPortalSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-lg lg:col-span-2">
-            <h3 className="mb-2 text-2xl font-bold text-indigo-900">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+          <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-lg lg:col-span-4 lg:-ml-3 lg:self-start">
+            <h3 className="mb-2 text-2xl font-bold text-teal-900">
               Student Login
             </h3>
             <p className="mb-6 text-sm text-slate-600">
@@ -158,7 +179,7 @@ export function LiveClassesPortalSection() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email or username"
-                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-3 outline-none ring-indigo-200 transition focus:ring-2"
+                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-3 outline-none ring-teal-200 transition focus:ring-2"
                   />
                 </div>
               </label>
@@ -174,14 +195,14 @@ export function LiveClassesPortalSection() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-3 outline-none ring-indigo-200 transition focus:ring-2"
+                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-3 outline-none ring-teal-200 transition focus:ring-2"
                   />
                 </div>
               </label>
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-indigo-700 py-3 font-semibold text-white transition hover:bg-indigo-800"
+                className="w-full rounded-xl bg-teal-700 py-3 font-semibold text-white transition hover:bg-teal-800"
               >
                 Login to Attend Class
               </button>
@@ -196,20 +217,20 @@ export function LiveClassesPortalSection() {
             </form>
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-8">
             <div className="mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-indigo-700" />
-              <h3 className="text-2xl font-bold text-indigo-900">
+              <Calendar className="h-5 w-5 text-teal-700" />
+              <h3 className="text-2xl font-bold text-teal-900">
                 Upcoming Live Classes
               </h3>
             </div>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
               {mockClasses.map((classItem) => (
                 <article
                   key={classItem.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-xl"
+                  className="flex h-full min-h-[460px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <div className="relative h-44">
+                  <div className="relative h-52">
                     <Image
                       src={classItem.thumbnail}
                       alt={classItem.subject}
@@ -222,8 +243,8 @@ export function LiveClassesPortalSection() {
                       </span>
                     )}
                   </div>
-                  <div className="space-y-2 p-4">
-                    <h4 className="text-lg font-bold text-slate-800">
+                  <div className="flex flex-1 flex-col space-y-2.5 p-5">
+                    <h4 className="min-h-[3.5rem] text-xl font-bold text-slate-800">
                       {classItem.subject}
                     </h4>
                     <p className="flex items-center gap-2 text-sm text-slate-600">
@@ -240,10 +261,10 @@ export function LiveClassesPortalSection() {
                     </p>
                     <button
                       type="button"
-                      className={`mt-2 w-full rounded-lg py-2.5 text-sm font-semibold text-white transition ${
+                      className={`mt-auto w-full rounded-lg py-2.5 text-sm font-semibold text-white transition ${
                         classItem.status === "live"
                           ? "bg-red-600 hover:bg-red-700"
-                          : "bg-indigo-700 hover:bg-indigo-800"
+                          : "bg-teal-700 hover:bg-teal-800"
                       }`}
                     >
                       {classItem.status === "live"

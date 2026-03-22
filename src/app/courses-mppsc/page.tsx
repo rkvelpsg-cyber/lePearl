@@ -27,6 +27,8 @@ import {
   Linkedin,
 } from "lucide-react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { CoursePageHeader } from "@/components/CoursePageHeader";
+import { CoursePageFooter } from "@/components/CoursePageFooter";
 
 // ─────────────────────────────────────────────────────────────
 // Header
@@ -38,35 +40,7 @@ function Header() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
-  return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-900 p-2 rounded-lg">
-            <img
-              src="/WebsiteLogo_final_white.png"
-              alt="LePearl Logo"
-              className="w-12 h-12 object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-blue-900 leading-tight whitespace-pre-line">
-              LePearl Education
-              <br />
-              Centre of Excellence in English Language & Literature
-            </h1>
-          </div>
-        </div>
-
-        <button
-          onClick={scrollToEnrollment}
-          className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
-        >
-          Enroll Now
-        </button>
-      </div>
-    </header>
-  );
+  return <CoursePageHeader onEnroll={scrollToEnrollment} />;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -490,115 +464,7 @@ function Pricing() {
 // Footer
 // ─────────────────────────────────────────────────────────────
 function Footer() {
-  return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* Logo and Description */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-blue-900 p-2 rounded-lg">
-                <img
-                  src="/WebsiteLogo_final_white.png"
-                  alt="LePearl Logo"
-                  className="w-12 h-12 object-contain"
-                />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white leading-tight whitespace-pre-line">
-                  LePearl Education
-                  <br />
-                  Centre of Excellence in English Language & Literature
-                </h3>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed">
-              Empowering future educators with quality coaching and
-              comprehensive exam preparation for MPPSC Assistant Professor
-              exams.
-            </p>
-          </div>
-
-          {/* Contact Details */}
-          <div>
-            <h4 className="text-lg font-bold text-white mb-4">Contact Us</h4>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                <span className="text-sm">
-                  123 Education Street, Bhopal, Madhya Pradesh 462001
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                <a
-                  href="tel:+911234567890"
-                  className="text-sm hover:text-amber-400 transition-colors"
-                >
-                  +91 1234 567 890
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                <a
-                  href="mailto:info@lepearl.edu"
-                  className="text-sm hover:text-amber-400 transition-colors"
-                >
-                  info@lepearl.edu
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Social Media */}
-          <div>
-            <h4 className="text-lg font-bold text-white mb-4">Follow Us</h4>
-            <div className="flex gap-4">
-              <a
-                href="#"
-                className="bg-blue-800 p-3 rounded-full hover:bg-amber-500 transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="bg-blue-800 p-3 rounded-full hover:bg-amber-500 transition-colors"
-                aria-label="X (Twitter)"
-              >
-                <X className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="bg-blue-800 p-3 rounded-full hover:bg-amber-500 transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="bg-blue-800 p-3 rounded-full hover:bg-amber-500 transition-colors"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-            </div>
-            <div className="mt-6">
-              <p className="text-sm text-gray-400 mb-2">Office Hours:</p>
-              <p className="text-sm">Monday - Saturday: 9:00 AM - 6:00 PM</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Copyright */}
-        <div className="border-t border-gray-800 pt-8 text-center">
-          <p className="text-sm text-gray-400">
-            © 2026 LePearl Coaching Institute. All rights reserved.
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
+  return <CoursePageFooter />;
 }
 
 // ─────────────────────────────────────────────────────────────

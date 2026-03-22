@@ -148,21 +148,28 @@ export function MockTestsSection() {
   ];
 
   return (
-    <section id="mock" className="min-h-screen bg-[#F3F0FF] py-12">
+    <section
+      id="mock"
+      className="min-h-screen py-12"
+      style={{
+        background:
+          "linear-gradient(135deg, #0f3f8f 0%, #0e7490 52%, #0f766e 100%)",
+      }}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <div
             className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2"
-            style={{ backgroundColor: "#E9D5FF" }}
+            style={{ backgroundColor: "rgba(255, 255, 255, 0.18)" }}
           >
-            <span className="text-sm font-semibold text-[#6A0DAD]">
+            <span className="text-sm font-semibold text-white">
               Practice. Analyze. Improve.
             </span>
           </div>
-          <h2 className="mb-4 text-4xl font-bold text-[#1E3A8A] md:text-5xl">
+          <h2 className="mb-4 text-4xl font-bold text-white md:text-5xl">
             Ongoing Mock Tests
           </h2>
-          <p className="mx-auto max-w-3xl text-lg text-[#4B5563]">
+          <p className="mx-auto max-w-3xl text-lg text-cyan-100">
             Test your preparation with real exam-pattern mock tests designed by
             experts.
           </p>

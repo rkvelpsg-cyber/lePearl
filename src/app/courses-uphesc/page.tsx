@@ -29,6 +29,8 @@ import {
   Linkedin,
   Youtube,
 } from "lucide-react";
+import { CoursePageHeader } from "@/components/CoursePageHeader";
+import { CoursePageFooter } from "@/components/CoursePageFooter";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -37,30 +39,7 @@ function Header() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
-  return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-700 to-cyan-600 rounded-lg flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-yellow-400" />
-            </div>
-            <div>
-              <div className="font-bold text-teal-800 text-lg">LePearl</div>
-              <div className="text-xs text-gray-600">Coaching Institute</div>
-            </div>
-          </div>
-
-          <button
-            onClick={scrollToEnrollment}
-            className="bg-gradient-to-r from-teal-700 to-cyan-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
-          >
-            Enroll Now
-          </button>
-        </div>
-      </div>
-    </header>
-  );
+  return <CoursePageHeader onEnroll={scrollToEnrollment} />;
 }
 
 function HeroSection() {
@@ -532,97 +511,7 @@ function EnrollmentSection() {
 }
 
 function Footer() {
-  return (
-    <footer className="bg-gradient-to-br from-teal-800 via-cyan-700 to-teal-800 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-7 h-7 text-teal-900" />
-              </div>
-              <div>
-                <div className="font-bold text-xl">LePearl</div>
-                <div className="text-sm text-cyan-200">Coaching Institute</div>
-              </div>
-            </div>
-            <p className="text-cyan-100 text-sm">
-              Empowering future Assistant Professors with excellence in
-              education and holistic preparation.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-lg mb-4">Contact Us</h4>
-            <div className="space-y-3">
-              <a
-                href="mailto:info@lepearlcoaching.com"
-                className="flex items-center gap-3 text-cyan-100 hover:text-yellow-400 transition-colors"
-              >
-                <Mail className="w-5 h-5" />
-                <span className="text-sm">info@lepearlcoaching.com</span>
-              </a>
-              <a
-                href="tel:+919876543210"
-                className="flex items-center gap-3 text-cyan-100 hover:text-yellow-400 transition-colors"
-              >
-                <Phone className="w-5 h-5" />
-                <span className="text-sm">+91 98765 43210</span>
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-lg mb-4">Follow Us</h4>
-            <div className="flex gap-3">
-              <a
-                href="#"
-                className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 group"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5 text-white group-hover:text-teal-900" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 group"
-                aria-label="X (Twitter)"
-              >
-                <X className="w-5 h-5 text-white group-hover:text-teal-900" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 group"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5 text-white group-hover:text-teal-900" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 group"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5 text-white group-hover:text-teal-900" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-yellow-500 transition-all duration-300 group"
-                aria-label="YouTube"
-              >
-                <Youtube className="w-5 h-5 text-white group-hover:text-teal-900" />
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-white/20 pt-8 text-center">
-          <p className="text-cyan-100 text-sm">
-            &copy; {new Date().getFullYear()} LePearl Coaching Institute. All
-            rights reserved.
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
+  return <CoursePageFooter />;
 }
 
 export default function UPHESCPage() {

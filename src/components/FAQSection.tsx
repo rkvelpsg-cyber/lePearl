@@ -79,6 +79,11 @@ export function FAQSection() {
       answer:
         'Led by Dr. Prem Shankar Pandey (25+ years experience, 7-time NET qualifier, author of "World Literature in Your Fist"). Faculty includes Ms. Sadhana, Dr. Babli Mallick, Ms. Neelu Patel, and GS expert Dr. Harendra K Tripathi.',
     },
+    {
+      question: "If I miss a live class, can I get the recording?",
+      answer:
+        "Yes. Every live session is recorded and available 24×7 in your personalised dashboard. You can watch, pause, and revise anytime, ensuring no gaps in your preparation.",
+    },
   ];
 
   const rightColumnFAQs: FAQ[] = [
@@ -102,16 +107,26 @@ export function FAQSection() {
       answer:
         "Students receive a dedicated academic coach for doubt clearing, personalised mentoring, career counselling, and interview guidance throughout their journey.",
     },
+    {
+      question:
+        "If I am not satisfied with the process and classes, can I get a refund?",
+      answer:
+        "Yes, partial refunds are available based on the duration of the course attended and as per our transparent Refund Policy.",
+    },
   ];
 
   return (
-    <section id="faq" className="w-full bg-transparent px-6 py-16">
+    <section
+      id="faq"
+      className="w-full px-6 py-16"
+      style={{ background: "rgba(255, 255, 255, 0.22)" }}
+    >
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
-          <h2 className="mb-3 text-3xl font-bold text-white">
+          <h2 className="mb-3 text-3xl font-bold" style={{ color: "#2d1a4a" }}>
             Frequently Asked Questions (FAQs)
           </h2>
-          <p className="text-base text-white/90">
+          <p className="text-base" style={{ color: "#4c1d95" }}>
             Everything you need to know about LePearl Coaching Institute.
           </p>
         </div>

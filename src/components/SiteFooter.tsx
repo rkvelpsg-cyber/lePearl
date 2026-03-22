@@ -23,7 +23,7 @@ export function SiteFooter() {
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2">
           <Image
-            src="/logo_vectorformat.png"
+            src="/WebsiteLogo_final_white.png"
             alt=""
             fill
             className="object-contain"
@@ -49,7 +49,7 @@ export function SiteFooter() {
             <div className="mb-4 flex items-center gap-2">
               <div className="rounded-lg bg-white p-2">
                 <Image
-                  src="/logo_vectorformat.png"
+                  src="/WebsiteLogo_final_white.png"
                   alt="LePearl Education Logo"
                   width={48}
                   height={48}

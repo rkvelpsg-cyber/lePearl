@@ -1,7 +1,7 @@
 "use client";
 
 import Slider, { type CustomArrowProps, type Settings } from "react-slick";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Image, { type StaticImageData } from "next/image";
 import sadhanaImg from "../../public/sadhana_faculty1.jpeg";
 import babliImg from "../../public/babil_faculty2.jpeg";
@@ -109,7 +109,10 @@ export function FacultyCarousel() {
   };
 
   return (
-    <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 bg-gradient-to-br from-violet-100 via-purple-50 to-white rounded-2xl">
+    <div
+      className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 rounded-2xl"
+      style={{ background: "rgba(255,255,255,0.60)" }}
+    >
       <h2 className="text-center mb-8 md:mb-12 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent text-3xl sm:text-4xl md:text-5xl font-bold">
         Faculty Profile
       </h2>
@@ -130,9 +133,18 @@ export function FacultyCarousel() {
                   <h3 className="mb-2 text-lg sm:text-xl font-semibold">
                     {faculty.name}
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-600">
+                  <p className="text-sm sm:text-base text-gray-600 mb-4">
                     {faculty.description}
                   </p>
+                  <a
+                    href={`/faculty/${faculty.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="view-profile-btn group inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-bold border-2 border-indigo-600 text-indigo-700 bg-white hover:bg-indigo-600 hover:text-white shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
+                  >
+                    <span className="relative z-10">View Profile</span>
+                    <ArrowRight className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -165,6 +177,27 @@ export function FacultyCarousel() {
 
         .faculty-carousel-wrapper .slick-dots li button:before {
           display: none;
+        }
+
+        .view-profile-btn::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 60%;
+          height: 100%;
+          background: linear-gradient(
+            120deg,
+            transparent,
+            rgba(255, 255, 255, 0.45),
+            transparent
+          );
+          transform: skewX(-20deg);
+          transition: left 0.55s ease;
+          z-index: 1;
+        }
+        .view-profile-btn:hover::before {
+          left: 160%;
         }
 
         .faculty-carousel-wrapper .slick-dots li.slick-active button {

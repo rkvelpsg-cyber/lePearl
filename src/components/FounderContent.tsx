@@ -3,10 +3,16 @@ import Image from "next/image";
 export function FounderContent() {
   return (
     <div className="w-full">
+      <div className="px-4 sm:px-6 mb-4 text-left">
+        <h2 className="text-3xl sm:text-4xl font-bold text-indigo-700">
+          About Foundar
+        </h2>
+      </div>
+
       <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 mb-10 md:mb-12 px-4 sm:px-6">
         <div className="flex items-center justify-center text-center">
           <div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-2 pb-2 leading-tight">
               Dr. Prem Shankar Pandey
             </h1>
             <p className="text-base sm:text-xl lg:text-2xl text-gray-700 font-semibold">

@@ -1,263 +1,333 @@
 ﻿import { getSiteContent } from "@/lib/siteContent";
 import Image from "next/image";
 import { Phone } from "lucide-react";
+
 import { HomeHeroCarousel } from "@/components/HomeHeroCarousel";
 import { FounderContent } from "@/components/FounderContent";
 import { FacultyCarousel } from "@/components/FacultyCarousel";
 import { FounderBooks } from "@/components/FounderBooks";
-import {
-  LiveClassesPortalSection,
-  NeedHelpSection,
-} from "@/components/LiveClassesPortalSection";
-import { MissionSection } from "@/components/MissionSection";
-import { MockTestsSection } from "@/components/MockTestsSection";
+import { LiveClassesPortalSection } from "@/components/LiveClassesPortalSection";
+import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
 import { CoursesBooksSection } from "@/components/CoursesBooksSection";
 import { PreviousPapersSection } from "@/components/PreviousPapersSection";
-import { NavDropdown } from "@/components/NavDropdown";
-import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
+import { MissionSection } from "@/components/MissionSection";
+import { WhyChooseSection } from "@/components/WhyChooseSection";
+import { MockTestsSection } from "@/components/MockTestsSection";
+import { FAQSection } from "@/components/FAQSection";
+import { NeedHelpSection } from "@/components/LiveClassesPortalSection";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WeeklyScheduleSection } from "@/components/WeeklyScheduleSection";
-import { WhyChooseSection } from "@/components/WhyChooseSection";
-import { FAQSection } from "@/components/FAQSection";
+import { NavDropdown } from "@/components/NavDropdown";
 
 export default async function Home() {
   const content = await getSiteContent();
-
   return (
     <>
-      <section
-        className="page-bg-video relative h-screen w-full overflow-hidden"
-        aria-hidden="true"
+      {/* Top Banner */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          width: "100%",
+          background: "#12606a",
+          color: "#fff",
+          textAlign: "center",
+          fontWeight: 700,
+          fontSize: 18,
+          padding: "8px 0",
+          letterSpacing: 0.2,
+        }}
       >
-        <video autoPlay muted loop playsInline className="page-bg-video-media">
-          <source
-            src="https://videos.pexels.com/video-files/5198158/5198158-uhd_2560_1440_25fps.mp4"
-            type="video/mp4"
-          />
-        </video>
-        <div className="page-bg-video-overlay" />
-      </section>
+        Admission opened for:{" "}
+        <span className="top-admission-highlight">
+          NTA NET June 2026 | MPPSC | UPHESC | UP GDC | LT GRADE | GIC
+        </span>
+      </div>
 
-      <div className="page-content-layer">
-        {/* Full-width Admission Banner */}
+      {/* Background Video */}
+      <div style={{ position: "relative" }}>
         <div
           style={{
-            position: "relative",
-            zIndex: 50,
-            width: "100%",
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
-            padding: "12px 24px",
+            position: "fixed",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+            overflow: "hidden",
           }}
         >
-          <div
-            className="top-admission-banner"
-            role="status"
-            aria-live="polite"
-            style={{ margin: 0, textAlign: "center" }}
-          >
-            <p className="top-admission-text" style={{ margin: 0 }}>
-              Admission opened for: NTA NET June 2026 | MPPSC | UPHESC | UP GDC
-              | LT GRADE | GIC
-            </p>
-          </div>
-        </div>
-
-        {/* Navigation Bar */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 50,
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "12px 24px",
-            gap: 20,
-            flexWrap: "wrap",
-          }}
-        >
-          {/* Center: Navigation Links */}
-          <nav
-            aria-label="Primary"
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
             style={{
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-              justifyContent: "center",
-              flex: 1,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              opacity: 1,
             }}
           >
-            {content.navItems.map((item) => (
-              <NavDropdown
-                key={item.href}
-                label={item.label}
-                href={item.href}
-                submenu={item.submenu}
-                isActive={item.href === "#home"}
-                isLive={item.href === "#live-class"}
-                openInNewTab={item.href === "/achievers"}
-                openSubmenuInNewTab={item.label === "Online Courses"}
-              />
-            ))}
-          </nav>
-
-          {/* Right: Action Buttons */}
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "center",
-            }}
-          >
-            <a
-              href="tel:+919876543210"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 16px",
-                backgroundColor: "transparent",
-                border: "1px solid #9333ea",
-                color: "#9333ea",
-                borderRadius: 6,
-                textDecoration: "none",
-                fontSize: 14,
-                fontWeight: 500,
-                transition: "all 0.2s ease",
-              }}
-            >
-              <Phone size={16} />
-              Contact
-            </a>
-
-            <a
-              href="/login"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "8px 16px",
-                backgroundColor: "#9333ea",
-                color: "white",
-                borderRadius: 6,
-                textDecoration: "none",
-                fontSize: 14,
-                fontWeight: 500,
-                transition: "all 0.2s ease",
-              }}
-            >
-              Login
-            </a>
-          </div>
+            <source src="/LePearlvideo3.mp4" type="video/mp4" />
+          </video>
         </div>
 
-        {/* Header with Logo */}
-        <header
-          className="site-header"
-          style={{
-            position: "relative",
-            zIndex: 10,
-            background: "transparent",
-            backdropFilter: "none",
-            paddingTop: 24,
-          }}
-        >
-          <div
-            className="header-top-row"
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* Header */}
+          <header
             style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: 16,
               position: "relative",
+              zIndex: 10,
+              background: "transparent",
+              borderBottom: "none",
             }}
           >
             <div
-              className="header-brand-block"
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                flexDirection: "column",
-                gap: 8,
-                fontWeight: 900,
-                letterSpacing: ".2px",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                padding: "12px 32px",
               }}
             >
-              <Image
-                src="/logo_vectorformat.png"
-                alt="LePearl logo"
-                className="header-brand-logo scale-125 origin-top-left -translate-x-[40px] -translate-y-[28px] -ml-3 -mt-3"
-                width={220}
-                height={220}
+              {/* Logo and Branding */}
+              <div
                 style={{
-                  borderRadius: 0,
-                  background: "transparent",
-                  border: "none",
-                  padding: 0,
-                  boxShadow: "none",
-                  filter: "none",
-                  objectFit: "contain",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  minWidth: 180,
                 }}
-              />
-
-              <div className="header-brand-copy">
-                <h1 className="text-left mb-1 leading-none">
-                  <span className="block text-xl md:text-2xl font-serif tracking-tight bg-gradient-to-r from-purple-600 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent">
+              >
+                <Image
+                  src="/logo_vectorformat.png"
+                  alt="LePearl logo"
+                  width={220}
+                  height={220}
+                  quality={100}
+                  style={{ objectFit: "contain" }}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    lineHeight: 1.2,
+                    textAlign: "center",
+                    marginTop: -22,
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: 700, fontSize: 22, color: "#a21caf" }}
+                  >
                     LePearl Education
                   </span>
-                </h1>
-                <p className="text-left text-[11px] md:text-sm text-purple-700 tracking-wide font-medium">
-                  Centre of Excellence in English Language &amp; Literature
-                </p>
+                  <span
+                    style={{ fontSize: 12, color: "#4c1d95", fontWeight: 500 }}
+                  >
+                    Centre of Excellence in English Language &amp; Literature
+                  </span>
+                </div>
+              </div>
+
+              {/* Navigation Menu */}
+              <nav
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 20,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    background: "#ede9fe",
+                    color: "#7c3aed",
+                    fontWeight: 600,
+                    borderRadius: 10,
+                    padding: "6px 18px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Home
+                </span>
+                <NavDropdown
+                  label="Online Courses"
+                  href="#"
+                  openSubmenuInNewTab
+                  submenu={[
+                    { label: "MPPSC", href: "/courses-mppsc" },
+                    { label: "NET Paper 1", href: "/courses-net-paper1" },
+                    { label: "NET Paper 2", href: "/courses-net-paper2" },
+                    { label: "UP GDC", href: "/courses-upgdc" },
+                    { label: "UPHESC", href: "/courses-uphesc" },
+                    { label: "LT Grade", href: "/courses-ltgrade" },
+                    { label: "GIC", href: "/courses-gic" },
+                  ]}
+                />
+                <a
+                  href="#research"
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Reasearch Assistance
+                </a>
+                <a
+                  href="#pyqs"
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                  }}
+                >
+                  PYQs
+                </a>
+                <a
+                  href="/achievers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  LePearl Achievers
+                </a>
+                <a
+                  href="#reviews"
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {"Student's Reviews"}
+                </a>
+                <a
+                  href="#mocktest"
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Mock Test
+                </a>
+                <a
+                  href="#books"
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                  }}
+                >
+                  Books
+                </a>
+                <span
+                  style={{
+                    color: "#222",
+                    fontWeight: 500,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Live Class
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "#ef4444",
+                      marginLeft: 2,
+                    }}
+                  />
+                </span>
+              </nav>
+
+              {/* Right Buttons */}
+              <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
+                <a
+                  href="#contact"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    border: "1.5px solid #065f46",
+                    background: "#065f46",
+                    color: "#fff",
+                    borderRadius: 8,
+                    padding: "7px 18px",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    fontSize: 15,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Phone size={16} />
+                  Contact
+                </a>
+                <a
+                  href="/login"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
+                    color: "#fff",
+                    borderRadius: 8,
+                    padding: "7px 22px",
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    fontSize: 15,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Login
+                </a>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <main id="home">
-          <SuccessStoriesSection />
-          <section className="hero-home-section">
-            <HomeHeroCarousel />
-          </section>
+          {/* Spacing below header */}
+          <div style={{ height: 28 }} />
 
-          <CoursesBooksSection />
-
-          <PreviousPapersSection />
-
-          <MissionSection />
-
-          <section className="section alt2" id="achievers">
+          <main id="home">
+            <SuccessStoriesSection />
+            <section className="hero-home-section">
+              <HomeHeroCarousel />
+            </section>
+            <CoursesBooksSection />
+            <PreviousPapersSection />
+            <MissionSection />
             <div
               id="founder"
-              className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-12"
+              className="py-12 overflow-visible"
+              style={{ background: "rgba(255,255,255,0.60)" }}
             >
               <FounderContent />
             </div>
-          </section>
-
-          <section className="section">
             <FacultyCarousel />
-          </section>
-
-          <WhyChooseSection />
-
-          <FounderBooks />
-
-          <MockTestsSection />
-
-          <LiveClassesPortalSection />
-
-          <WeeklyScheduleSection />
-        </main>
+            <WhyChooseSection />
+            <FounderBooks />
+            <MockTestsSection />
+            <LiveClassesPortalSection />
+            <WeeklyScheduleSection />
+          </main>
+        </div>
       </div>
 
-      <FAQSection />
-
-      <NeedHelpSection />
-
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <FAQSection />
+        <NeedHelpSection />
+      </div>
       <div className="footer-no-video">
         <SiteFooter />
       </div>

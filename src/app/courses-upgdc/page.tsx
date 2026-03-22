@@ -23,6 +23,8 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { CoursePageHeader } from "@/components/CoursePageHeader";
+import { CoursePageFooter } from "@/components/CoursePageFooter";
 
 type Feature = {
   icon: LucideIcon;
@@ -158,26 +160,7 @@ function UPGDCPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-900 to-blue-700">
-              <GraduationCap className="h-7 w-7 text-yellow-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-blue-900">LePearl</h1>
-              <p className="text-xs text-gray-600">Coaching Institute</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={scrollToEnroll}
-            className="rounded-lg bg-yellow-500 px-6 py-2.5 font-semibold text-blue-900 shadow-md transition-all duration-300 hover:bg-yellow-600 hover:shadow-lg"
-          >
-            Enroll Now
-          </button>
-        </div>
-      </header>
+      <CoursePageHeader onEnroll={scrollToEnroll} />
 
       <section className="relative overflow-hidden bg-blue-900 text-white">
         <div className="absolute inset-0 opacity-20">
@@ -433,80 +416,7 @@ function UPGDCPage() {
         </div>
       </section>
 
-      <footer className="bg-blue-900 py-12 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 grid gap-8 md:grid-cols-3">
-            <div>
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-500">
-                  <GraduationCap className="h-7 w-7 text-blue-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">LePearl</h3>
-                  <p className="text-sm text-blue-200">Coaching Institute</p>
-                </div>
-              </div>
-              <p className="text-sm text-blue-200">
-                Empowering future professors with expert guidance and proven
-                strategies for UP GDC Assistant Professor Exam.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-lg font-bold">Contact Us</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-yellow-400" />
-                  <a
-                    href="mailto:info@lepearlcoaching.com"
-                    className="text-blue-200 transition-colors hover:text-white"
-                  >
-                    info@lepearlcoaching.com
-                  </a>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-yellow-400" />
-                  <a
-                    href="tel:+919876543210"
-                    className="text-blue-200 transition-colors hover:text-white"
-                  >
-                    +91 98765 43210
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-lg font-bold">Follow Us</h3>
-              <div className="flex gap-4">
-                {[
-                  { label: "Facebook", icon: Facebook },
-                  { label: "X", icon: X },
-                  { label: "LinkedIn", icon: Linkedin },
-                  { label: "Instagram", icon: Instagram },
-                ].map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <a
-                      key={item.label}
-                      href="#"
-                      className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 transition-colors duration-300 hover:bg-yellow-500"
-                      aria-label={item.label}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-blue-800 pt-8 text-center text-sm text-blue-200">
-            <p>© 2026 LePearl Coaching Institute. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <CoursePageFooter />
     </div>
   );
 }

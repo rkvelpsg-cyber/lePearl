@@ -81,6 +81,11 @@ body {
   animation: admissionBlink 1.05s ease-in-out infinite;
 }
 
+.top-admission-highlight {
+  display: inline-block;
+  animation: admissionBlink 1.05s ease-in-out infinite;
+}
+
 .top-admission-text a {
   color: #ffffff;
   text-decoration: underline;
