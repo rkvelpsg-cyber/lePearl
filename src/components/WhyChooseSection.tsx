@@ -88,27 +88,27 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
   const Icon = feature.icon;
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/50 bg-white/85 p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/0 via-blue-500/0 to-amber-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" />
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-lg sm:rounded-2xl border border-slate-200/50 bg-white/85 p-4 sm:p-5 md:p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+      <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-blue-500/0 via-blue-500/0 to-amber-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" />
 
-      <div className="relative mb-5 inline-flex">
+      <div className="relative mb-3 sm:mb-5 inline-flex">
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 opacity-20 blur-lg transition-opacity duration-300 group-hover:opacity-40" />
-        <div className="relative rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-4 shadow-lg transition-shadow duration-300 group-hover:shadow-xl">
-          <Icon className="h-7 w-7 text-white" />
+        <div className="relative rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-2.5 sm:p-3 md:p-4 shadow-lg transition-shadow duration-300 group-hover:shadow-xl">
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
         </div>
-        <div className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 text-xs font-bold text-blue-900 shadow-md">
+        <div className="absolute -right-1.5 -top-1.5 sm:-right-2 sm:-top-2 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 text-xs font-bold text-blue-900 shadow-md">
           {index + 1}
         </div>
       </div>
 
-      <h3 className="mb-3 text-xl font-bold text-slate-800 transition-colors duration-300 group-hover:text-blue-700">
+      <h3 className="mb-2 sm:mb-3 text-base sm:text-lg md:text-xl font-bold text-slate-800 transition-colors duration-300 group-hover:text-blue-700 line-clamp-3">
         {feature.title}
       </h3>
-      <p className="flex-grow text-base leading-relaxed text-slate-600">
+      <p className="flex-grow text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 line-clamp-4 sm:line-clamp-5">
         {feature.description}
       </p>
 
-      <div className="absolute bottom-0 right-0 h-24 w-24 rounded-tl-full bg-gradient-to-tl from-blue-100/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="absolute bottom-0 right-0 h-20 w-20 sm:h-24 sm:w-24 rounded-tl-full bg-gradient-to-tl from-blue-100/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     </div>
   );
 }
@@ -117,35 +117,35 @@ export function WhyChooseSection() {
   return (
     <section
       id="research"
-      className="relative min-h-screen w-full overflow-hidden px-4 py-20"
+      className="relative min-h-screen w-full overflow-hidden px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20"
       style={{
         background:
           "linear-gradient(135deg, #0f172a 0%, #1e1b4b 48%, #0b3a53 100%)",
       }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-10 top-20 h-72 w-72 rounded-full bg-cyan-300/15 blur-3xl" />
-        <div className="absolute bottom-20 right-10 h-96 w-96 rounded-full bg-indigo-300/15 blur-3xl" />
-        <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-200/10 blur-3xl" />
+        <div className="absolute left-5 sm:left-10 top-10 sm:top-20 h-40 w-40 sm:h-72 sm:w-72 rounded-full bg-cyan-300/15 blur-3xl" />
+        <div className="absolute bottom-10 sm:bottom-20 right-5 sm:right-10 h-48 w-48 sm:h-96 sm:w-96 rounded-full bg-indigo-300/15 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-72 w-72 sm:h-[600px] sm:w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-200/10 blur-3xl" />
       </div>
 
       <div className="relative">
-        <div className="mx-auto mb-16 max-w-6xl px-4 text-center">
-          <h2 className="mb-6 text-4xl font-bold tracking-tight text-white md:text-5xl lg:text-6xl">
+        <div className="mx-auto mb-8 sm:mb-12 md:mb-16 max-w-6xl px-2 sm:px-4 text-center">
+          <h2 className="mb-4 sm:mb-6 text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-white">
             Why Choose{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-300 bg-clip-text text-transparent">
               LePearl Education?
             </span>
           </h2>
-          <p className="mx-auto max-w-4xl px-4 text-base leading-relaxed text-slate-200 md:text-lg lg:text-xl">
+          <p className="mx-auto max-w-4xl px-2 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl leading-relaxed text-slate-200">
             In a sea of coaching institutes promising quick success, LePearl
             Education stands apart as a complete ecosystem that transforms not
             only exam results but the entire academic and personal journey.
           </p>
         </div>
 
-        <div className="relative left-1/2 mb-16 w-screen -translate-x-1/2 px-4 md:px-8 lg:px-12 xl:px-16">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5 lg:gap-6">
+        <div className="relative left-1/2 mb-8 sm:mb-12 md:mb-16 w-screen -translate-x-1/2 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {features.map((feature, index) => (
               <div key={feature.title} className="h-full">
                 <FeatureCard feature={feature} index={index} />

@@ -408,6 +408,8 @@ export default async function Home() {
                 </a>
                 <a
                   href="/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     background:
                       "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
@@ -457,6 +459,43 @@ export default async function Home() {
       <div style={{ position: "relative", zIndex: 1 }}>
         <FAQSection />
         <NeedHelpSection />
+
+        {/* Achievers CTA Section */}
+        <div className="w-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="space-y-4 sm:space-y-6">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent px-2">
+                See Our Success Stories
+              </h3>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2">
+                Meet the students who cracked NTA NET with LePearl Education.
+                Get inspired by their journey and start yours today!
+              </p>
+              <div className="flex justify-center pt-2 sm:pt-4">
+                <Link
+                  href="/achievers"
+                  className="group relative inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                >
+                  <span>View All Achievers</span>
+                  <svg
+                    className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="footer-no-video">
         <SiteFooter />

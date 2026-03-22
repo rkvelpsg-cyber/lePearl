@@ -70,12 +70,12 @@ function Hero() {
           </p>
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row">
-            <button
-              onClick={scrollToEnrollment}
+            <a
+              href="/login"
               className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
             >
               Enroll Now
-            </button>
+            </a>
             <button className="flex items-center justify-center gap-2 rounded-lg border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition hover:bg-white/20">
               <Download className="h-5 w-5" />
               Download Course Details
@@ -427,12 +427,12 @@ function EnrollmentSection() {
               </ul>
             </div>
 
-            <button
-              onClick={handleEnroll}
-              className="w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white transition-colors hover:bg-blue-800"
+            <a
+              href="/login"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
             >
               Enroll Now
-            </button>
+            </a>
           </div>
 
           <div className="relative rounded-2xl border-4 border-amber-400 bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
@@ -465,12 +465,12 @@ function EnrollmentSection() {
               </ul>
             </div>
 
-            <button
-              onClick={handleEnroll}
-              className="w-full rounded-lg bg-amber-500 py-4 text-lg font-bold text-white transition-colors hover:bg-amber-600"
+            <a
+              href="/login"
+              className="block w-full rounded-lg bg-amber-500 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-amber-600"
             >
               Fill Registration Form
-            </button>
+            </a>
           </div>
         </div>
       </div>

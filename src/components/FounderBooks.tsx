@@ -123,52 +123,57 @@ export function FounderBooks() {
   return (
     <section
       id="books"
-      className="w-full py-16 px-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
+      className="w-full py-12 sm:py-16 md:py-20 px-3 sm:px-4 md:px-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="text-center mb-12">
-          <div className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full mb-4">
-            <span className="text-sm tracking-wide uppercase">
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
+            <span className="text-xs sm:text-sm tracking-wide uppercase font-semibold">
               Literary Excellence
             </span>
           </div>
-          <h2 className="text-4xl mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-3 sm:mb-4 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent font-bold px-2">
             Books by Our Founder
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-2">
             Explore the comprehensive collection of academic works authored by
             Dr. Prem Shankar Pandey, designed for competitive examinations and
             literary studies.
           </p>
         </div>
 
-        <div className="relative left-1/2 w-screen -translate-x-1/2 px-6 md:px-10 lg:px-14">
-          <div className="books-carousel-wrapper">
+        <div className="relative left-1/2 w-screen -translate-x-1/2 px-2 sm:px-4 md:px-6 lg:px-10">
+          <div className="books-carousel-wrapper mx-auto">
             <Slider {...sliderSettings}>
               {books.map((book) => (
-                <div key={book.id} className="px-3 py-1">
-                  <div className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <div
+                  key={book.id}
+                  className="px-1.5 sm:px-2 md:px-3 lg:px-4 py-1"
+                >
+                  <div className="flex h-auto sm:h-96 md:h-[480px] lg:h-[560px] flex-col overflow-hidden rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl">
+                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 p-2 sm:p-3">
                       <Image
                         src={book.image}
                         alt={book.title}
-                        className="h-full w-full object-contain transition-transform duration-300 hover:scale-105"
+                        fill
+                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 40vw, 25vw"
+                        className="object-contain object-center p-1 sm:p-2"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 hover:opacity-100" />
                     </div>
 
-                    <div className="flex flex-grow flex-col bg-gradient-to-b from-white to-gray-50 p-6">
-                      <h3 className="mb-4 flex-grow text-lg text-gray-800">
+                    <div className="flex flex-1 flex-col bg-gradient-to-b from-white to-gray-50 p-3 sm:p-4 md:p-6">
+                      <h3 className="mb-2 sm:mb-4 h-16 sm:h-20 text-sm sm:text-base md:text-lg leading-snug text-gray-800 line-clamp-3 sm:line-clamp-2">
                         {book.title}
                       </h3>
                       <a
                         href={book.amazonLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#FF9900] to-[#FF8000] px-6 py-3 text-white shadow-md transition-all duration-200 hover:from-[#FA8900] hover:to-[#F57C00] hover:shadow-lg"
+                        className="mt-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-r from-[#FF9900] to-[#FF8000] px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm md:text-base text-white font-semibold shadow-md transition-all duration-200 hover:from-[#FA8900] hover:to-[#F57C00] hover:shadow-lg whitespace-nowrap"
                       >
                         <span>Purchase on Amazon</span>
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
                       </a>
                     </div>
                   </div>

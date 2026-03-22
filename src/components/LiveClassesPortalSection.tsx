@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import {
   Calendar,
-  Chrome,
   Clock,
   FileText,
   HelpCircle,
-  Lock,
   Mail,
   User,
   Video,
@@ -134,9 +131,6 @@ export function NeedHelpSection() {
 }
 
 export function LiveClassesPortalSection() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   return (
     <section
       id="live-class"
@@ -157,124 +151,65 @@ export function LiveClassesPortalSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
-          <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-lg lg:col-span-4 lg:-ml-3 lg:self-start">
-            <h3 className="mb-2 text-2xl font-bold text-teal-900">
-              Student Login
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-teal-700" />
+            <h3 className="text-2xl font-bold text-teal-900">
+              Upcoming Live Classes
             </h3>
-            <p className="mb-6 text-sm text-slate-600">
-              Access your personalized dashboard and join live sessions
-              instantly.
-            </p>
-
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <label className="block space-y-2">
-                <span className="text-sm font-semibold text-slate-700">
-                  Email / Username
-                </span>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email or username"
-                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-3 outline-none ring-teal-200 transition focus:ring-2"
-                  />
-                </div>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-semibold text-slate-700">
-                  Password
-                </span>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-3 outline-none ring-teal-200 transition focus:ring-2"
-                  />
-                </div>
-              </label>
-
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-teal-700 py-3 font-semibold text-white transition hover:bg-teal-800"
-              >
-                Login to Attend Class
-              </button>
-
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                <Chrome className="h-4 w-4" />
-                Sign in with Google
-              </button>
-            </form>
           </div>
-
-          <div className="lg:col-span-8">
-            <div className="mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-teal-700" />
-              <h3 className="text-2xl font-bold text-teal-900">
-                Upcoming Live Classes
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {mockClasses.map((classItem) => (
-                <article
-                  key={classItem.id}
-                  className="flex h-full min-h-[460px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="relative h-52">
-                    <Image
-                      src={classItem.thumbnail}
-                      alt={classItem.subject}
-                      fill
-                      className="object-cover"
-                    />
-                    {classItem.status === "live" && (
-                      <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">
-                        LIVE NOW
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col space-y-2.5 p-5">
-                    <h4 className="min-h-[3.5rem] text-xl font-bold text-slate-800">
-                      {classItem.subject}
-                    </h4>
-                    <p className="flex items-center gap-2 text-sm text-slate-600">
-                      <User className="h-4 w-4" />
-                      Faculty: {classItem.faculty}
-                    </p>
-                    <p className="flex items-center gap-2 text-sm text-slate-600">
-                      <Calendar className="h-4 w-4" />
-                      {classItem.date}
-                    </p>
-                    <p className="flex items-center gap-2 text-sm text-slate-600">
-                      <Clock className="h-4 w-4" />
-                      {classItem.time}
-                    </p>
-                    <button
-                      type="button"
-                      className={`mt-auto w-full rounded-lg py-2.5 text-sm font-semibold text-white transition ${
-                        classItem.status === "live"
-                          ? "bg-red-600 hover:bg-red-700"
-                          : "bg-teal-700 hover:bg-teal-800"
-                      }`}
-                    >
-                      {classItem.status === "live"
-                        ? "Join Live Class Now"
-                        : "Join Class"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {mockClasses.map((classItem) => (
+              <article
+                key={classItem.id}
+                className="flex h-full min-h-[460px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-xl"
+              >
+                <div className="relative h-52">
+                  <Image
+                    src={classItem.thumbnail}
+                    alt={classItem.subject}
+                    fill
+                    className="object-cover"
+                  />
+                  {classItem.status === "live" && (
+                    <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">
+                      LIVE NOW
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col space-y-2.5 p-5">
+                  <h4 className="min-h-[3.5rem] text-xl font-bold text-slate-800">
+                    {classItem.subject}
+                  </h4>
+                  <p className="flex items-center gap-2 text-sm text-slate-600">
+                    <User className="h-4 w-4" />
+                    Faculty: {classItem.faculty}
+                  </p>
+                  <p className="flex items-center gap-2 text-sm text-slate-600">
+                    <Calendar className="h-4 w-4" />
+                    {classItem.date}
+                  </p>
+                  <p className="flex items-center gap-2 text-sm text-slate-600">
+                    <Clock className="h-4 w-4" />
+                    {classItem.time}
+                  </p>
+                  <a
+                    href="/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`mt-auto block w-full rounded-lg py-2.5 text-center text-sm font-semibold text-white transition ${
+                      classItem.status === "live"
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-teal-700 hover:bg-teal-800"
+                    }`}
+                  >
+                    {classItem.status === "live"
+                      ? "Join Live Class Now"
+                      : "Join Class"}
+                  </a>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </div>

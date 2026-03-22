@@ -110,40 +110,45 @@ export function FacultyCarousel() {
 
   return (
     <div
-      className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 rounded-2xl"
+      className="w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-10 md:py-16 rounded-xl sm:rounded-2xl"
       style={{ background: "rgba(255,255,255,0.60)" }}
     >
-      <h2 className="text-center mb-8 md:mb-12 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent text-3xl sm:text-4xl md:text-5xl font-bold">
+      <h2 className="text-center mb-6 sm:mb-8 md:mb-12 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold px-2">
         Faculty Profile
       </h2>
       <div className="faculty-carousel-wrapper max-w-7xl mx-auto">
         <Slider {...settings}>
           {facultyData.map((faculty) => (
-            <div key={faculty.id} className="px-2 sm:px-3 md:px-4">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden mx-auto max-w-md transition-all duration-300 hover:shadow-2xl">
+            <div
+              key={faculty.id}
+              className="px-1.5 sm:px-2 md:px-3 lg:px-4 h-full"
+            >
+              <div className="bg-white rounded-lg sm:rounded-lg shadow-lg overflow-hidden mx-auto max-w-xs sm:max-w-sm h-full flex flex-col transition-all duration-300 hover:shadow-2xl">
                 <div className="aspect-[3/4] w-full overflow-hidden bg-gray-100">
                   <Image
                     src={faculty.image}
                     alt={faculty.name}
-                    className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-110 cursor-pointer"
+                    className={`w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-110 cursor-pointer ${
+                      faculty.id === 1 ? "object-[center_62%]" : "object-center"
+                    }`}
                     priority={faculty.id === 1}
                   />
                 </div>
-                <div className="p-4 sm:p-6 text-center">
-                  <h3 className="mb-2 text-lg sm:text-xl font-semibold">
+                <div className="p-3 sm:p-4 md:p-6 text-center flex-1 flex flex-col">
+                  <h3 className="mb-1 sm:mb-2 text-base sm:text-lg md:text-xl font-semibold h-14 sm:h-16 overflow-hidden flex items-center justify-center text-center leading-snug line-clamp-2">
                     {faculty.name}
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-600 mb-4">
+                  <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-2 sm:mb-4 h-12 sm:h-16 overflow-hidden leading-relaxed line-clamp-3">
                     {faculty.description}
                   </p>
                   <a
                     href={`/faculty/${faculty.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="view-profile-btn group inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-bold border-2 border-indigo-600 text-indigo-700 bg-white hover:bg-indigo-600 hover:text-white shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
+                    className="view-profile-btn group inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm md:font-bold font-semibold border-2 border-indigo-600 text-indigo-700 bg-white hover:bg-indigo-600 hover:text-white shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0 active:shadow-md mt-auto self-center whitespace-nowrap"
                   >
                     <span className="relative z-10">View Profile</span>
-                    <ArrowRight className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
                   </a>
                 </div>
               </div>
@@ -152,6 +157,18 @@ export function FacultyCarousel() {
         </Slider>
       </div>
       <style jsx global>{`
+        .faculty-carousel-wrapper .slick-track {
+          display: flex !important;
+        }
+
+        .faculty-carousel-wrapper .slick-slide {
+          height: inherit !important;
+        }
+
+        .faculty-carousel-wrapper .slick-slide > div {
+          height: 100%;
+        }
+
         .faculty-carousel-wrapper .slick-dots {
           bottom: -40px;
           display: flex !important;

@@ -236,9 +236,12 @@ export default function LTGradeCoursePage() {
                   </li>
                 ))}
               </ul>
-              <button className="w-full rounded-lg bg-blue-900 py-3.5 font-bold text-white hover:bg-blue-800">
+              <a
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
+              >
                 Enroll Now
-              </button>
+              </a>
             </div>
 
             <div className="rounded-2xl border-4 border-amber-400 bg-white p-8 text-gray-900 shadow-2xl">
@@ -262,9 +265,12 @@ export default function LTGradeCoursePage() {
                   </li>
                 ))}
               </ul>
-              <button className="w-full rounded-lg bg-amber-500 py-3.5 font-bold text-white hover:bg-amber-600">
+              <a
+                href="/login"
+                className="block w-full rounded-lg bg-amber-500 py-3.5 text-center font-bold text-white hover:bg-amber-600"
+              >
                 Fill Registration Form
-              </button>
+              </a>
             </div>
           </div>
         </div>

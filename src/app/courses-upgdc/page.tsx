@@ -183,13 +183,12 @@ function UPGDCPage() {
             </p>
 
             <div className="mb-10 flex flex-wrap gap-4">
-              <button
-                type="button"
-                onClick={scrollToEnroll}
+              <a
+                href="/login"
                 className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Enroll Now
-              </button>
+              </a>
               <button
                 type="button"
                 className="rounded-lg border-2 border-white bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20"
@@ -307,6 +306,7 @@ function UPGDCPage() {
             >
               <ChevronLeft className="h-6 w-6 text-blue-900" />
             </button>
+
             <button
               type="button"
               onClick={nextTestimonial}
@@ -375,12 +375,12 @@ function UPGDCPage() {
                   </li>
                 ))}
               </ul>
-              <button
-                type="button"
-                className="w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              <a
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
               >
                 Enroll Now
-              </button>
+              </a>
             </div>
 
             <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
@@ -405,12 +405,12 @@ function UPGDCPage() {
                   </li>
                 ))}
               </ul>
-              <button
-                type="button"
-                className="w-full rounded-lg bg-yellow-500 py-4 text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
+              <a
+                href="/login"
+                className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Fill Registration Form
-              </button>
+              </a>
             </div>
           </div>
         </div>

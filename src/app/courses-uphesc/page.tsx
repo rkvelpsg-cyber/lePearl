@@ -75,17 +75,16 @@ function HeroSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <button
-              onClick={scrollToEnrollment}
+            <a
+              href="/login"
               className="bg-yellow-500 text-teal-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               Enroll Now
-            </button>
+            </a>
             <button className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white/20 transition-all duration-300">
               Download Course Details
             </button>
           </div>
-
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center">
@@ -477,15 +476,16 @@ function EnrollmentSection() {
                   ))}
                 </ul>
 
-                <button
-                  className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 ${
+                <a
+                  href="/login"
+                  className={`block w-full py-4 rounded-lg font-bold text-lg text-center transition-all duration-300 ${
                     option.popular
                       ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-teal-900 hover:shadow-xl hover:scale-105"
                       : "bg-gradient-to-r from-teal-700 to-cyan-600 text-white hover:shadow-lg hover:scale-105"
                   }`}
                 >
                   Enroll Now
-                </button>
+                </a>
               </div>
             );
           })}
@@ -500,9 +500,12 @@ function EnrollmentSection() {
               Fill out our registration form and our team will guide you through
               the enrollment process
             </p>
-            <button className="bg-yellow-500 text-teal-900 px-10 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl">
+            <a
+              href="/login"
+              className="inline-block bg-yellow-500 text-teal-900 px-10 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
+            >
               Fill Registration Form
-            </button>
+            </a>
           </div>
         </div>
       </div>

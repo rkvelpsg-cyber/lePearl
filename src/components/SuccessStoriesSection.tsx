@@ -259,6 +259,14 @@ const successStories: VideoStory[] = [
     achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/4cqnt2DkIPw/hqdefault.jpg",
   },
+  {
+    id: "28",
+    videoId: "9-fngrO0Lc4",
+    videoUrl: "https://www.youtube.com/watch?v=9-fngrO0Lc4",
+    studentName: "Ms Neelu Patel, MPPSC AIR 39",
+    achievement: "",
+    thumbnailUrl: "https://img.youtube.com/vi/9-fngrO0Lc4/maxresdefault.jpg",
+  },
 ];
 
 function VideoCard({ story }: { story: VideoStory }) {

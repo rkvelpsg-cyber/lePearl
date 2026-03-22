@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import trainerImage from "../../public/PremSir_Photo.jpeg";
 import { Check } from "lucide-react";
 
 export function CoachingCard() {
@@ -37,6 +36,29 @@ export function CoachingCard() {
     "R",
     "S",
     "T",
+  ];
+
+  const netAchievers = [
+    {
+      id: 1,
+      name: "Nidhi Shukla",
+      imageUrl: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg",
+    },
+    {
+      id: 2,
+      name: "Richa Singh",
+      imageUrl: "/Richa%20Singh_NET_Dec_2026.jpeg",
+    },
+    {
+      id: 3,
+      name: "Kanika Sharma",
+      imageUrl: "/Kanika%20Sharma.jpeg",
+    },
+    {
+      id: 4,
+      name: "Rashmita Sahoo",
+      imageUrl: "/Rashmita%20Sahoo.jpeg",
+    },
   ];
 
   const getLetterStyle = (index: number) => ({
@@ -79,33 +101,33 @@ export function CoachingCard() {
             ))}
           </div>
 
-          <div className="hero-slide-content relative z-10 px-8 pt-8 pb-24 md:px-12 md:pt-12 md:pb-28">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div className="space-y-8">
+          <div className="hero-slide-content relative z-10 px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-16 md:px-12 md:pt-12 md:pb-28">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center">
+              <div className="space-y-4 sm:space-y-6 lg:space-y-8">
                 <div>
-                  <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-3">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3">
                     Crack UGC NET English with{" "}
                     <span className="text-yellow-400">Confidence</span>
                   </h2>
-                  <div className="w-24 h-1 bg-yellow-400 rounded-full" />
+                  <div className="w-16 sm:w-24 h-1 bg-yellow-400 rounded-full" />
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-yellow-400 mb-4">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-yellow-400 mb-2 sm:mb-4">
                     What You&apos;ll Get:
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {coachingPrograms.map((program, index) => (
                       <div
                         key={`${program}-${index}`}
-                        className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/20 transition-all"
+                        className="flex items-start gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20 hover:bg-white/20 transition-all"
                       >
                         <div className="flex-shrink-0 mt-0.5">
                           <div className="bg-green-500 rounded-full p-1">
-                            <Check className="w-4 h-4 text-white" />
+                            <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                           </div>
                         </div>
-                        <span className="text-white font-medium text-sm">
+                        <span className="text-white font-medium text-xs sm:text-sm">
                           {program}
                         </span>
                       </div>
@@ -113,46 +135,56 @@ export function CoachingCard() {
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-2 bg-yellow-400/20 border-2 border-yellow-400 rounded-full px-6 py-3">
-                  <span className="text-yellow-400 font-bold text-lg">
+                <div className="inline-flex items-center gap-1 sm:gap-2 bg-yellow-400/20 border-2 border-yellow-400 rounded-full px-3 sm:px-6 py-2 sm:py-3">
+                  <span className="text-yellow-400 font-bold text-sm sm:text-base lg:text-lg">
                     🎯 Expert-Led Training
                   </span>
                 </div>
               </div>
 
-              <div className="flex justify-center lg:justify-end">
-                <div className="relative">
+              <div className="flex justify-center lg:justify-end mt-6 sm:mt-0">
+                <div className="relative w-full sm:w-auto">
                   <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-3xl blur-2xl opacity-30" />
 
-                  <div className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-3xl p-2 border-2 border-white/20">
-                    <Image
-                      src={trainerImage}
-                      alt="UGC NET English Expert Trainer"
-                      className="w-full max-w-[380px] h-auto object-contain rounded-2xl"
-                      style={{ imageRendering: "-webkit-optimize-contrast" }}
-                      priority
-                    />
+                  <div className="relative w-full sm:w-auto max-w-sm md:max-w-[420px] rounded-2xl sm:rounded-3xl border-2 border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-3 sm:p-4 backdrop-blur-sm">
+                    <h4 className="mb-3 sm:mb-4 text-center text-base sm:text-lg lg:text-xl font-bold text-yellow-300">
+                      NTA NET Achievers
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 max-h-64 sm:max-h-80 overflow-y-auto pr-1">
+                      {netAchievers.map((achiever) => (
+                        <div
+                          key={achiever.id}
+                          className="rounded-lg sm:rounded-2xl border border-white/25 bg-white/10 p-1.5 sm:p-2 text-center"
+                        >
+                          <div className="mx-auto mb-1 sm:mb-2 h-16 sm:h-24 w-16 sm:w-24 overflow-hidden rounded-lg sm:rounded-xl border-2 border-yellow-300/80 bg-white/90">
+                            <Image
+                              src={achiever.imageUrl}
+                              alt={achiever.name}
+                              width={96}
+                              height={96}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <p className="text-xs sm:text-sm font-semibold text-white line-clamp-2">
+                            {achiever.name}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
-                  <Link
-                    href="/#founder"
-                    className="absolute -bottom-4 -right-4 bg-green-500 text-white font-bold px-5 py-3 rounded-2xl shadow-xl border-4 border-white max-w-[320px] hover:bg-green-600 transition-colors"
-                  >
-                    <span className="text-xs md:text-sm leading-tight text-center block">
-                      Dr. Prem Shankar Pandey, Founder &amp; Director, LePearl
-                      Education
-                    </span>
-                  </Link>
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 flex justify-center">
-              <button className="group relative bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-xl px-12 py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-yellow-500/50">
-                <span className="relative z-10 flex items-center gap-3">
+            <div className="mt-6 sm:mt-8 lg:mt-12 flex justify-center">
+              <Link
+                href="/login"
+                className="group relative inline-block bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-sm sm:text-base lg:text-xl px-6 sm:px-8 lg:px-12 py-3 sm:py-4 lg:py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 sm:hover:scale-110 hover:shadow-yellow-500/50"
+              >
+                <span className="relative z-10 flex items-center gap-2 sm:gap-3">
                   Enroll Now
                   <svg
-                    className="w-6 h-6 group-hover:translate-x-1 transition-transform"
+                    className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -168,7 +200,7 @@ export function CoachingCard() {
                 </span>
 
                 <span className="absolute inset-0 rounded-full bg-white/30 scale-0 group-hover:scale-100 transition-transform duration-300" />
-              </button>
+              </Link>
             </div>
           </div>
         </div>

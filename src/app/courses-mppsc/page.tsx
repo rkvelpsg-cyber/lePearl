@@ -75,12 +75,12 @@ function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
-            <button
-              onClick={scrollToEnrollment}
+            <a
+              href="/login"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Enroll Now
-            </button>
+            </a>
             <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2">
               <Download className="w-5 h-5" />
               Download Course Details
@@ -396,12 +396,12 @@ function Pricing() {
               </ul>
             </div>
 
-            <button
-              onClick={handleEnroll}
-              className="w-full bg-blue-900 hover:bg-blue-800 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg"
+            <a
+              href="/login"
+              className="block w-full bg-blue-900 hover:bg-blue-800 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
             >
               Enroll Now
-            </button>
+            </a>
           </div>
 
           {/* Installment Plan */}
@@ -435,12 +435,12 @@ function Pricing() {
               </ul>
             </div>
 
-            <button
-              onClick={handleEnroll}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg"
+            <a
+              href="/login"
+              className="block w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
             >
               Fill Registration Form
-            </button>
+            </a>
           </div>
         </div>
 
