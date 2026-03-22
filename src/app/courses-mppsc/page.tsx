@@ -43,11 +43,18 @@ function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-blue-900 p-2 rounded-lg">
-            <GraduationCap className="w-8 h-8 text-amber-400" />
+            <img
+              src="/WebsiteLogo_final_white.png"
+              alt="LePearl Logo"
+              className="w-12 h-12 object-contain"
+            />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-blue-900">LePearl</h1>
-            <p className="text-xs text-gray-600">Coaching Institute</p>
+            <h1 className="text-xl font-bold text-blue-900 leading-tight whitespace-pre-line">
+              LePearl Education
+              <br />
+              Centre of Excellence in English Language & Literature
+            </h1>
           </div>
         </div>
 
@@ -491,11 +498,18 @@ function Footer() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-blue-900 p-2 rounded-lg">
-                <GraduationCap className="w-8 h-8 text-amber-400" />
+                <img
+                  src="/WebsiteLogo_final_white.png"
+                  alt="LePearl Logo"
+                  className="w-12 h-12 object-contain"
+                />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">LePearl</h3>
-                <p className="text-sm text-gray-400">Coaching Institute</p>
+                <h3 className="text-xl font-bold text-white leading-tight whitespace-pre-line">
+                  LePearl Education
+                  <br />
+                  Centre of Excellence in English Language & Literature
+                </h3>
               </div>
             </div>
             <p className="text-sm leading-relaxed">

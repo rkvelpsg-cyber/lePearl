@@ -359,10 +359,10 @@ export default function AchieversPage() {
       imageUrl: "/Arju%20Mishra.jpeg",
     },
     {
-      id: 24,
-      name: "Mr Neelu Kumar",
-      examName: "Assistant Professor, UPHESC-Adv 50-2022",
-      imageUrl: "/Neelu%20Kumar.jpeg",
+      id: 25,
+      name: "Ms Mahima Singh, Assistant Professor, Himachal Pradesh Service Commision-2023",
+      examName: "Assistant Professor, Himachal Pradesh Service Commision-2023",
+      imageUrl: "/Mahima2.jpeg",
     },
   ];
 
@@ -373,7 +373,7 @@ export default function AchieversPage() {
           <div className="mb-4 flex items-center justify-center gap-3">
             <Sparkles className="h-8 w-8 text-amber-400" />
             <h1 className="text-4xl text-white md:text-5xl">
-              LePearl Achivers
+              LePearl Achievers
             </h1>
             <Sparkles className="h-8 w-8 text-amber-400" />
           </div>
@@ -385,7 +385,10 @@ export default function AchieversPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-6">
-        <AchieversSection title="NTA NET Achievers" achievers={netAchievers} />
+        <AchieversSection
+          title="Assistant Professor Achievers"
+          achievers={assistantProfessorAchievers}
+        />
 
         <div className="relative py-8">
           <div className="absolute inset-0 flex items-center">
@@ -398,10 +401,7 @@ export default function AchieversPage() {
           </div>
         </div>
 
-        <AchieversSection
-          title="Assistant Professor Achievers"
-          achievers={assistantProfessorAchievers}
-        />
+        <AchieversSection title="NTA NET Achievers" achievers={netAchievers} />
       </div>
 
       <div className="mt-16 h-2 w-full bg-gradient-to-r from-blue-600 via-amber-500 to-blue-600" />
