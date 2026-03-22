@@ -360,7 +360,7 @@ export default function AchieversPage() {
     },
     {
       id: 25,
-      name: "Ms Mahima Singh, Assistant Professor, Himachal Pradesh Service Commision-2023",
+      name: "Ms Mahima Singh",
       examName: "Assistant Professor, Himachal Pradesh Service Commision-2023",
       imageUrl: "/Mahima2.jpeg",
     },
