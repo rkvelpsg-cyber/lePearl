@@ -222,7 +222,7 @@ export default async function Home() {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  minWidth: 180,
+                  minWidth: 150,
                 }}
               >
                 <Image
@@ -255,175 +255,224 @@ export default async function Home() {
                 </div>
               </div>
 
-              {/* Navigation Menu */}
-              <nav
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "flex-start",
                   gap: 20,
-                  flexWrap: "wrap",
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
-                <span
+                {/* Navigation Menu */}
+                <nav
                   style={{
-                    background: "#ede9fe",
-                    color: "#7c3aed",
-                    fontWeight: 600,
-                    borderRadius: 10,
-                    padding: "6px 18px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Home
-                </span>
-                <NavDropdown
-                  label="Online Courses"
-                  href="#"
-                  openSubmenuInNewTab
-                  submenu={[
-                    { label: "MPPSC", href: "/courses-mppsc" },
-                    { label: "NET Paper 1", href: "/courses-net-paper1" },
-                    { label: "NET Paper 2", href: "/courses-net-paper2" },
-                    { label: "UP GDC", href: "/courses-upgdc" },
-                    { label: "UPHESC", href: "/courses-uphesc" },
-                    { label: "LT Grade", href: "/courses-ltgrade" },
-                    { label: "GIC", href: "/courses-gic" },
-                  ]}
-                />
-                <a
-                  href="/research-assistance"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Research Assistance
-                </a>
-                <a
-                  href="#pyqs"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                  }}
-                >
-                  PYQs
-                </a>
-                <a
-                  href="/achievers"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  LePearl Achievers
-                </a>
-                <a
-                  href="#reviews"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {"Student's Reviews"}
-                </a>
-                <a
-                  href="#mock"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Mock Test
-                </a>
-                <a
-                  href="#books"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                  }}
-                >
-                  Books
-                </a>
-                <a
-                  href="#live-class"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
                     display: "flex",
                     alignItems: "center",
-                    gap: 4,
+                    gap: 20,
+                    flex: "0 1 auto",
+                    minWidth: 0,
                     whiteSpace: "nowrap",
+                    marginRight: 20,
                   }}
                 >
-                  Live Class
                   <span
                     style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "#ef4444",
-                      marginLeft: 2,
+                      background: "#ede9fe",
+                      color: "#7c3aed",
+                      fontWeight: 600,
+                      borderRadius: 10,
+                      padding: "6px 18px",
+                      cursor: "pointer",
+                      flexShrink: 0,
                     }}
+                  >
+                    Home
+                  </span>
+                  <NavDropdown
+                    label="Online Courses"
+                    href="#"
+                    openSubmenuInNewTab
+                    submenu={[
+                      {
+                        label: "Assistant Professor",
+                        isSection: true,
+                        submenu: [
+                          { label: "MPPSC", href: "/courses-mppsc" },
+                          { label: "UPHESC", href: "/courses-uphesc" },
+                          { label: "UP GDC", href: "/courses-upgdc" },
+                        ],
+                      },
+                      {
+                        label: "NTA NET",
+                        isSection: true,
+                        submenu: [
+                          { label: "NET Paper 1", href: "/courses-net-paper1" },
+                          { label: "NET Paper 2", href: "/courses-net-paper2" },
+                        ],
+                      },
+                      {
+                        label: "Other Teaching Exams",
+                        isSection: true,
+                        submenu: [
+                          { label: "GIC", href: "/courses-gic" },
+                          { label: "LT Grade", href: "/courses-ltgrade" },
+                        ],
+                      },
+                      {
+                        label: "Interview Preparation",
+                        isSection: true,
+                        submenu: [
+                          { label: "Communication Skills", href: "/courses-communication-skills" },
+                        ],
+                      },
+                    ]}
                   />
-                </a>
-              </nav>
+                  <a
+                    href="/research-assistance"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Research Assistance
+                  </a>
+                  <a
+                    href="#pyqs"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    PYQs
+                  </a>
+                  <a
+                    href="/achievers"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    LePearl Achievers
+                  </a>
+                  <a
+                    href="#reviews"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {"Student's Reviews"}
+                  </a>
+                  <a
+                    href="#mock"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Mock Test
+                  </a>
+                  <a
+                    href="#books"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Books
+                  </a>
+                </nav>
 
-              {/* Right Buttons */}
-              <div style={{ display: "flex", gap: 12, flexShrink: 0 }}>
-                <a
-                  href="#contact"
+                {/* Right Buttons */}
+                <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
-                    border: "1.5px solid #065f46",
-                    background: "#065f46",
-                    color: "#fff",
-                    borderRadius: 8,
-                    padding: "7px 18px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    fontSize: 15,
+                    gap: 12,
+                    flexShrink: 0,
                     whiteSpace: "nowrap",
                   }}
                 >
-                  <Phone size={16} />
-                  Contact
-                </a>
-                <a
-                  href="/login"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
-                    color: "#fff",
-                    borderRadius: 8,
-                    padding: "7px 22px",
-                    fontWeight: 700,
-                    textDecoration: "none",
-                    fontSize: 15,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Login
-                </a>
+                  <a
+                    href="#live-class"
+                    style={{
+                      color: "#222",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Live Class
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#ef4444",
+                        marginLeft: 2,
+                      }}
+                    />
+                  </a>
+                  <a
+                    href="#contact"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      border: "1.5px solid #065f46",
+                      background: "#065f46",
+                      color: "#fff",
+                      borderRadius: 8,
+                      padding: "9px 14px",
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      fontSize: 15,
+                      whiteSpace: "nowrap",
+                    }}
+                    aria-label="Contact"
+                  >
+                    <Phone size={16} />
+                  </a>
+                  <a
+                    href="/login"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
+                      color: "#fff",
+                      borderRadius: 8,
+                      padding: "7px 22px",
+                      fontWeight: 700,
+                      textDecoration: "none",
+                      fontSize: 15,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Login
+                  </a>
+                </div>
               </div>
             </div>
           </header>

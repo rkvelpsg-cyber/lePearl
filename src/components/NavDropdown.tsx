@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 type NavSubItem = {
   label: string;
-  href: string;
+  href?: string;
+  isSection?: boolean;
+  submenu?: NavSubItem[];
 };
 
 type NavDropdownProps = {
@@ -28,11 +30,30 @@ export function NavDropdown({
   openSubmenuInNewTab = false,
 }: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openNested, setOpenNested] = useState<Record<string, boolean>>({});
+  const [isMobile, setIsMobile] = useState(false);
+
   const hasSubmenu = Boolean(submenu?.length);
   const shouldOpenInNewTab = openInNewTab;
 
+  // Detect if device is mobile
+  const handleMouseEnter = () => {
+    if (typeof window !== "undefined") {
+      setIsMobile(window.innerWidth < 768);
+    }
+    if (!isMobile) setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (!isMobile) setIsOpen(false);
+  };
+
+  const handleTouchStart = () => {
+    setIsMobile(true);
+  };
+
   const baseStyle: React.CSSProperties = {
-    display: "inline-flex",
+    display: "flex",
     alignItems: "center",
     gap: 6,
     padding: "8px 10px",
@@ -44,6 +65,7 @@ export function NavDropdown({
     background: isActive ? "rgba(124, 58, 237, 0.12)" : "transparent",
     whiteSpace: "nowrap",
     transition: "all .2s ease",
+    minHeight: "44px",
   };
 
   if (!hasSubmenu) {
@@ -72,11 +94,208 @@ export function NavDropdown({
     );
   }
 
+  const renderSubmenuItem = (
+    item: NavSubItem,
+    index: number
+  ): React.ReactNode => {
+    const itemKey = `${item.label}-${index}`;
+    const hasNested = Boolean(item.submenu?.length);
+
+    if (item.isSection && hasNested) {
+      // Nested dropdown section with side menu on hover
+      return (
+        <div
+          key={itemKey}
+          style={{ position: "relative" }}
+          onMouseEnter={() => {
+            if (!isMobile) {
+              setOpenNested((prev) => ({
+                ...prev,
+                [itemKey]: true,
+              }));
+            }
+          }}
+          onMouseLeave={() => {
+            if (!isMobile) {
+              setOpenNested((prev) => ({
+                ...prev,
+                [itemKey]: false,
+              }));
+            }
+          }}
+        >
+          <div
+            onClick={() => {
+              if (isMobile) {
+                setOpenNested((prev) => ({
+                  ...prev,
+                  [itemKey]: !prev[itemKey],
+                }));
+              }
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              padding: isMobile ? "14px 16px" : "10px 12px",
+              borderRadius: isMobile ? 0 : 8,
+              border: "none",
+              background: openNested[itemKey]
+                ? "rgba(59, 130, 246, .08)"
+                : "transparent",
+              color: "#111827",
+              fontSize: isMobile ? 15 : 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "background .2s ease",
+              touchAction: "manipulation",
+              userSelect: "none",
+            }}
+          >
+            {item.label}
+            <ChevronRight
+              size={isMobile ? 20 : 16}
+              style={{
+                transform: openNested[itemKey] ? "rotate(90deg)" : "rotate(0deg)",
+                transition: "transform .2s ease",
+                marginLeft: 8,
+              }}
+            />
+          </div>
+
+          {openNested[itemKey] && (
+            <div
+              style={{
+                position: isMobile ? "relative" : "absolute",
+                left: isMobile ? 0 : "100%",
+                top: isMobile ? 0 : 0,
+                marginLeft: isMobile ? 0 : 4,
+                minWidth: isMobile ? "100%" : 180,
+                background: isMobile ? "#f3f4f6" : "#fff",
+                border: isMobile ? "none" : "1px solid rgba(0,0,0,.08)",
+                borderRadius: isMobile ? 0 : 10,
+                boxShadow: isMobile ? "none" : "0 12px 30px rgba(0,0,0,.12)",
+                padding: isMobile ? 0 : 6,
+                zIndex: 101,
+              }}
+            >
+              {item.submenu?.map((subitem, subindex) => (
+                <a
+                  key={`${subitem.href}-${subitem.label}`}
+                  href={subitem.href}
+                  target={openSubmenuInNewTab ? "_blank" : undefined}
+                  rel={openSubmenuInNewTab ? "noopener noreferrer" : undefined}
+                  style={{
+                    display: "flex",
+                    padding: isMobile ? "14px 16px" : "10px 12px",
+                    borderRadius: isMobile ? 0 : 8,
+                    color: "#111827",
+                    textDecoration: "none",
+                    fontSize: isMobile ? 15 : 14,
+                    transition: "background .2s ease",
+                    minHeight: isMobile ? "44px" : "auto",
+                    alignItems: "center",
+                    borderLeft: isMobile ? "4px solid #7c3aed" : "none",
+                    paddingLeft: isMobile ? 12 : 12,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isMobile) {
+                      e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isMobile) {
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
+                  }}
+                  onTouchEnd={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {subitem.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (item.isSection) {
+      // Non-nested section header
+      return (
+        <div
+          key={itemKey}
+          style={{
+            padding: isMobile
+              ? index === 0
+                ? "12px 16px 8px"
+                : "16px 16px 8px"
+              : index === 0
+              ? "8px 12px 6px"
+              : "12px 12px 6px",
+            fontSize: isMobile ? 13 : 12,
+            fontWeight: 700,
+            letterSpacing: 0.4,
+            textTransform: "uppercase",
+            color: "#6b7280",
+          }}
+        >
+          {item.label}
+        </div>
+      );
+    }
+
+    // Regular menu item
+    return (
+      <a
+        key={itemKey}
+        href={item.href}
+        target={openSubmenuInNewTab ? "_blank" : undefined}
+        rel={openSubmenuInNewTab ? "noopener noreferrer" : undefined}
+        style={{
+          display: "flex",
+          padding: isMobile ? "14px 16px" : "10px 12px",
+          borderRadius: isMobile ? 0 : 8,
+          color: "#111827",
+          textDecoration: "none",
+          fontSize: isMobile ? 15 : 14,
+          minHeight: isMobile ? "44px" : "auto",
+          alignItems: "center",
+          transition: "background .2s ease",
+        }}
+        onMouseEnter={(e) => {
+          if (!isMobile) {
+            e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isMobile) {
+            e.currentTarget.style.background = "transparent";
+          }
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.background = "transparent";
+        }}
+      >
+        {item.label}
+      </a>
+    );
+  };
+
   return (
     <div
       style={{ position: "relative" }}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
     >
       <button
         type="button"
@@ -105,39 +324,20 @@ export function NavDropdown({
             position: "absolute",
             top: "100%",
             left: 0,
-            minWidth: 220,
+            minWidth: isMobile ? "100vw" : 220,
+            maxWidth: isMobile ? "100vw" : 360,
             background: "#fff",
             border: "1px solid rgba(0,0,0,.08)",
-            borderRadius: 10,
+            borderRadius: isMobile ? 0 : 10,
             boxShadow: "0 12px 30px rgba(0,0,0,.12)",
-            padding: 6,
+            padding: isMobile ? 0 : 6,
             zIndex: 100,
+            maxHeight: isMobile ? "60vh" : "auto",
+            overflowY: isMobile ? "auto" : "visible",
+            marginLeft: isMobile ? "calc(-50vw + 50%)" : 0,
           }}
         >
-          {submenu?.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              target={openSubmenuInNewTab ? "_blank" : undefined}
-              rel={openSubmenuInNewTab ? "noopener noreferrer" : undefined}
-              style={{
-                display: "block",
-                padding: "10px 12px",
-                borderRadius: 8,
-                color: "#111827",
-                textDecoration: "none",
-                fontSize: 14,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              {item.label}
-            </a>
-          ))}
+          {submenu?.map((item, index) => renderSubmenuItem(item, index))}
         </div>
       ) : null}
     </div>
