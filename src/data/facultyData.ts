@@ -55,7 +55,7 @@ export const facultyProfiles: FacultyProfile[] = [
     name: "Dr. Babli Mallick",
     title: "Ph.D. | Assistant Professor",
     designation: "Assistant Professor & Faculty – LePearl Education",
-    image: "/babil_faculty2.jpeg",
+    image: "/DrBablick.png",
     shortBio: "Assistant Professor, Faculty-LePearl Education",
     fullBio:
       "Dr. Babli Mallick is a distinguished academic with a Doctorate in English and extensive experience as an Assistant Professor in reputed institutions. She brings rigorous academic scholarship and a research-oriented approach to her classes. Her expertise in advanced literary theory and postcolonial studies has helped hundreds of students achieve top ranks in NET and other competitive examinations.",

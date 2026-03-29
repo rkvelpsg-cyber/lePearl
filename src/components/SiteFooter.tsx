@@ -47,15 +47,13 @@ export function SiteFooter() {
         <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <div className="mb-4 flex items-center gap-2">
-              <div className="rounded-lg bg-white p-2">
-                <Image
-                  src="/WebsiteLogo_final_white.png"
-                  alt="LePearl Education Logo"
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 object-contain"
-                />
-              </div>
+              <Image
+                src="/logo_vectorformat.png"
+                alt="LePearl Education Logo"
+                width={80}
+                height={80}
+                className="object-contain flex-shrink-0"
+              />
               <div>
                 <h3 className="text-lg font-bold">LePearl Education</h3>
                 <p className="text-xs text-gray-200">

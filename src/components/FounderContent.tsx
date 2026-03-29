@@ -1,11 +1,15 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
 export function FounderContent() {
+  const [expanded, setExpanded] = useState(false);
   return (
     <div className="w-full">
       <div className="px-4 sm:px-6 mb-4 text-left">
         <h2 className="text-3xl sm:text-4xl font-bold text-indigo-700">
-          About Foundar
+          About Founder
         </h2>
       </div>
 
@@ -96,117 +100,147 @@ export function FounderContent() {
               International Forum, ensuring the highest standards in feminist
               and interdisciplinary research.
             </p>
-            <div className="bg-gradient-to-r from-indigo-100 to-purple-100 border-l-4 border-indigo-600 p-4 mt-4 rounded-r-lg">
-              <p className="text-gray-800 font-semibold">
-                In recognition of his outstanding contributions to teaching and
-                mentorship, Dr. Pandey was awarded
-                <span className="text-indigo-700">
-                  {" "}
-                  Best Professor of the Year in 2023
-                </span>{" "}
-                by Hindustan Institute of Technology and Science.
-              </p>
-            </div>
+
+            {!expanded && (
+              <button
+                onClick={() => setExpanded(true)}
+                className="mt-3 inline-flex items-center gap-1 text-indigo-600 font-semibold underline underline-offset-2 hover:text-purple-700 transition-colors text-sm sm:text-base cursor-pointer bg-transparent border-none p-0"
+              >
+                ↓ Expand here to read more about our founder
+              </button>
+            )}
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
-              Research, Publications, and Literary Contributions
-            </h2>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              A prolific scholar and bestselling author, Dr. Pandey has authored
-              over 80 research papers in reputed journals, earning an impressive
-              H-Index of 16. His work delves into the intersections of
-              literature, psychoanalysis, and language pedagogy, influencing
-              discourse in American English studies and beyond.
-            </p>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              Dr. Pandey is also a celebrated author of
-              <span className="font-semibold text-indigo-700">
-                {" "}
-                many bestselling books
-              </span>{" "}
-              in the field of English Literature, widely acclaimed for making
-              complex topics accessible and exam-oriented for students preparing
-              for competitive examinations like UGC-NET, SET, Assistant
-              Professor and others. His notable works include:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
-              {[
-                "World Literature in Your Fist, Vol. 1",
-                "World Literature in Your Fist, Vol. 2",
-                "World Literature in Your Fist, Vol. 3",
-                "Literary Theory and Criticism in Your Lips",
-                "Practice Workbook of English Literature",
-                "Literature and Psychology",
-                "Literature and Trauma",
-                "Challenging the Challenges of Life",
-                "Advanced Academic Writing",
-              ].map((book, index) => (
-                <div
-                  key={index}
-                  className="flex items-start bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg shadow-sm"
+          {expanded && (
+            <>
+              <div className="mb-8">
+                <div className="bg-gradient-to-r from-indigo-100 to-purple-100 border-l-4 border-indigo-600 p-4 mt-4 rounded-r-lg">
+                  <p className="text-gray-800 font-semibold">
+                    In recognition of his outstanding contributions to teaching
+                    and mentorship, Dr. Pandey was awarded
+                    <span className="text-indigo-700">
+                      {" "}
+                      Best Professor of the Year in 2023
+                    </span>{" "}
+                    by Hindustan Institute of Technology and Science.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
+                  Research, Publications, and Literary Contributions
+                </h2>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  A prolific scholar and bestselling author, Dr. Pandey has
+                  authored over 80 research papers in reputed journals, earning
+                  an impressive H-Index of 16. His work delves into the
+                  intersections of literature, psychoanalysis, and language
+                  pedagogy, influencing discourse in American English studies
+                  and beyond.
+                </p>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  Dr. Pandey is also a celebrated author of
+                  <span className="font-semibold text-indigo-700">
+                    {" "}
+                    many bestselling books
+                  </span>{" "}
+                  in the field of English Literature, widely acclaimed for
+                  making complex topics accessible and exam-oriented for
+                  students preparing for competitive examinations like UGC-NET,
+                  SET, Assistant Professor and others. His notable works
+                  include:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-6">
+                  {[
+                    "World Literature in Your Fist, Vol. 1",
+                    "World Literature in Your Fist, Vol. 2",
+                    "World Literature in Your Fist, Vol. 3",
+                    "Literary Theory and Criticism in Your Lips",
+                    "Practice Workbook of English Literature",
+                    "Literature and Psychology",
+                    "Literature and Trauma",
+                    "Challenging the Challenges of Life",
+                    "Advanced Academic Writing",
+                  ].map((book, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start bg-gradient-to-r from-indigo-50 to-purple-50 p-3 rounded-lg shadow-sm"
+                    >
+                      <span className="text-indigo-600 mr-2">📚</span>
+                      <span className="text-gray-700">{book}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  These books have received high praise, and strong endorsements
+                  as essential resources for English Literature aspirants.
+                </p>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
+                  Mentorship and Student Success
+                </h2>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  At the heart of Dr. Pandey&apos;s mission is his profound
+                  impact on students. Under his able guidance, more than 50
+                  individuals have secured positions as Assistant Professors by
+                  2025, while over 100 have successfully qualified for NET and
+                  SET exams. His holistic mentoring—blending academic
+                  preparation with NLP-driven soft skills—has empowered a
+                  generation of educators and professionals to thrive in
+                  competitive landscapes.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <div className="bg-gradient-to-br from-indigo-100 to-indigo-50 p-6 rounded-xl shadow-md text-center">
+                    <div className="text-4xl font-bold text-indigo-700 mb-2">
+                      50+
+                    </div>
+                    <div className="text-gray-700">
+                      Assistant Professors Placed
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-6 rounded-xl shadow-md text-center">
+                    <div className="text-4xl font-bold text-purple-700 mb-2">
+                      100+
+                    </div>
+                    <div className="text-gray-700">NET &amp; SET Qualified</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
+                  Vision for Empowerment
+                </h2>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  Dr. Pandey&apos;s ultimate aim is to empower and upskill
+                  hardworking students, equipping them with the tools to achieve
+                  excellence in their personal and professional lives. Through
+                  LePearl Education, he continues to champion accessible,
+                  transformative learning experiences that unlock untapped
+                  potential and inspire lifelong success.
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8 rounded-2xl shadow-xl text-center mt-12">
+                <p className="text-xl font-semibold">
+                  Connect with Dr. Pandey to explore how LePearl Education can
+                  elevate your journey toward greatness
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <button
+                  onClick={() => setExpanded(false)}
+                  className="inline-flex items-center gap-1 text-indigo-600 font-semibold underline underline-offset-2 hover:text-purple-700 transition-colors text-sm sm:text-base cursor-pointer bg-transparent border-none p-0"
                 >
-                  <span className="text-indigo-600 mr-2">📚</span>
-                  <span className="text-gray-700">{book}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              These books have received high praise, and strong endorsements as
-              essential resources for English Literature aspirants.
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
-              Mentorship and Student Success
-            </h2>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              At the heart of Dr. Pandey&apos;s mission is his profound impact
-              on students. Under his able guidance, more than 50 individuals
-              have secured positions as Assistant Professors by 2025, while over
-              100 have successfully qualified for NET and SET exams. His
-              holistic mentoring—blending academic preparation with NLP-driven
-              soft skills—has empowered a generation of educators and
-              professionals to thrive in competitive landscapes.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <div className="bg-gradient-to-br from-indigo-100 to-indigo-50 p-6 rounded-xl shadow-md text-center">
-                <div className="text-4xl font-bold text-indigo-700 mb-2">
-                  50+
-                </div>
-                <div className="text-gray-700">Assistant Professors Placed</div>
+                  ↑ Collapse
+                </button>
               </div>
-              <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-6 rounded-xl shadow-md text-center">
-                <div className="text-4xl font-bold text-purple-700 mb-2">
-                  100+
-                </div>
-                <div className="text-gray-700">NET &amp; SET Qualified</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
-              Vision for Empowerment
-            </h2>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              Dr. Pandey&apos;s ultimate aim is to empower and upskill
-              hardworking students, equipping them with the tools to achieve
-              excellence in their personal and professional lives. Through
-              LePearl Education, he continues to champion accessible,
-              transformative learning experiences that unlock untapped potential
-              and inspire lifelong success.
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8 rounded-2xl shadow-xl text-center mt-12">
-            <p className="text-xl font-semibold">
-              Connect with Dr. Pandey to explore how LePearl Education can
-              elevate your journey toward greatness
-            </p>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

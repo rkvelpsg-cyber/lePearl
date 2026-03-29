@@ -4,7 +4,7 @@ import Slider, { type CustomArrowProps, type Settings } from "react-slick";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Image, { type StaticImageData } from "next/image";
 import sadhanaImg from "../../public/sadhana_faculty1.jpeg";
-import babliImg from "../../public/babil_faculty2.jpeg";
+import babliImg from "../../public/DrBablick.png";
 import neeluImg from "../../public/neelu_faculty3.jpeg";
 import harendraImg from "../../public/harendra_faculty4.jpeg";
 
@@ -124,21 +124,32 @@ export function FacultyCarousel() {
               className="px-1.5 sm:px-2 md:px-3 lg:px-4 h-full"
             >
               <div className="bg-white rounded-lg sm:rounded-lg shadow-lg overflow-hidden mx-auto max-w-xs sm:max-w-sm h-full flex flex-col transition-all duration-300 hover:shadow-2xl">
-                <div className="aspect-[3/4] w-full overflow-hidden bg-gray-100">
+                <div
+                  className="w-full overflow-hidden bg-gray-100"
+                  style={{ height: "280px" }}
+                >
                   <Image
                     src={faculty.image}
                     alt={faculty.name}
-                    className={`w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-110 cursor-pointer ${
-                      faculty.id === 1 ? "object-[center_62%]" : "object-center"
-                    }`}
+                    className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-110 cursor-pointer"
+                    style={{
+                      objectPosition:
+                        faculty.id === 1
+                          ? "center 62%"
+                          : faculty.id === 2
+                            ? "center top"
+                            : faculty.id === 3
+                              ? "center 0%"
+                              : "center 0%",
+                    }}
                     priority={faculty.id === 1}
                   />
                 </div>
                 <div className="p-3 sm:p-4 md:p-6 text-center flex-1 flex flex-col">
-                  <h3 className="mb-1 sm:mb-2 text-base sm:text-lg md:text-xl font-semibold h-14 sm:h-16 overflow-hidden flex items-center justify-center text-center leading-snug line-clamp-2">
+                  <h3 className="mb-1 sm:mb-2 text-base sm:text-lg md:text-xl font-semibold text-center leading-snug">
                     {faculty.name}
                   </h3>
-                  <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-2 sm:mb-4 h-12 sm:h-16 overflow-hidden leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-2 sm:mb-4 leading-relaxed">
                     {faculty.description}
                   </p>
                   <a
