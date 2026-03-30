@@ -19,6 +19,7 @@ interface MockTestCategory {
   tests: string[];
   duration: string;
   buttonText: string;
+  loginUrl?: string;
 }
 
 interface MockTestCardProps {
@@ -86,18 +87,36 @@ function MockTestCard({ category }: MockTestCardProps) {
 
         <div className="my-4 h-px bg-[#E5E7EB]" />
 
-        <button
-          type="button"
-          className="w-full rounded-xl py-3 font-semibold text-white transition-all duration-300"
-          style={{
-            backgroundColor: isHovered ? "#6A0DAD" : "#1E3A8A",
-            boxShadow: isHovered
-              ? "0 6px 20px rgba(106, 13, 173, 0.3)"
-              : "0 4px 12px rgba(30, 58, 138, 0.2)",
-          }}
-        >
-          {category.buttonText}
-        </button>
+        {category.loginUrl ? (
+          <a
+            href={category.loginUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full rounded-xl py-3 text-center font-semibold transition-all duration-300"
+            style={{
+              color: "#FFFFFF",
+              backgroundColor: isHovered ? "#6A0DAD" : "#1E3A8A",
+              boxShadow: isHovered
+                ? "0 6px 20px rgba(106, 13, 173, 0.3)"
+                : "0 4px 12px rgba(30, 58, 138, 0.2)",
+            }}
+          >
+            {category.buttonText}
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="w-full rounded-xl py-3 font-semibold text-white transition-all duration-300"
+            style={{
+              backgroundColor: isHovered ? "#6A0DAD" : "#1E3A8A",
+              boxShadow: isHovered
+                ? "0 6px 20px rgba(106, 13, 173, 0.3)"
+                : "0 4px 12px rgba(30, 58, 138, 0.2)",
+            }}
+          >
+            {category.buttonText}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -112,6 +131,7 @@ export function MockTestsSection() {
       tests: ["MPPSC", "UPHESC", "UP GDC"],
       duration: "180 min",
       buttonText: "Start Mock Test",
+      loginUrl: "/login",
     },
     {
       id: 2,
@@ -120,6 +140,7 @@ export function MockTestsSection() {
       tests: ["Paper I", "Paper II"],
       duration: "180 min",
       buttonText: "Start Mock Test",
+      loginUrl: "/login",
     },
     {
       id: 3,
@@ -128,6 +149,7 @@ export function MockTestsSection() {
       tests: ["GIC", "LT Grade"],
       duration: "120 min",
       buttonText: "Start Mock Test",
+      loginUrl: "/login",
     },
     {
       id: 4,
@@ -143,7 +165,8 @@ export function MockTestsSection() {
       title: "SET Examination",
       tests: ["SET Mock Test"],
       duration: "180 min",
-      buttonText: "Start Test",
+      buttonText: "Start Mock Tset",
+      loginUrl: "/login",
     },
   ];
 

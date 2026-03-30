@@ -101,10 +101,10 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
         </div>
       </div>
 
-      <h3 className="mb-2 sm:mb-3 text-base sm:text-lg md:text-xl font-bold text-slate-800 transition-colors duration-300 group-hover:text-blue-700 line-clamp-3">
+      <h3 className="mb-2 sm:mb-3 text-base sm:text-lg md:text-xl font-bold text-slate-800 transition-colors duration-300 group-hover:text-blue-700">
         {feature.title}
       </h3>
-      <p className="flex-grow text-xs sm:text-sm md:text-base leading-relaxed text-slate-600 line-clamp-4 sm:line-clamp-5">
+      <p className="flex-grow text-xs sm:text-sm md:text-base leading-relaxed text-slate-600">
         {feature.description}
       </p>
 

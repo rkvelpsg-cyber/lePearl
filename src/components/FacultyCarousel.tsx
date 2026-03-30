@@ -110,7 +110,7 @@ export function FacultyCarousel() {
 
   return (
     <div
-      className="w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-10 md:py-16 rounded-xl sm:rounded-2xl"
+      className="w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-10 md:py-16"
       style={{ background: "rgba(255,255,255,0.60)" }}
     >
       <h2 className="text-center mb-6 sm:mb-8 md:mb-12 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold px-2">

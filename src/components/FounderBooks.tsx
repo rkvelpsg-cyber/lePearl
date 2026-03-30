@@ -1,7 +1,8 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FaAmazon } from "react-icons/fa";
 import Slider, { type CustomArrowProps, type Settings } from "react-slick";
 import book1 from "../../public/book1.jpeg";
 import book2 from "../../public/book2.jpeg";
@@ -21,37 +22,37 @@ const books: Book[] = [
   {
     id: 1,
     image: book1,
-    title: "Literary Theories and Criticism on Your Lips",
+    title: "World Literature In Your Fist - Volume 1",
     amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_1",
   },
   {
     id: 2,
     image: book2,
-    title: "World Literature In Your Fist - Volume 1",
+    title: "Literary Theories and Criticism on Your Lips",
     amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_2",
   },
   {
     id: 3,
     image: book3,
-    title: "Literature and Trauma - Volume II",
+    title: "Practice Workbook of English Literature",
     amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_3",
   },
   {
     id: 4,
     image: book4,
-    title: "Practice Workbook of English Literature",
+    title: "Literature and Psychology - Volume I",
     amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_4",
   },
   {
     id: 5,
     image: book5,
-    title: "Challenging the Challenges of Life",
+    title: "Literature and Trauma - Volume II",
     amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_5",
   },
   {
     id: 6,
     image: book6,
-    title: "Literature and Psychology - Volume I",
+    title: "Challenging the Challenges of Life",
     amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_6",
   },
 ];
@@ -163,7 +164,7 @@ export function FounderBooks() {
                     </div>
 
                     <div className="flex flex-1 flex-col bg-gradient-to-b from-white to-gray-50 p-3 sm:p-4 md:p-6">
-                      <h3 className="mb-2 sm:mb-4 h-16 sm:h-20 text-sm sm:text-base md:text-lg leading-snug text-gray-800 line-clamp-3 sm:line-clamp-2">
+                      <h3 className="mb-2 sm:mb-4 text-sm sm:text-base md:text-lg leading-snug text-gray-800">
                         {book.title}
                       </h3>
                       <a
@@ -172,8 +173,11 @@ export function FounderBooks() {
                         rel="noopener noreferrer"
                         className="mt-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-r from-[#FF9900] to-[#FF8000] px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm md:text-base text-white font-semibold shadow-md transition-all duration-200 hover:from-[#FA8900] hover:to-[#F57C00] hover:shadow-lg whitespace-nowrap"
                       >
+                        <FaAmazon
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                          aria-hidden="true"
+                        />
                         <span>Purchase on Amazon</span>
-                        <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
                       </a>
                     </div>
                   </div>

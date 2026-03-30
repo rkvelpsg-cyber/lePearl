@@ -202,6 +202,7 @@ export function LiveClassesPortalSection() {
                         ? "bg-red-600 hover:bg-red-700"
                         : "bg-teal-700 hover:bg-teal-800"
                     }`}
+                    style={{ color: "#FFFFFF" }}
                   >
                     {classItem.status === "live"
                       ? "Join Live Class Now"

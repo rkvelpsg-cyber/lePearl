@@ -53,66 +53,68 @@ export function FounderContent() {
             countless students toward academic and career triumphs.
           </p>
 
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
-              Academic Excellence and Qualifications
-            </h2>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              Dr. Pandey holds a Doctorate in American English, specializing in
-              Psychoanalytical Studies, which forms the cornerstone of his
-              interdisciplinary approach to language, psychology, and human
-              potential. His academic prowess is underscored by qualifying the
-              National Eligibility Test (NTA-NET) seven times, alongside State
-              Eligibility Tests (SET) across various states—a testament to his
-              unwavering commitment to scholarly rigor.
-            </p>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              Complementing his doctoral expertise, Dr. Pandey has pursued
-              advanced certifications, including a Post Graduate Diploma in
-              Computer Applications and a Post Graduate Diploma in Training and
-              Development. As a certified Master Practitioner of
-              Neuro-Linguistic Programming (NLP), he masterfully integrates
-              psychological insights with practical communication strategies to
-              foster personal and professional growth.
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
-              Professional Journey
-            </h2>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              Dr. Pandey&apos;s illustrious career spans leadership roles in
-              premier educational institutions. He served as Head of the
-              Department of Training &amp; Placement at Hindustan Institute of
-              Technology and Science (HITS), Chennai, where he spearheaded
-              initiatives to enhance student employability and industry
-              readiness. Prior to this, as Assistant Professor of English in the
-              Department of Languages at HITS, he shaped the minds of future
-              leaders through dynamic teaching and curriculum development.
-            </p>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              In addition to his teaching and administrative contributions, Dr.
-              Pandey held the pivotal role of Editor for the university,
-              overseeing publications that elevated institutional scholarship.
-              His expertise extends to the global academic community as a
-              revered Reviewer for the Scopus-indexed Women&apos;s Studies
-              International Forum, ensuring the highest standards in feminist
-              and interdisciplinary research.
-            </p>
-
-            {!expanded && (
-              <button
-                onClick={() => setExpanded(true)}
-                className="mt-3 inline-flex items-center gap-1 text-indigo-600 font-semibold underline underline-offset-2 hover:text-purple-700 transition-colors text-sm sm:text-base cursor-pointer bg-transparent border-none p-0"
-              >
-                ↓ Expand here to read more about our founder
-              </button>
-            )}
-          </div>
+          {!expanded && (
+            <button
+              onClick={() => setExpanded(true)}
+              className="mb-6 inline-flex items-center gap-1 text-indigo-600 font-semibold underline underline-offset-2 hover:text-purple-700 transition-colors text-sm sm:text-base cursor-pointer bg-transparent border-none p-0"
+            >
+              ↓ Expand here to read more about our founder
+            </button>
+          )}
 
           {expanded && (
             <>
+              <div className="mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
+                  Academic Excellence and Qualifications
+                </h2>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  Dr. Pandey holds a Doctorate in American English, specializing
+                  in Psychoanalytical Studies, which forms the cornerstone of
+                  his interdisciplinary approach to language, psychology, and
+                  human potential. His academic prowess is underscored by
+                  qualifying the National Eligibility Test (NTA-NET) seven
+                  times, alongside State Eligibility Tests (SET) across various
+                  states—a testament to his unwavering commitment to scholarly
+                  rigor.
+                </p>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  Complementing his doctoral expertise, Dr. Pandey has pursued
+                  advanced certifications, including a Post Graduate Diploma in
+                  Computer Applications and a Post Graduate Diploma in Training
+                  and Development. As a certified Master Practitioner of
+                  Neuro-Linguistic Programming (NLP), he masterfully integrates
+                  psychological insights with practical communication strategies
+                  to foster personal and professional growth.
+                </p>
+              </div>
+
+              <div className="mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 border-b-4 border-purple-400 pb-2 inline-block">
+                  Professional Journey
+                </h2>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  Dr. Pandey&apos;s illustrious career spans leadership roles in
+                  premier educational institutions. He served as Head of the
+                  Department of Training &amp; Placement at Hindustan Institute
+                  of Technology and Science (HITS), Chennai, where he
+                  spearheaded initiatives to enhance student employability and
+                  industry readiness. Prior to this, as Assistant Professor of
+                  English in the Department of Languages at HITS, he shaped the
+                  minds of future leaders through dynamic teaching and
+                  curriculum development.
+                </p>
+                <p className="text-gray-700 leading-relaxed mt-4">
+                  In addition to his teaching and administrative contributions,
+                  Dr. Pandey held the pivotal role of Editor for the university,
+                  overseeing publications that elevated institutional
+                  scholarship. His expertise extends to the global academic
+                  community as a revered Reviewer for the Scopus-indexed
+                  Women&apos;s Studies International Forum, ensuring the highest
+                  standards in feminist and interdisciplinary research.
+                </p>
+              </div>
+
               <div className="mb-8">
                 <div className="bg-gradient-to-r from-indigo-100 to-purple-100 border-l-4 border-indigo-600 p-4 mt-4 rounded-r-lg">
                   <p className="text-gray-800 font-semibold">

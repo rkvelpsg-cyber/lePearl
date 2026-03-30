@@ -42,22 +42,62 @@ export function CoachingCard() {
     {
       id: 1,
       name: "Nidhi Shukla",
+      year: "NTA-NET Dec 2025",
       imageUrl: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg",
     },
     {
       id: 2,
       name: "Richa Singh",
+      year: "NTA-NET Dec 2026",
       imageUrl: "/Richa%20Singh_NET_Dec_2026.jpeg",
     },
     {
       id: 3,
       name: "Kanika Sharma",
+      year: "NTA-NET Dec 2025",
       imageUrl: "/Kanika%20Sharma.jpeg",
     },
     {
       id: 4,
       name: "Rashmita Sahoo",
+      year: "NTA-NET Dec 2024",
       imageUrl: "/Rashmita%20Sahoo.jpeg",
+    },
+    {
+      id: 5,
+      name: "Abhishesh Verma",
+      year: "NTA-NET Jun 2025",
+      imageUrl: "/Abhishesh%20Verma.jpeg",
+    },
+    {
+      id: 6,
+      name: "Hemlata",
+      year: "NTA-NET Jun 2023",
+      imageUrl: "/Hemlata.jpeg",
+    },
+    {
+      id: 7,
+      name: "Shabnam Khatun",
+      year: "NTA-NET Jun 2023",
+      imageUrl: "/Shabnam%20Khatun.jpeg",
+    },
+    {
+      id: 8,
+      name: "Shivani Tiwari",
+      year: "NTA-NET JRF Dec 2024",
+      imageUrl: "/Shivani%20Tiwari.jpeg",
+    },
+    {
+      id: 9,
+      name: "Vineeta Vijay Sharma",
+      year: "NTA-NET Dec 2022",
+      imageUrl: "/Vineeta%20Vijay%20Sharma.jpeg",
+    },
+    {
+      id: 10,
+      name: "Deepti Dwivedi",
+      year: "NTA-NET Jun 2023",
+      imageUrl: "/Deepti%20Dwivedi.jpeg",
     },
   ];
 
@@ -70,7 +110,7 @@ export function CoachingCard() {
   });
 
   return (
-    <div style={{ paddingTop: 8, paddingBottom: 24, width: "100%" }}>
+    <div style={{ paddingTop: 0, paddingBottom: 24, width: "100%" }}>
       <div className="relative" style={{ width: "100%", margin: "0 auto" }}>
         <div
           className="hero-slide-shell relative overflow-hidden shadow-2xl"
@@ -143,30 +183,33 @@ export function CoachingCard() {
               </div>
 
               <div className="flex justify-center lg:justify-end mt-6 sm:mt-0">
-                <div className="relative w-full sm:w-auto">
+                <div className="relative w-full">
                   <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-3xl blur-2xl opacity-30" />
 
-                  <div className="relative w-full sm:w-auto max-w-sm md:max-w-[420px] rounded-2xl sm:rounded-3xl border-2 border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-3 sm:p-4 backdrop-blur-sm">
+                  <div className="relative w-full rounded-2xl sm:rounded-3xl border-2 border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-3 sm:p-4 backdrop-blur-sm">
                     <h4 className="mb-3 sm:mb-4 text-center text-base sm:text-lg lg:text-xl font-bold text-yellow-300">
                       NTA NET Achievers
                     </h4>
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3 max-h-64 sm:max-h-80 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                       {netAchievers.map((achiever) => (
                         <div
                           key={achiever.id}
-                          className="rounded-lg sm:rounded-2xl border border-white/25 bg-white/10 p-1.5 sm:p-2 text-center"
+                          className="rounded-lg border border-white/25 bg-white/10 p-1 sm:p-1.5 text-center"
                         >
-                          <div className="mx-auto mb-1 sm:mb-2 h-16 sm:h-24 w-16 sm:w-24 overflow-hidden rounded-lg sm:rounded-xl border-2 border-yellow-300/80 bg-white/90">
+                          <div className="mx-auto mb-1 h-12 w-12 sm:h-14 sm:w-14 overflow-hidden rounded-lg border-2 border-yellow-300/80 bg-white/90">
                             <Image
                               src={achiever.imageUrl}
                               alt={achiever.name}
-                              width={96}
-                              height={96}
+                              width={56}
+                              height={56}
                               className="h-full w-full object-cover"
                             />
                           </div>
-                          <p className="text-xs sm:text-sm font-semibold text-white line-clamp-2">
+                          <p className="text-[10px] sm:text-xs font-semibold text-white leading-tight line-clamp-2">
                             {achiever.name}
+                          </p>
+                          <p className="mt-0.5 text-[9px] sm:text-[10px] text-yellow-300 leading-tight line-clamp-1">
+                            {achiever.year}
                           </p>
                         </div>
                       ))}
@@ -176,7 +219,7 @@ export function CoachingCard() {
               </div>
             </div>
 
-            <div className="mt-6 sm:mt-8 lg:mt-12 flex justify-center">
+            <div className="mt-6 sm:mt-8 lg:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
               <Link
                 href="/login"
                 className="group relative inline-block bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-sm sm:text-base lg:text-xl px-6 sm:px-8 lg:px-12 py-3 sm:py-4 lg:py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 sm:hover:scale-110 hover:shadow-yellow-500/50"
@@ -200,6 +243,26 @@ export function CoachingCard() {
                 </span>
 
                 <span className="absolute inset-0 rounded-full bg-white/30 scale-0 group-hover:scale-100 transition-transform duration-300" />
+              </Link>
+              <Link
+                href="/achievers"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-yellow-400 px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 text-sm sm:text-base lg:text-lg font-bold text-yellow-300 transition-all duration-300 hover:scale-105 hover:bg-yellow-400/20"
+              >
+                More Achievers
+                <svg
+                  className="h-4 w-4 sm:h-5 sm:w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
               </Link>
             </div>
           </div>

@@ -19,9 +19,113 @@ import { NeedHelpSection } from "@/components/LiveClassesPortalSection";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WeeklyScheduleSection } from "@/components/WeeklyScheduleSection";
 import { NavDropdown } from "@/components/NavDropdown";
+import { StudentReviewsSection } from "@/components/StudentReviewsSection";
 
 export default async function Home() {
   const content = await getSiteContent();
+  const studentReviews = [
+    {
+      id: 1,
+      name: "Dr. Babli Mallick",
+      track: "Assistant Professor Achiever",
+      exam: "MPPSC 2025",
+      image: "/DrBablick.png",
+      rating: 5,
+      review:
+        "LePearl Education gave me a complete roadmap, focused mentoring, and consistent mock practice. The personal guidance from faculty made all the difference in my MPPSC journey.",
+    },
+    {
+      id: 2,
+      name: "Ms. Rekha Bhati",
+      track: "Assistant Professor Achiever",
+      exam: "RPSC Rank 11, 2025",
+      image: "/Rekha Bhati.jpeg",
+      rating: 5,
+      review:
+        "Every class was exam-oriented and practical. From concept clarity to interview confidence, LePearl helped me perform with consistency and confidence.",
+    },
+    {
+      id: 3,
+      name: "Mr. Balram Mishra",
+      track: "Assistant Professor Achiever",
+      exam: "MPPSC 2025",
+      image: "/Balram Mishra.jpeg",
+      rating: 5,
+      review:
+        "The guidance at LePearl is structured and result-driven. Regular feedback, revision strategy, and test analysis helped me crack the exam on time.",
+    },
+    {
+      id: 4,
+      name: "Ms. Kanika Sharma",
+      track: "NTA NET Achiever",
+      exam: "NTA-NET English, Dec 2025",
+      image: "/Kanika Sharma.jpeg",
+      rating: 5,
+      review:
+        "LePearl's content and live doubt sessions simplified tough topics. Their notes and mock tests were exactly aligned with NTA NET expectations.",
+    },
+    {
+      id: 5,
+      name: "Ms. Shivani Tiwari",
+      track: "NTA NET-JRF Achiever",
+      exam: "NTA-JRF English, Dec 2024",
+      image: "/Shivani Tiwari.jpeg",
+      rating: 5,
+      review:
+        "I loved the discipline and accountability LePearl builds. The personalized mentorship and daily targets helped me stay focused and secure JRF.",
+    },
+    {
+      id: 6,
+      name: "Ms. Deepti Dwivedi",
+      track: "NTA NET Achiever",
+      exam: "NTA-NET English, Jun 2023",
+      image: "/Deepti Dwivedi.jpeg",
+      rating: 5,
+      review:
+        "From classes to motivation sessions, everything felt student-first. LePearl transformed my preparation and gave me confidence to clear NET.",
+    },
+    {
+      id: 7,
+      name: "Mr. Shubham Singh",
+      track: "Assistant Professor Achiever",
+      exam: "MPPSC 2025",
+      image: "/Shubham Singh.jpeg",
+      rating: 5,
+      review:
+        "LePearl's mentorship was practical and focused on outcomes. The practice modules and strategy sessions kept my preparation sharp till the final exam.",
+    },
+    {
+      id: 8,
+      name: "Mr. Asit Kumar Mohanty",
+      track: "Assistant Professor Achiever",
+      exam: "Lecturer, OPSC 2024",
+      image: "/Asit Kumar Mohanty.jpeg",
+      rating: 5,
+      review:
+        "I gained conceptual depth and confidence with LePearl's faculty support. Their revision plans and feedback system helped me perform consistently.",
+    },
+    {
+      id: 9,
+      name: "Ms. Vineeta Vijay Sharma",
+      track: "NTA NET Achiever",
+      exam: "NTA NET, Dec 2022",
+      image: "/Vineeta Vijay Sharma.jpeg",
+      rating: 5,
+      review:
+        "LePearl made my NET preparation structured and stress-free. Topic-wise tests and one-to-one doubt guidance improved my accuracy and confidence.",
+    },
+    {
+      id: 10,
+      name: "Ms. Nidhi Shukla",
+      track: "NTA NET Achiever",
+      exam: "NTA-NET, Dec 2025",
+      image: "/Nidhi Shukla, NTA-NET Dec 2025.jpeg",
+      rating: 5,
+      review:
+        "The classes were clear, engaging, and fully exam-aligned. LePearl's daily support and mock analysis played a major role in my NET result.",
+    },
+  ];
+
   return (
     <>
       {/* Top Banner */}
@@ -324,7 +428,10 @@ export default async function Home() {
                         label: "Interview Preparation",
                         isSection: true,
                         submenu: [
-                          { label: "Communication Skills", href: "/courses-communication-skills" },
+                          {
+                            label: "Communication Skills",
+                            href: "/courses-communication-skills",
+                          },
                         ],
                       },
                     ]}
@@ -509,42 +616,7 @@ export default async function Home() {
         <FAQSection />
         <NeedHelpSection />
 
-        {/* Achievers CTA Section */}
-        <div className="w-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 sm:py-16 md:py-20 px-4 sm:px-6 md:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="space-y-4 sm:space-y-6">
-              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent px-2">
-                See Our Success Stories
-              </h3>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-2">
-                Meet the students who cracked NTA NET with LePearl Education.
-                Get inspired by their journey and start yours today!
-              </p>
-              <div className="flex justify-center pt-2 sm:pt-4">
-                <Link
-                  href="/achievers"
-                  className="group relative inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                >
-                  <span>View All Achievers</span>
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7l5 5m0 0l-5 5m5-5H6"
-                    />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StudentReviewsSection reviews={studentReviews} />
       </div>
       <div className="footer-no-video">
         <SiteFooter />
