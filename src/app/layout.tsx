@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { IntroPopup } from "@/components/IntroPopup";
 
 export const metadata: Metadata = {
   title: "LePearl NET English Exam Preparation",
@@ -23,7 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <IntroPopup />
+        {children}
+      </body>
     </html>
   );
 }
