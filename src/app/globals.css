@@ -1,4 +1,28 @@
 @import "tailwindcss";
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+
+/* Achievers carousel - equal width slides */
+.achievers-carousel .slick-slide {
+  height: auto !important;
+}
+.achievers-carousel .slick-slide > div {
+  width: 100% !important;
+}
+
+.slick-dots li button:before {
+  display: none;
+}
+.slick-dots li {
+  margin: 0 4px;
+}
+.slick-dots li div {
+  cursor: pointer;
+}
+.slick-dots li.slick-active div {
+  background-color: rgb(251, 191, 36) !important;
+  transform: scale(1.2);
+}
 
 :root {
   --bg: #f5f6fa;

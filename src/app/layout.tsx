@@ -3,6 +3,7 @@ import "./globals.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { IntroPopup } from "@/components/IntroPopup";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 export const metadata: Metadata = {
   title: "LePearl NET English Exam Preparation",
@@ -27,6 +28,7 @@ export default function RootLayout({
       <body>
         <IntroPopup />
         {children}
+        <ScrollToTop />
       </body>
     </html>
   );

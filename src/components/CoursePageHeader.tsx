@@ -1,13 +1,22 @@
 import Image from "next/image";
 
-type CoursePageHeaderProps = {
-  onEnroll: () => void;
+type TopButton = {
+  label: string;
+  sectionId: string;
 };
 
-export function CoursePageHeader({ onEnroll }: CoursePageHeaderProps) {
+type CoursePageHeaderProps = {
+  onEnroll: () => void;
+  topButtons?: TopButton[];
+};
+
+export function CoursePageHeader({
+  onEnroll,
+  topButtons,
+}: CoursePageHeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3">
+      <div className="flex w-full items-center justify-between gap-3 px-3 py-2 sm:px-5 sm:py-3">
         {/* Logo and Branding — matches homepage style */}
         <a
           href="/"
@@ -44,6 +53,29 @@ export function CoursePageHeader({ onEnroll }: CoursePageHeaderProps) {
             </span>
           </div>
         </a>
+
+        {topButtons && topButtons.length > 0 ? (
+          <div className="hidden flex-1 justify-center lg:flex">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {topButtons.map(({ label, sectionId }) => (
+                <button
+                  key={sectionId}
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById(sectionId)
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 cursor-pointer"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="hidden flex-1 lg:block" />
+        )}
 
         <a
           href="/login"

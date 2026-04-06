@@ -11,6 +11,19 @@
 			],
 			"isBackground": true,
 			"group": "build"
+		},
+		{
+			"label": "Build Next.js Project",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }
