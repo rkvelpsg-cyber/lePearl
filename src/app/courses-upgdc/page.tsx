@@ -47,66 +47,79 @@ type Testimonial = {
 const features: Feature[] = [
   {
     icon: Video,
+    title: "Free Demo Class",
+    description: "Experience our teaching methodology before enrolling.",
+  },
+  {
+    icon: BookOpen,
+    title: "Complete Coverage of Syllabus for Prelims + Mains",
+    description:
+      "Comprehensive coverage of both preliminary and main examination syllabus.",
+  },
+  {
+    icon: Video,
     title: "Video Lectures",
     description:
-      "In-depth coverage of the UP GDC exam pattern with simplified explanations.",
+      "In-depth coverage of the UP GDC pattern, simplified complex topics.",
   },
   {
     icon: FileText,
     title: "Mock Tests",
-    description:
-      "50+ mock tests with detailed analysis and performance insights.",
+    description: "50+ Mock tests with detailed analysis.",
   },
   {
     icon: BookOpen,
     title: "Study Material",
     description:
-      "Concise PDFs, recorded lectures, and decoded previous year question papers.",
+      "Concise PDFs, recorded lectures, and previous papers decoded.",
   },
   {
     icon: MessageCircle,
     title: "Live Doubt Clearing",
-    description: "Weekly sessions providing real-time academic support.",
+    description: "Weekly sessions for real-time support.",
   },
   {
     icon: Users,
     title: "Personalized Attention",
-    description:
-      "One-to-one academic attention based on individual student needs.",
+    description: "One-to-one attention for each student as needed.",
   },
   {
     icon: TrendingUp,
     title: "Holistic Development",
-    description: "Focus on academic growth, confidence, and subject mastery.",
+    description: "Holistic development of the students.",
   },
   {
     icon: PenTool,
-    title: "Answer Writing Practice",
+    title: "Important points of every topic are highlighted",
     description:
-      "Special guidance for descriptive answer writing required in the UP GDC examination.",
+      "Key points and concepts are clearly marked for easy revision.",
   },
 ];
 
 const overviewPoints: OverviewPoint[] = [
   {
     icon: Award,
-    text: "Tailored specifically for UP GDC Assistant Professor aspirants",
+    text: "Tailored for UP GDC aspirants",
   },
   {
     icon: Video,
-    text: "Blend of recorded video lectures, PDFs, and live doubt resolution sessions",
+    text: "Blend of live video lectures, PDFs, and live doubt resolution sessions",
   },
   {
     icon: Users,
-    text: "Flipped live classes with live question and answer solving and detailed explanation",
+    text: "One year of access to the videos and PDFs",
   },
   {
     icon: GraduationCap,
-    text: "Subject expertise with more than 15 years of teaching experience",
+    text: "Flipped Live Classes with live Question and Answer solving with explanation.",
+  },
+  {
+    icon: TrendingUp,
+    text: "Subject Expertise with teaching experience of more than 15 years.",
   },
   {
     icon: CheckCircle2,
-    text: "No shortcuts, only proven strategies for first-attempt success",
+    text: "No shortcuts, just proven strategies for first-attempt success.",
   },
 ];
 
@@ -185,7 +198,7 @@ function UPGDCPage() {
             <div className="mb-10 flex flex-wrap gap-4">
               <a
                 href="/login"
-                className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
+                className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Enroll Now
               </a>
@@ -268,6 +281,58 @@ function UPGDCPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-gradient-to-br from-yellow-50 to-blue-50 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-blue-900 mb-4">MAINS</h2>
+            <h3 className="text-2xl font-semibold text-blue-800 mb-6">
+              Master the Art of Descriptive Writing: From Draft to Distinction
+            </h3>
+            <div className="w-24 h-1 bg-gradient-to-r from-yellow-500 to-yellow-600 mx-auto"></div>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <h4 className="text-xl font-bold text-blue-900 mb-8 text-center">
+              The Methodology:
+            </h4>
+            <div className="grid gap-6 md:grid-cols-1">
+              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
+                <p className="text-gray-700 leading-relaxed">
+                  Unlike bulk coaching, each student is assigned a mentor who
+                  tracks their progress through every answer script.
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
+                <p className="text-gray-700 leading-relaxed">
+                  We teach you how to structure answers, from impactful
+                  introductions to data-backed body paragraphs and balanced
+                  conclusions.
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
+                <p className="text-gray-700 leading-relaxed">
+                  Learn how to use "High-Yield Keywords" that UPPSC evaluators
+                  look for in GDC Mains scripts.
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
+                <p className="text-gray-700 leading-relaxed">
+                  Every mock answer you write is deeply evaluated with written
+                  annotations, pointing out exactly where you can gain an extra
+                  half-mark.
+                </p>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
+                <p className="text-gray-700 leading-relaxed">
+                  Real-time sessions where we pick a previous year's question
+                  and build a model answer together on screen.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -355,16 +420,82 @@ function UPGDCPage() {
                 BEST VALUE
               </div>
               <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                One-Time Payment
+                One-time payment for both Prelims + Mains
               </h3>
               <div className="mb-6">
                 <span className="text-5xl font-bold text-blue-900">
-                  Rs.14,000
+                  Rs.13,995
                 </span>
               </div>
               <ul className="mb-8 space-y-3">
                 {[
-                  "Full course access",
+                  "Full course access for Prelims + Mains",
+                  "All study materials included",
+                  "50+ mock tests",
+                  "Live doubt clearing sessions",
+                  "Answer writing practice",
+                  "One year access to videos and PDFs",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span className="text-gray-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              >
+                Enroll Now
+              </a>
+            </div>
+
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
+              <h3 className="mb-2 text-2xl font-bold text-blue-900">
+                Instalments for both Prelims + Mains
+              </h3>
+              <div className="mb-6">
+                <span className="text-5xl font-bold text-blue-900">
+                  Rs.4,995 × 3
+                </span>
+              </div>
+              <ul className="mb-8 space-y-3">
+                {[
+                  "Full course access for Prelims + Mains",
+                  "All study materials included",
+                  "50+ mock tests",
+                  "Flexible payment terms",
+                  "Live doubt clearing sessions",
+                  "Answer writing practice",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span className="text-gray-700">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/login"
+                className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
+              >
+                Fill Registration Form
+              </a>
+            </div>
+          </div>
+
+          <div className="mx-auto mb-12 grid max-w-4xl gap-8 md:grid-cols-2">
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
+              <h3 className="mb-2 text-2xl font-bold text-blue-900">
+                Full fee of Only Prelims
+              </h3>
+              <div className="mb-6">
+                <span className="text-5xl font-bold text-blue-900">
+                  Rs.10,995
+                </span>
+              </div>
+              <ul className="mb-8 space-y-3">
+                {[
+                  "Full course access for Prelims only",
                   "All study materials included",
                   "50+ mock tests",
                   "Live doubt clearing sessions",
@@ -385,19 +516,20 @@ function UPGDCPage() {
 
             <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
               <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                Installment Plan
+                Instalments for Only Prelims
               </h3>
               <div className="mb-6">
                 <span className="text-5xl font-bold text-blue-900">
-                  Rs.15,000
+                  Rs.3,995 × 3
                 </span>
               </div>
               <ul className="mb-8 space-y-3">
                 {[
-                  "Full course access",
+                  "Full course access for Prelims only",
                   "All study materials included",
                   "50+ mock tests",
                   "Flexible payment terms",
+                  "Live doubt clearing sessions",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
@@ -411,6 +543,12 @@ function UPGDCPage() {
               >
                 Fill Registration Form
               </a>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <div className="inline-block rounded-lg bg-yellow-500 px-6 py-3 text-blue-900">
+              <p className="font-bold">10% discount for all the Perlians</p>
             </div>
           </div>
         </div>

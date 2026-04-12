@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import {
   GraduationCap,
@@ -77,7 +77,7 @@ function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <a
               href="/login"
-              className="bg-yellow-500 text-teal-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
+              className="bg-yellow-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               Enroll Now
             </a>
@@ -122,32 +122,31 @@ function CourseOverview() {
     {
       icon: Target,
       title: "Tailored for UPHESC Aspirants",
-      description:
-        "Specifically designed curriculum for UPHESC Assistant Professor aspirants",
+      description: "Tailored for UPHESC aspirants",
     },
     {
       icon: Video,
       title: "Comprehensive Learning Materials",
       description:
-        "Blend of recorded video lectures, PDFs, and live doubt resolution sessions",
+        "Blend of live video lectures, PDFs, and live doubt resolution sessions",
     },
     {
       icon: Users,
       title: "Flipped Live Classes",
       description:
-        "Live question and answer solving with detailed explanations",
+        "Flipped Live Classes with live Question and Answer solving with explanation.",
     },
     {
       icon: Award,
       title: "Expert Faculty",
       description:
-        "Subject expertise with more than 15 years of teaching experience",
+        "Subject Expertise with teaching experience of more than 15 years.",
     },
     {
       icon: TrendingUp,
       title: "Proven Strategies",
       description:
-        "No shortcuts, only proven strategies for first-attempt success",
+        "No shortcuts, just proven strategies for first-attempt success.",
     },
   ];
 
@@ -195,33 +194,33 @@ function FeaturesSection() {
       icon: Video,
       title: "Video Lectures",
       description:
-        "In-depth coverage of the UPHESC exam pattern with simplified explanations.",
+        "In-depth coverage of the UPHESC pattern, simplified complex topics.",
     },
     {
       icon: ClipboardCheck,
       title: "Mock Tests",
-      description: "50+ mock tests with detailed performance analysis.",
+      description: "50+ Mock tests with detailed analysis.",
     },
     {
       icon: BookOpen,
       title: "Study Material",
       description:
-        "Concise PDFs, recorded lectures, and decoded previous year papers.",
+        "Concise PDFs, recorded lectures, and previous papers decoded.",
     },
     {
       icon: MessageSquare,
       title: "Live Doubt Clearing",
-      description: "Weekly sessions for real-time support and guidance.",
+      description: "Weekly sessions for real-time support.",
     },
     {
       icon: UserCheck,
       title: "Personalized Attention",
-      description: "One-to-one academic attention based on student needs.",
+      description: "One-to-one attention as per the student's needs.",
     },
     {
       icon: TrendingUp,
       title: "Holistic Development",
-      description: "Focus on academic growth, confidence, and subject mastery.",
+      description: "Holistic development of the students.",
     },
   ];
 
@@ -266,32 +265,62 @@ function FeaturesSection() {
 function TestimonialsSection() {
   const testimonials = [
     {
-      name: "Dr. Priya Sharma",
-      exam: "UPHESC Assistant Professor",
-      image:
-        "https://images.unsplash.com/photo-1583590019912-19cdc55ec80e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB3b21hbiUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0fGVufDF8fHx8MTc3MzI5MTk1NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      name: "Ms Priya Sharma",
+      exam: "UPHESC Adv 50-2022",
+      image: "/Priya%20sharma.jpeg",
       quote:
-        "LePearl's structured approach and personalized guidance helped me clear the UPHESC exam in my first attempt. The faculty's expertise is unmatched.",
+        "LePearl's comprehensive study material and expert guidance helped me clear UPHESC Adv 50-2022. Their personalized attention made all the difference.",
     },
     {
-      name: "Rajesh Kumar",
-      exam: "UPHESC Assistant Professor",
-      image:
-        "https://images.unsplash.com/photo-1698356253803-838dceb68946?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBtYWxlJTIwc3R1ZGVudCUyMHByb2Zlc3Npb25hbHxlbnwxfHx8fDE3NzMyMzEwNjl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      name: "Ms Sandhya Patel",
+      exam: "UPHESC Adv 50-2022",
+      image: "/Sandhya%20Patel.jpeg",
       quote:
-        "The mock tests and live doubt sessions were game-changers. LePearl gave me the confidence and knowledge to succeed in the competitive exam.",
+        "From comprehensive study material to answer writing practice, LePearl covered everything. I'm now proudly serving as an Assistant Professor!",
     },
     {
-      name: "Dr. Anjali Verma",
-      exam: "UPHESC Assistant Professor",
-      image:
-        "https://images.unsplash.com/photo-1659355894748-0b7b60de60b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBmZW1hbGUlMjB0ZWFjaGVyJTIwcHJvZmVzc2lvbmFsfGVufDF8fHx8MTc3MzIxNTAwOXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      name: "Ms Rashmi Verma",
+      exam: "UPHESC Adv 50-2022",
+      image: "/Rashmi%20verma.jpeg",
       quote:
-        "I am grateful to LePearl for their comprehensive study material and expert guidance. Their holistic approach truly sets them apart.",
+        "LePearl's structured approach and mock tests were instrumental in my success. Their faculty support is unmatched.",
+    },
+    {
+      name: "Ms Mahima Thakur",
+      exam: "UPHESC Adv 50-2022",
+      image: "/Mahima.jpeg",
+      quote:
+        "The live doubt sessions and personalized guidance at LePearl helped me build confidence and clear the exam successfully.",
+    },
+    {
+      name: "Ms. Surbhi Satyabha",
+      exam: "UPHESC-Adv 50-2022",
+      image: "/Surbhi.jpeg",
+      quote:
+        "LePearl's holistic approach to preparation transformed my understanding of the subject. Grateful for their expert mentorship.",
+    },
+    {
+      name: "Dr. Amresh",
+      exam: "UPHESC, Adv 50- 2022",
+      image: "/Amresh.jpeg",
+      quote:
+        "The comprehensive study materials and regular assessments at LePearl were key to my success in the UPHESC examination.",
     },
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Auto-slide functionality
+  useEffect(() => {
+    if (isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+    }, 4000); // Change slide every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [testimonials.length, isPaused]);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -317,7 +346,11 @@ function TestimonialsSection() {
         </div>
 
         <div className="relative max-w-4xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 sm:p-12 border border-white/20">
+          <div
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 sm:p-12 border border-white/20"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
             <div className="flex flex-col md:flex-row gap-8 items-center">
               <div className="flex-shrink-0">
                 <div className="relative">
@@ -392,7 +425,7 @@ function EnrollmentSection() {
     {
       icon: CreditCard,
       title: "One-Time Payment",
-      price: "₹5000",
+      price: "₹4,995",
       features: [
         "Full course access",
         "All video lectures",
@@ -405,7 +438,7 @@ function EnrollmentSection() {
     {
       icon: Calendar,
       title: "Installment Plan",
-      price: "₹5500",
+      price: "₹2,250 × 2",
       features: [
         "Full course access",
         "All video lectures",

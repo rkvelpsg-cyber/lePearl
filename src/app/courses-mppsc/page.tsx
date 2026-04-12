@@ -112,23 +112,23 @@ function Hero() {
 const overviewPoints = [
   {
     icon: Target,
-    text: "Tailored specifically for MPPSC Assistant Professor aspirants",
+    text: "Tailored for MPPSC aspirants",
   },
   {
     icon: Video,
-    text: "Blend of recorded video lectures, PDFs, and live doubt resolution sessions",
+    text: "Blend of live video lectures, PDFs, and live doubt resolution sessions",
   },
   {
     icon: Users,
-    text: "Flipped live classes with live question and answer solving and explanations",
+    text: "Flipped Live Classes with live Question and Answer solving with explanation.",
   },
   {
     icon: Award,
-    text: "Subject expertise with more than 15 years of teaching experience",
+    text: "Subject Expertise with teaching experience of more than 15 years.",
   },
   {
     icon: TrendingUp,
-    text: "No shortcuts, only proven strategies for first-attempt success",
+    text: "No shortcuts, just proven strategies for first-attempt success.",
   },
 ];
 
@@ -174,34 +174,32 @@ const features = [
     icon: PlayCircle,
     title: "Video Lectures",
     description:
-      "In-depth coverage of the MPPSC exam pattern with simplified explanations.",
+      "In-depth coverage of the MPPSC pattern, simplified complex topics.",
   },
   {
     icon: ClipboardCheck,
     title: "Mock Tests",
-    description:
-      "50+ mock tests with detailed analysis and performance tracking.",
+    description: "50+ Mock tests with detailed analysis.",
   },
   {
     icon: FileText,
     title: "Study Material",
-    description:
-      "Concise PDFs, recorded lectures, and decoded previous year papers.",
+    description: "Concise PDFs, live lectures, and previous papers decoded.",
   },
   {
     icon: MessageCircle,
     title: "Live Doubt Clearing",
-    description: "Weekly sessions to clarify doubts in real time.",
+    description: "Weekly sessions for real-time support.",
   },
   {
     icon: UserCheck,
     title: "Personalized Attention",
-    description: "One-to-one academic support based on student needs.",
+    description: "One-to-one attention to each student as per their needs.",
   },
   {
     icon: Sparkles,
     title: "Holistic Development",
-    description: "Focus on academic growth, confidence, and subject mastery.",
+    description: "Holistic development of the students.",
   },
 ];
 
@@ -247,28 +245,25 @@ function Features() {
 // ─────────────────────────────────────────────────────────────
 const testimonials = [
   {
-    name: "Priya Sharma",
-    image:
-      "https://images.unsplash.com/photo-1707876447570-d2225b758f5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBmZW1hbGUlMjBzdHVkZW50JTIwcHJvZmVzc2lvbmFsJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzczMjk1MTM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    role: "MPPSC Assistant Professor - History",
+    name: "Dr. Babli Mallick",
+    image: "/babil_faculty2.jpeg",
+    role: "Assistant Professor, Madhya Pradesh Public Service Commission-2025",
     quote:
-      "The structured lectures and mock tests from LePearl helped me crack the MPPSC Assistant Professor exam in my first attempt.",
+      "LePearl's structured mentorship and exam-focused guidance helped me succeed in the MPPSC Assistant Professor exam.",
   },
   {
-    name: "Rajesh Kumar",
-    image:
-      "https://images.unsplash.com/photo-1627776880991-808c5996527b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBtYWxlJTIwc3R1ZGVudCUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0fGVufDF8fHx8MTc3MzI5NTEzNXww&ixlib=rb-4.1.0&q=80&w=1080",
-    role: "MPPSC Assistant Professor - Economics",
+    name: "Mr Shubham Singh",
+    image: "/Shubham%20Singh.jpeg",
+    role: "Madhya Pradesh Public Service Commission-2025",
     quote:
-      "LePearl's personalized attention and expert faculty guidance made all the difference in my preparation journey.",
+      "Consistent mock practice and detailed feedback from LePearl helped me clear MPPSC Assistant Professor.",
   },
   {
-    name: "Anita Deshmukh",
-    image:
-      "https://images.unsplash.com/photo-1622460241924-a114e6abe1ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB3b21hbiUyMHRlYWNoZXIlMjBwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzMyOTUxMzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    role: "MPPSC Assistant Professor - Political Science",
+    name: "Mr. Vishal Damahe",
+    image: "/Vishal%20Damahe.jpeg",
+    role: "Assistant Professor, Madhya Pradesh Public Service Commission-2025",
     quote:
-      "The comprehensive study materials and weekly doubt sessions were instrumental in building my confidence and clearing the exam.",
+      "The live doubt sessions and study plan at LePearl gave me the confidence to secure my MPPSC faculty role.",
   },
 ];
 
@@ -398,7 +393,8 @@ function Pricing() {
 
             <a
               href="/login"
-              className="block w-full bg-blue-900 hover:bg-blue-800 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
+              className="block w-full bg-blue-900 hover:bg-blue-800 text-white hover:text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
+              style={{ color: "white" }}
             >
               Enroll Now
             </a>
@@ -417,10 +413,10 @@ function Pricing() {
               </h3>
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-3xl font-bold text-blue-900">
-                  5 Instalments of ₹2,000
+                  2 Instalments of ₹5,499
                 </span>
               </div>
-              <p className="text-gray-600">Total Cost: ₹10,000</p>
+              <p className="text-gray-600">Total Cost: ₹11,000</p>
             </div>
 
             <div className="mb-8">
