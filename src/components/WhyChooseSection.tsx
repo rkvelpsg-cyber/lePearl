@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -85,14 +88,15 @@ type FeatureCardProps = {
 };
 
 function FeatureCard({ feature, index }: FeatureCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const Icon = feature.icon;
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-lg sm:rounded-2xl border border-slate-200/50 bg-white/85 p-4 sm:p-5 md:p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
-      <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-blue-500/0 via-blue-500/0 to-amber-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" />
+      <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-blue-500/0 via-blue-500/0 to-amber-500/0 opacity-0 transition-opacity duration-300 group-hover:opacity-10 pointer-events-none" />
 
       <div className="relative mb-3 sm:mb-5 inline-flex">
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 opacity-20 blur-lg transition-opacity duration-300 group-hover:opacity-40" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 opacity-20 blur-lg transition-opacity duration-300 group-hover:opacity-40 pointer-events-none" />
         <div className="relative rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 p-2.5 sm:p-3 md:p-4 shadow-lg transition-shadow duration-300 group-hover:shadow-xl">
           <Icon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
         </div>
@@ -104,11 +108,34 @@ function FeatureCard({ feature, index }: FeatureCardProps) {
       <h3 className="mb-2 sm:mb-3 text-base sm:text-lg md:text-xl font-bold text-slate-800 transition-colors duration-300 group-hover:text-blue-700">
         {feature.title}
       </h3>
-      <p className="flex-grow text-xs sm:text-sm md:text-base leading-relaxed text-slate-600">
-        {feature.description}
-      </p>
 
-      <div className="absolute bottom-0 right-0 h-20 w-20 sm:h-24 sm:w-24 rounded-tl-full bg-gradient-to-tl from-blue-100/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="flex flex-col flex-grow">
+        <p
+          className="text-xs sm:text-sm md:text-base leading-relaxed text-slate-600"
+          style={
+            expanded
+              ? undefined
+              : {
+                  display: "-webkit-box",
+                  WebkitLineClamp: 4,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }
+          }
+        >
+          {feature.description}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="mt-3 text-sm font-semibold text-sky-700 hover:text-sky-900 transition-colors text-left cursor-pointer"
+        >
+          {expanded ? "View Less" : "View More"}
+        </button>
+      </div>
+
+      <div className="absolute bottom-0 right-0 h-20 w-20 sm:h-24 sm:w-24 rounded-tl-full bg-gradient-to-tl from-blue-100/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
     </div>
   );
 }

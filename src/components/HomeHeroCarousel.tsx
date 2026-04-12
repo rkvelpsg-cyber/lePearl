@@ -147,7 +147,7 @@ export function HomeHeroCarousel() {
         type="button"
         aria-label="Scroll hero left"
         onClick={goToPrevious}
-        className="hero-nav-btn hero-nav-prev absolute top-1/2 -translate-y-1/2 -left-4 z-20 w-10 h-10 rounded-full border border-white/80 bg-white/80 text-purple-700 shadow-md backdrop-blur-sm flex items-center justify-center hover:bg-white"
+        className="hero-nav-btn hero-nav-prev hidden md:flex absolute top-1/2 -translate-y-1/2 -left-2 lg:-left-4 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-white/80 bg-white/80 text-purple-700 shadow-md backdrop-blur-sm items-center justify-center hover:bg-white transition-all"
       >
         <svg
           width="18"
@@ -170,7 +170,7 @@ export function HomeHeroCarousel() {
         type="button"
         aria-label="Scroll hero right"
         onClick={goToNext}
-        className="hero-nav-btn hero-nav-next absolute top-1/2 -translate-y-1/2 -right-4 z-20 w-10 h-10 rounded-full border border-white/80 bg-white/80 text-purple-700 shadow-md backdrop-blur-sm flex items-center justify-center hover:bg-white"
+        className="hero-nav-btn hero-nav-next hidden md:flex absolute top-1/2 -translate-y-1/2 -right-2 lg:-right-4 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-white/80 bg-white/80 text-purple-700 shadow-md backdrop-blur-sm items-center justify-center hover:bg-white transition-all"
       >
         <svg
           width="18"

@@ -513,10 +513,6 @@ function EnrollmentSection() {
   );
 }
 
-function Footer() {
-  return <CoursePageFooter />;
-}
-
 export default function UPHESCPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -526,7 +522,7 @@ export default function UPHESCPage() {
       <FeaturesSection />
       <TestimonialsSection />
       <EnrollmentSection />
-      <Footer />
+      <CoursePageFooter />
     </div>
   );
 }

@@ -415,85 +415,6 @@ function EnrollmentSection() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div>
-            <div className="mb-4 flex items-center gap-3">
-              <div className="rounded-lg bg-blue-900 p-2">
-                <img
-                  src="/WebsiteLogo_final_white.png"
-                  alt="LePearl Logo"
-                  className="h-12 w-12 object-contain"
-                />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold leading-tight text-white">
-                  LePearl Education
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Centre of Excellence in English Language & Literature
-                </p>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed">
-              Empowering NET aspirants with quality coaching and complete
-              academic support.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="mb-4 text-lg font-bold text-white">Contact Us</h4>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-amber-400" />
-                <a
-                  href="tel:+911234567890"
-                  className="text-sm hover:text-amber-400"
-                >
-                  +91 1234 567 890
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-amber-400" />
-                <a
-                  href="mailto:info@lepearl.edu"
-                  className="text-sm hover:text-amber-400"
-                >
-                  info@lepearl.edu
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="mb-4 text-lg font-bold text-white">Follow Us</h4>
-            <div className="flex gap-4">
-              {[Facebook, X, Instagram, Linkedin].map((Icon, idx) => (
-                <a
-                  key={idx}
-                  href="#"
-                  className="rounded-full bg-blue-800 p-3 transition-colors hover:bg-amber-500"
-                >
-                  <Icon className="h-5 w-5" />
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-800 pt-8 text-center">
-          <p className="text-sm text-gray-400">
-            © 2026 LePearl Coaching Institute. All rights reserved.
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 export default function NETPaper1CoursePage() {
   return (
     <div className="min-h-screen bg-white">
@@ -504,7 +425,7 @@ export default function NETPaper1CoursePage() {
       <SyllabusCoverage />
       <Testimonials />
       <EnrollmentSection />
-      <Footer />
+      <CoursePageFooter />
     </div>
   );
 }

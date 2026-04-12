@@ -64,9 +64,9 @@ export function AchieversCard() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50" />
 
-          <div className="hero-slide-content relative z-10 h-full p-4 md:p-6">
-            <div className="h-full w-full bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden border border-white/70 flex flex-col">
-              <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-4 md:px-6 md:py-5">
+          <div className="hero-slide-content relative z-10 h-full p-3 sm:p-4 md:p-6 lg:p-8">
+            <div className="h-full w-full bg-white/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl overflow-hidden border border-white/70 flex flex-col">
+              <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 sm:px-6 sm:py-4 md:px-6 md:py-5 lg:px-8 lg:py-6">
                 <div className="absolute inset-0 opacity-10">
                   <img
                     src="https://images.unsplash.com/photo-1524591282491-edb48a0fca8f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZHVjYXRpb24lMjBib29rcyUyMGxpYnJhcnklMjBzdHVkeXxlbnwxfHx8fDE3NzI0NTg2NzF8MA&ixlib=rb-4.1.0&q=80&w=1080"
@@ -74,36 +74,42 @@ export function AchieversCard() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
-                  <div>
+                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 flex-wrap">
+                  <div className="w-full sm:flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Trophy className="w-7 h-7" />
-                      <GraduationCap className="w-7 h-7" />
-                      <Award className="w-7 h-7" />
+                      <Trophy className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex-shrink-0" />
+                      <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex-shrink-0" />
+                      <Award className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex-shrink-0" />
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-bold">
+                    <h2 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold break-words">
                       LePearl Achievers
                     </h2>
-                    <p className="text-sm md:text-base text-blue-50">
+                    <p className="text-xs sm:text-sm md:text-base text-blue-50 leading-tight mt-1 break-words">
                       Success stories of UGC NET & SET qualifiers in English
                     </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                     <div>
-                      <div className="text-xl md:text-2xl font-bold">200+</div>
-                      <div className="text-[10px] md:text-xs opacity-90">
+                      <div className="text-lg sm:text-xl md:text-2xl font-bold">
+                        200+
+                      </div>
+                      <div className="text-[9px] sm:text-xs opacity-90">
                         Qualified
                       </div>
                     </div>
                     <div>
-                      <div className="text-xl md:text-2xl font-bold">95%</div>
-                      <div className="text-[10px] md:text-xs opacity-90">
+                      <div className="text-lg sm:text-xl md:text-2xl font-bold">
+                        95%
+                      </div>
+                      <div className="text-[9px] sm:text-xs opacity-90">
                         Success
                       </div>
                     </div>
                     <div>
-                      <div className="text-xl md:text-2xl font-bold">20+</div>
-                      <div className="text-[10px] md:text-xs opacity-90">
+                      <div className="text-lg sm:text-xl md:text-2xl font-bold">
+                        20+
+                      </div>
+                      <div className="text-[9px] sm:text-xs opacity-90">
                         Top Rankers
                       </div>
                     </div>
@@ -111,68 +117,68 @@ export function AchieversCard() {
                 </div>
               </div>
 
-              <div className="px-4 pt-4 md:px-6 md:pt-5">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+              <div className="px-4 pt-3 sm:px-6 sm:pt-4 md:px-6 md:pt-5 lg:px-8">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2">
                   Our Pride: NET & SET Qualified Scholars
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                   LePearl achievers have cleared UGC NET and SET in English
                   Literature and now serve as Assistant Professors, Lecturers,
                   and PhD scholars across reputed institutions.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 md:p-6 flex-1 min-h-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 lg:p-8 flex-1 min-h-0 overflow-y-auto">
                 {achievers.map((achiever) => (
                   <div
                     key={achiever.id}
-                    className="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm"
+                    className="rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col min-w-0"
                   >
-                    <div className="relative h-40 overflow-hidden">
+                    <div className="relative h-32 sm:h-40 overflow-hidden flex-shrink-0">
                       <img
                         src={achiever.image}
                         alt={achiever.name}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                      <div className="absolute top-3 right-3 bg-yellow-400 rounded-full p-2 shadow-lg">
-                        <Trophy className="w-4 h-4 text-yellow-900" />
+                      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-yellow-400 rounded-full p-1.5 sm:p-2 shadow-lg">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-900" />
                       </div>
-                      <div className="absolute bottom-2 left-3 right-3 text-white">
-                        <h4 className="text-base font-bold leading-tight">
+                      <div className="absolute bottom-2 left-2 right-2 text-white min-w-0">
+                        <h4 className="text-xs sm:text-sm md:text-base font-bold leading-tight truncate">
                           {achiever.name}
                         </h4>
                         <div className="flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                          <span className="text-xs font-semibold">
+                          <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-xs font-semibold">
                             {achiever.rank}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-3">
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded-full font-medium">
+                    <div className="p-2 sm:p-3 flex flex-col min-w-0 flex-grow">
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        <span className="bg-blue-100 text-blue-700 text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium truncate">
                           {achiever.exam}
                         </span>
-                        <span className="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded-full font-medium">
-                          Score: {achiever.score}
+                        <span className="bg-green-100 text-green-700 text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium truncate">
+                          {achiever.score}
                         </span>
-                        <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-1 rounded-full font-medium">
+                        <span className="bg-purple-100 text-purple-700 text-[8px] sm:text-[10px] px-2 py-0.5 rounded-full font-medium truncate">
                           {achiever.year}
                         </span>
                       </div>
 
-                      <div className="flex items-start gap-2 mb-2">
-                        <GraduationCap className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-xs font-semibold text-gray-800">
+                      <div className="flex items-start gap-2 mb-2 min-w-0">
+                        <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-[10px] sm:text-xs font-semibold text-gray-800 line-clamp-2 break-words">
                           {achiever.achievement}
                         </p>
                       </div>
 
                       <div className="border-t border-gray-100 pt-2">
-                        <p className="text-[11px] text-gray-600 italic leading-relaxed">
+                        <p className="text-[9px] sm:text-[11px] text-gray-600 italic leading-relaxed line-clamp-3 break-words">
                           "{achiever.testimonial}"
                         </p>
                       </div>

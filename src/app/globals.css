@@ -777,20 +777,65 @@ a {
     font-size: clamp(1.45rem, 1.75vw, 2rem) !important;
     line-height: 1.2;
   }
+}
 
-  .hero-slide-shell h3 {
-    font-size: clamp(1.05rem, 1.2vw, 1.2rem) !important;
+/* Mobile Overflow Prevention & Responsive Utilities */
+@media (max-width: 767px) {
+  /* Prevent horizontal scroll on mobile */
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
-  .hero-slide-shell p {
-    font-size: 0.92rem;
-    line-height: 1.5;
+  /* Ensure drawable elements fit mobile viewports */
+  .page-content-layer {
+    overflow-x: hidden;
   }
 
-  .hero-slide-shell .btn,
-  .hero-slide-shell button,
-  .hero-slide-shell a[class*="px-"] {
-    font-size: 0.9rem;
+  /* Prevent text overflow issues */
+  body,
+  main,
+  section,
+  div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Safe image scaling */
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Prevent horizontal overflow from fixed elements */
+  [style*="left: "],
+  [style*="right: "] {
+    max-width: 100vw;
+  }
+
+  /* Mobile-safe button styling */
+  button,
+  a,
+  [role="button"] {
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* Ensure lists don't overflow */
+  ul,
+  ol {
+    padding-left: 1rem;
+    margin: 0;
+  }
+
+  /* Safe margin handling for mobile */
+  [style*="margin-left"],
+  [style*="margin-right"],
+  [style*="padding-left"],
+  [style*="padding-right"] {
+    max-width: 100%;
   }
 }
 

@@ -460,16 +460,6 @@ function Pricing() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Footer
-// ─────────────────────────────────────────────────────────────
-function Footer() {
-  return <CoursePageFooter />;
-}
-
-// ─────────────────────────────────────────────────────────────
-// Page
-// ─────────────────────────────────────────────────────────────
 export default function MPPSCCoursePage() {
   return (
     <div className="min-h-screen bg-white">
@@ -479,7 +469,7 @@ export default function MPPSCCoursePage() {
       <Features />
       <Testimonials />
       <Pricing />
-      <Footer />
+      <CoursePageFooter />
     </div>
   );
 }

@@ -1,18 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 
 export function IntroPopup() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    if (pathname !== "/") {
+      setVisible(false);
+      return;
+    }
+
     const seen = sessionStorage.getItem("intro_popup_seen");
     if (!seen) {
       setVisible(true);
     }
-  }, []);
+  }, [pathname]);
 
   const close = () => {
     setVisible(false);

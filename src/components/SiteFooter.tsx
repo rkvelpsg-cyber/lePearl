@@ -12,6 +12,7 @@ import {
   MapPin,
   Phone,
   Youtube,
+  Twitter,
 } from "lucide-react";
 
 export function SiteFooter() {
@@ -43,25 +44,27 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-6 py-12">
-        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className="mb-8 grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-4 flex items-start gap-3 sm:gap-4">
               <Image
                 src="/logo_vectorformat.png"
                 alt="LePearl Education Logo"
                 width={80}
                 height={80}
-                className="object-contain flex-shrink-0"
+                className="object-contain flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20"
               />
-              <div>
-                <h3 className="text-lg font-bold">LePearl Education</h3>
-                <p className="text-xs text-gray-200">
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-xl font-bold break-words">
+                  LePearl Education
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-200 leading-tight break-words">
                   Centre of Excellence in English Language &amp; Literature
                 </p>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-gray-200">
+            <p className="text-xs sm:text-sm leading-relaxed text-gray-200 break-words">
               LePearl Education empowers aspirants to succeed in UGC NET, SET,
               PhD Entrance, and Assistant Professor examinations through expert
               mentorship, quality content, and holistic development.
@@ -69,76 +72,76 @@ export function SiteFooter() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="mb-4 border-b border-white/20 pb-2 text-lg font-bold">
+            <h4 className="mb-3 sm:mb-4 border-b border-white/20 pb-2 text-sm sm:text-lg font-bold">
               Courses &amp; Exams
             </h4>
-            <ul className="space-y-3">
+            <ul className="space-y-2 sm:space-y-3">
               <li>
                 <a
                   href="#courses"
-                  className="flex items-center gap-2 text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <BookOpen className="h-4 w-4" />
-                  UGC NET Coaching
+                  <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">UGC NET Coaching</span>
                 </a>
               </li>
               <li>
                 <a
                   href="#courses"
-                  className="flex items-center gap-2 text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <FileText className="h-4 w-4" />
-                  SET Exam Preparation
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">SET Exam Preparation</span>
                 </a>
               </li>
               <li>
                 <a
                   href="#courses"
-                  className="flex items-center gap-2 text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <GraduationCap className="h-4 w-4" />
-                  PhD Entrance Preparation
+                  <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">PhD Entrance Prep</span>
                 </a>
               </li>
               <li>
                 <a
                   href="#courses"
-                  className="flex items-center gap-2 text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <Award className="h-4 w-4" />
-                  UPHESC Assistant Professor
+                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">UPHESC Prof</span>
                 </a>
               </li>
               <li>
                 <a
                   href="#courses"
-                  className="flex items-center gap-2 text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <Award className="h-4 w-4" />
-                  MPPSC Assistant Professor
+                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">MPPSC Prof</span>
                 </a>
               </li>
               <li>
                 <a
                   href="#courses"
-                  className="flex items-center gap-2 text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <FileText className="h-4 w-4" />
-                  LT Grade Preparation
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">LT Grade Prep</span>
                 </a>
               </li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h4 className="mb-4 border-b border-white/20 pb-2 text-lg font-bold">
+            <h4 className="mb-3 sm:mb-4 border-b border-white/20 pb-2 text-sm sm:text-lg font-bold">
               Quick Links
             </h4>
-            <ul className="space-y-3">
+            <ul className="space-y-2 sm:space-y-3">
               <li>
                 <a
                   href="#founder"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   About Us
                 </a>
@@ -146,7 +149,7 @@ export function SiteFooter() {
               <li>
                 <a
                   href="#achievers"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Faculty
                 </a>
@@ -154,7 +157,7 @@ export function SiteFooter() {
               <li>
                 <a
                   href="#courses"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Courses
                 </a>
@@ -162,15 +165,15 @@ export function SiteFooter() {
               <li>
                 <a
                   href="#live-class"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
-                  Weekly Schedule
+                  Schedule
                 </a>
               </li>
               <li>
                 <a
                   href="#reviews"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Testimonials
                 </a>
@@ -178,7 +181,7 @@ export function SiteFooter() {
               <li>
                 <a
                   href="#books"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Books
                 </a>
@@ -186,7 +189,7 @@ export function SiteFooter() {
               <li>
                 <a
                   href="#contact"
-                  className="inline-block text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Contact Us
                 </a>
@@ -195,85 +198,108 @@ export function SiteFooter() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="mb-4 border-b border-white/20 pb-2 text-lg font-bold">
+            <h4 className="mb-3 sm:mb-4 border-b border-white/20 pb-2 text-sm sm:text-lg font-bold">
               Contact Information
             </h4>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-sm text-gray-200">India</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Phone className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-sm text-gray-200">+91-99949 90639</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Mail className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-sm text-gray-200">
-                  info@lepearleducation.com
+            <ul className="space-y-2 sm:space-y-3">
+              <li className="flex items-start gap-2 sm:gap-3 min-w-0">
+                <MapPin className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
+                <span className="text-xs sm:text-sm text-gray-200 break-words">
+                  India
                 </span>
               </li>
-              <li className="flex items-start gap-3">
-                <Globe className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-sm text-gray-200">
-                  www.lepearleducation.com
+              <li className="flex items-start gap-2 sm:gap-3 min-w-0">
+                <Phone className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
+                <span className="text-xs sm:text-sm text-gray-200">
+                  +91-99949 90639
+                </span>
+              </li>
+              <li className="flex items-start gap-2 sm:gap-3 min-w-0">
+                <Mail className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
+                <span className="text-xs sm:text-sm text-gray-200 truncate">
+                  info@lepearl.com
+                </span>
+              </li>
+              <li className="flex items-start gap-2 sm:gap-3 min-w-0">
+                <Globe className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
+                <span className="text-xs sm:text-sm text-gray-200 truncate">
+                  lepearleducation.com
                 </span>
               </li>
             </ul>
 
             <div className="pt-4">
-              <h5 className="mb-3 text-sm font-semibold">Follow Us</h5>
-              <div className="flex gap-3">
+              <h5 className="mb-3 text-xs sm:text-sm font-semibold">
+                Follow Us
+              </h5>
+              <div className="flex gap-2 sm:gap-3">
                 <a
-                  href="#"
-                  className="rounded-full bg-white/10 p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
+                  href="https://www.youtube.com/channel/UCnxWNpUm3iltu922GwWnRHg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-white/10 p-2 sm:p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
                   aria-label="YouTube"
                 >
-                  <Youtube className="h-5 w-5" />
+                  <Youtube className="h-4 w-4 sm:h-5 sm:w-5" />
                 </a>
                 <a
-                  href="#"
-                  className="rounded-full bg-white/10 p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
+                  href="https://www.facebook.com/The-Pearl-Education-104234304455338/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-white/10 p-2 sm:p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
                   aria-label="Facebook"
                 >
-                  <Facebook className="h-5 w-5" />
+                  <Facebook className="h-4 w-4 sm:h-5 sm:w-5" />
                 </a>
                 <a
-                  href="#"
-                  className="rounded-full bg-white/10 p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
+                  href="https://www.instagram.com/thepearlseducation/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-white/10 p-2 sm:p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
                   aria-label="Instagram"
                 >
-                  <Instagram className="h-5 w-5" />
+                  <Instagram className="h-4 w-4 sm:h-5 sm:w-5" />
                 </a>
                 <a
-                  href="#"
-                  className="rounded-full bg-white/10 p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
+                  href="https://twitter.com/EducationPearl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-white/10 p-2 sm:p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
+                  aria-label="Twitter"
+                >
+                  <Twitter className="h-4 w-4 sm:h-5 sm:w-5" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/the-pearl-education-4a43151a0/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-white/10 p-2 sm:p-2.5 transition-all duration-300 hover:scale-110 hover:bg-white hover:text-[#6A0DAD]"
                   aria-label="LinkedIn"
                 >
-                  <Linkedin className="h-5 w-5" />
+                  <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
                 </a>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-6 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+        <div className="my-6 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
-        <div className="flex flex-col items-center justify-between gap-4 text-sm md:flex-row">
-          <p className="text-gray-200">
+        <div className="flex flex-col items-center justify-between gap-3 sm:gap-4 text-xs sm:text-sm md:flex-row">
+          <p className="text-gray-200 text-center md:text-left">
             © 2026 LePearl Education. All Rights Reserved.
           </p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
             <a
               href="#"
-              className="text-gray-200 transition-colors duration-200 hover:text-white"
+              className="text-gray-200 transition-colors duration-200 hover:text-white whitespace-nowrap"
             >
               Privacy Policy
             </a>
             <span className="text-gray-400">|</span>
             <a
               href="#"
-              className="text-gray-200 transition-colors duration-200 hover:text-white"
+              className="text-gray-200 transition-colors duration-200 hover:text-white whitespace-nowrap"
             >
               Terms &amp; Conditions
             </a>

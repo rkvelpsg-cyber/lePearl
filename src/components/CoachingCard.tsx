@@ -143,31 +143,31 @@ export function CoachingCard() {
 
           <div className="hero-slide-content relative z-10 px-4 pt-6 pb-12 sm:px-6 sm:pt-8 sm:pb-16 md:px-12 md:pt-12 md:pb-28">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center">
-              <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+              <div className="space-y-4 sm:space-y-6 lg:space-y-8 min-w-0">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 break-words">
                     Crack UGC NET English with{" "}
                     <span className="text-yellow-400">Confidence</span>
                   </h2>
-                  <div className="w-16 sm:w-24 h-1 bg-yellow-400 rounded-full" />
+                  <div className="w-12 sm:w-16 md:w-20 lg:w-24 h-1 bg-yellow-400 rounded-full" />
                 </div>
 
                 <div className="space-y-3 sm:space-y-4">
-                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-yellow-400 mb-2 sm:mb-4">
+                  <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-yellow-400 mb-2 sm:mb-4">
                     What You&apos;ll Get:
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                     {coachingPrograms.map((program, index) => (
                       <div
                         key={`${program}-${index}`}
-                        className="flex items-start gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20 hover:bg-white/20 transition-all"
+                        className="flex items-start gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-white/20 hover:bg-white/20 transition-all min-w-0"
                       >
                         <div className="flex-shrink-0 mt-0.5">
                           <div className="bg-green-500 rounded-full p-1">
                             <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                           </div>
                         </div>
-                        <span className="text-white font-medium text-xs sm:text-sm">
+                        <span className="text-white font-medium text-xs sm:text-sm break-words">
                           {program}
                         </span>
                       </div>
@@ -175,28 +175,28 @@ export function CoachingCard() {
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-1 sm:gap-2 bg-yellow-400/20 border-2 border-yellow-400 rounded-full px-3 sm:px-6 py-2 sm:py-3">
-                  <span className="text-yellow-400 font-bold text-sm sm:text-base lg:text-lg">
+                <div className="inline-flex items-center gap-1 sm:gap-2 bg-yellow-400/20 border-2 border-yellow-400 rounded-full px-3 sm:px-6 py-2 sm:py-3 flex-wrap">
+                  <span className="text-yellow-400 font-bold text-xs sm:text-sm md:text-base lg:text-lg">
                     🎯 Expert-Led Training
                   </span>
                 </div>
               </div>
 
-              <div className="flex justify-center lg:justify-end mt-6 sm:mt-0">
-                <div className="relative w-full">
+              <div className="flex justify-center lg:justify-end mt-6 sm:mt-8 lg:mt-0 w-full">
+                <div className="relative w-full max-w-md">
                   <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-3xl blur-2xl opacity-30" />
 
                   <div className="relative w-full rounded-2xl sm:rounded-3xl border-2 border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-3 sm:p-4 backdrop-blur-sm">
-                    <h4 className="mb-3 sm:mb-4 text-center text-base sm:text-lg lg:text-xl font-bold text-yellow-300">
+                    <h4 className="mb-3 sm:mb-4 text-center text-xs sm:text-base md:text-lg lg:text-xl font-bold text-yellow-300">
                       NTA NET Achievers
                     </h4>
                     <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                       {netAchievers.map((achiever) => (
                         <div
                           key={achiever.id}
-                          className="rounded-lg border border-white/25 bg-white/10 p-1 sm:p-1.5 text-center"
+                          className="rounded-lg border border-white/25 bg-white/10 p-1 sm:p-1.5 text-center min-w-0"
                         >
-                          <div className="mx-auto mb-1 h-12 w-12 sm:h-14 sm:w-14 overflow-hidden rounded-lg border-2 border-yellow-300/80 bg-white/90">
+                          <div className="mx-auto mb-1 h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 overflow-hidden rounded-lg border-2 border-yellow-300/80 bg-white/90 flex-shrink-0">
                             <Image
                               src={achiever.imageUrl}
                               alt={achiever.name}
@@ -205,10 +205,10 @@ export function CoachingCard() {
                               className="h-full w-full object-cover"
                             />
                           </div>
-                          <p className="text-[10px] sm:text-xs font-semibold text-white leading-tight line-clamp-2">
+                          <p className="text-[9px] sm:text-xs font-semibold text-white leading-tight line-clamp-2 break-words">
                             {achiever.name}
                           </p>
-                          <p className="mt-0.5 text-[9px] sm:text-[10px] text-yellow-300 leading-tight line-clamp-1">
+                          <p className="mt-0.5 text-[8px] sm:text-[10px] text-yellow-300 leading-tight line-clamp-1 break-words">
                             {achiever.year}
                           </p>
                         </div>
@@ -219,15 +219,15 @@ export function CoachingCard() {
               </div>
             </div>
 
-            <div className="mt-6 sm:mt-8 lg:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5">
+            <div className="mt-6 sm:mt-8 lg:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-5 w-full px-2">
               <Link
                 href="/login"
-                className="group relative inline-block bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-sm sm:text-base lg:text-xl px-6 sm:px-8 lg:px-12 py-3 sm:py-4 lg:py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 sm:hover:scale-110 hover:shadow-yellow-500/50"
+                className="group relative inline-flex items-center w-full sm:w-auto justify-center bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-xs sm:text-sm md:text-base lg:text-lg px-4 sm:px-6 md:px-8 lg:px-10 py-2.5 sm:py-3 md:py-4 lg:py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-yellow-500/50 whitespace-nowrap min-h-[44px]"
               >
-                <span className="relative z-10 flex items-center gap-2 sm:gap-3">
+                <span className="relative z-10 flex items-center gap-2 sm:gap-3 justify-center">
                   Enroll Now
                   <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform"
+                    className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -246,7 +246,7 @@ export function CoachingCard() {
               </Link>
               <Link
                 href="/achievers"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-yellow-400 px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 text-sm sm:text-base lg:text-lg font-bold text-yellow-300 transition-all duration-300 hover:scale-105 hover:bg-yellow-400/20"
+                className="inline-flex items-center w-full sm:w-auto justify-center gap-2 sm:gap-3 rounded-full border-2 border-yellow-400 px-4 sm:px-6 md:px-8 lg:px-10 py-2.5 sm:py-3 md:py-4 lg:py-5 text-xs sm:text-sm md:text-base lg:text-lg font-bold text-yellow-300 transition-all duration-300 hover:scale-105 hover:bg-yellow-400/20 whitespace-nowrap min-h-[44px]"
               >
                 More Achievers
                 <svg

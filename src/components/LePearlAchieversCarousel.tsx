@@ -377,12 +377,20 @@ export function LePearlAchieversCarousel() {
 
       {/* CTA Buttons */}
       <div className="max-w-7xl mx-auto px-6 mt-8 flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <button className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+        <a
+          href="/achievers"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 inline-block text-center"
+        >
           View All Achievers
-        </button>
-        <button className="px-8 py-4 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 border-2 border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+        </a>
+        <a
+          href="/login"
+          className="px-8 py-4 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 border-2 border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 inline-block text-center"
+        >
           Join LePearl Courses
-        </button>
+        </a>
       </div>
     </section>
   );

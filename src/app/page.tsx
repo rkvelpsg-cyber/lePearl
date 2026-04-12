@@ -1,8 +1,16 @@
 ﻿import { getSiteContent } from "@/lib/siteContent";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone } from "lucide-react";
+import {
+  Phone,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  Twitter,
+} from "lucide-react";
 
+import { Header } from "@/components/Header";
 import { FounderContent } from "@/components/FounderContent";
 import { FacultyCarousel } from "@/components/FacultyCarousel";
 import { FounderBooks } from "@/components/FounderBooks";
@@ -18,7 +26,6 @@ import { FAQSection } from "@/components/FAQSection";
 import { NeedHelpSection } from "@/components/LiveClassesPortalSection";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WeeklyScheduleSection } from "@/components/WeeklyScheduleSection";
-import { NavDropdown } from "@/components/NavDropdown";
 import { StudentReviewsSection } from "@/components/StudentReviewsSection";
 
 export default async function Home() {
@@ -170,419 +177,265 @@ export default async function Home() {
             padding: "clamp(6px, 2vw, 12px) clamp(12px, 3vw, 20px)",
             letterSpacing: 0.2,
             overflowX: "auto",
+            overflowY: "hidden",
+            scrollbarWidth: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "clamp(8px, 2vw, 16px)",
           }}
         >
-          Admission opened for:{" "}
-          <span
-            className="top-admission-highlight"
-            style={{
-              display: "inline-flex",
-              gap: "clamp(4px, 1vw, 8px)",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Link
-              href="/courses-net-paper1"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                borderRight: "1px solid #fff",
-                paddingRight: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              NTA NET Jun 2026 Paper 1
-            </Link>
-            <Link
-              href="/courses-net-paper2"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                borderRight: "1px solid #fff",
-                paddingRight: "clamp(4px, 1vw, 8px)",
-                paddingLeft: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              NTA NET Jun 2026 Paper 2 (English)
-            </Link>
-            <Link
-              href="/courses-mppsc"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                borderRight: "1px solid #fff",
-                paddingRight: "clamp(4px, 1vw, 8px)",
-                paddingLeft: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              MPPSC
-            </Link>
-            <Link
-              href="/courses-uphesc"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                borderRight: "1px solid #fff",
-                paddingRight: "clamp(4px, 1vw, 8px)",
-                paddingLeft: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              UPHESC
-            </Link>
-            <Link
-              href="/courses-upgdc"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                borderRight: "1px solid #fff",
-                paddingRight: "clamp(4px, 1vw, 8px)",
-                paddingLeft: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              UP GDC
-            </Link>
-            <Link
-              href="/courses-ltgrade"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                borderRight: "1px solid #fff",
-                paddingRight: "clamp(4px, 1vw, 8px)",
-                paddingLeft: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              LT GRADE
-            </Link>
-            <Link
-              href="/courses-gic"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "#fff",
-                textDecoration: "none",
-                cursor: "pointer",
-                paddingLeft: "clamp(4px, 1vw, 8px)",
-                fontSize: "clamp(11px, 2.5vw, 16px)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              GIC
-            </Link>
-          </span>
-        </div>
-
-        {/* Header */}
-        <header
-          style={{
-            position: "relative",
-            zIndex: 10,
-            background: "transparent",
-            borderBottom: "none",
-          }}
-        >
+          {/* Social Media Icons - Right Side */}
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              padding: "12px 32px",
+              gap: "clamp(8px, 1.5vw, 12px)",
+              flexShrink: 0,
+              order: 2,
             }}
           >
-            {/* Logo and Branding */}
-            <div
+            <a
+              href="https://www.youtube.com/channel/UCnxWNpUm3iltu922GwWnRHg"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                padding: "clamp(6px, 1vw, 10px)",
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
-                minWidth: 150,
+                justifyContent: "center",
               }}
+              aria-label="YouTube"
             >
-              <Image
-                src="/logo_vectorformat.png"
-                alt="LePearl logo"
-                width={220}
-                height={220}
-                quality={100}
-                style={{ objectFit: "contain" }}
+              <Youtube
+                style={{
+                  width: "clamp(14px, 2.5vw, 20px)",
+                  height: "clamp(14px, 2.5vw, 20px)",
+                }}
               />
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  lineHeight: 1.2,
-                  textAlign: "center",
-                  marginTop: -22,
-                }}
-              >
-                <span
-                  style={{ fontWeight: 700, fontSize: 22, color: "#a21caf" }}
-                >
-                  LePearl Education
-                </span>
-                <span
-                  style={{ fontSize: 12, color: "#4c1d95", fontWeight: 500 }}
-                >
-                  Centre of Excellence in English Language &amp; Literature
-                </span>
-              </div>
-            </div>
-
-            <div
+            </a>
+            <a
+              href="https://www.facebook.com/The-Pearl-Education-104234304455338/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                padding: "clamp(6px, 1vw, 10px)",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "flex-start",
-                gap: 20,
-                flex: 1,
-                minWidth: 0,
+                justifyContent: "center",
+              }}
+              aria-label="Facebook"
+            >
+              <Facebook
+                style={{
+                  width: "clamp(14px, 2.5vw, 20px)",
+                  height: "clamp(14px, 2.5vw, 20px)",
+                }}
+              />
+            </a>
+            <a
+              href="https://www.instagram.com/thepearlseducation/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full transition-all duration-300 hover:scale-110"
+              style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                padding: "clamp(6px, 1vw, 10px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Instagram"
+            >
+              <Instagram
+                style={{
+                  width: "clamp(14px, 2.5vw, 20px)",
+                  height: "clamp(14px, 2.5vw, 20px)",
+                }}
+              />
+            </a>
+            <a
+              href="https://twitter.com/EducationPearl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full transition-all duration-300 hover:scale-110"
+              style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                padding: "clamp(6px, 1vw, 10px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Twitter"
+            >
+              <Twitter
+                style={{
+                  width: "clamp(14px, 2.5vw, 20px)",
+                  height: "clamp(14px, 2.5vw, 20px)",
+                }}
+              />
+            </a>
+            <a
+              href="https://www.linkedin.com/in/the-pearl-education-4a43151a0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full transition-all duration-300 hover:scale-110"
+              style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                padding: "clamp(6px, 1vw, 10px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="LinkedIn"
+            >
+              <Linkedin
+                style={{
+                  width: "clamp(14px, 2.5vw, 20px)",
+                  height: "clamp(14px, 2.5vw, 20px)",
+                }}
+              />
+            </a>
+          </div>
+
+          {/* Admission Text - Center/Left */}
+          <div style={{ order: 1, flex: 1, minWidth: 0 }}>
+            Admission opened for:{" "}
+            <span
+              className="top-admission-highlight"
+              style={{
+                display: "inline-flex",
+                gap: "clamp(4px, 1vw, 8px)",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              {/* Navigation Menu */}
-              <nav
+              <Link
+                href="/courses-net-paper1"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 20,
-                  flex: "0 1 auto",
-                  minWidth: 0,
-                  whiteSpace: "nowrap",
-                  marginRight: 20,
-                }}
-              >
-                <span
-                  style={{
-                    background: "#ede9fe",
-                    color: "#7c3aed",
-                    fontWeight: 600,
-                    borderRadius: 10,
-                    padding: "6px 18px",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  Home
-                </span>
-                <NavDropdown
-                  label="Online Courses"
-                  href="#"
-                  openSubmenuInNewTab
-                  submenu={[
-                    {
-                      label: "Assistant Professor",
-                      isSection: true,
-                      submenu: [
-                        { label: "MPPSC", href: "/courses-mppsc" },
-                        { label: "UPHESC", href: "/courses-uphesc" },
-                        { label: "UP GDC", href: "/courses-upgdc" },
-                      ],
-                    },
-                    {
-                      label: "NTA NET",
-                      isSection: true,
-                      submenu: [
-                        { label: "NET Paper 1", href: "/courses-net-paper1" },
-                        { label: "NET Paper 2", href: "/courses-net-paper2" },
-                      ],
-                    },
-                    {
-                      label: "Other Teaching Exams",
-                      isSection: true,
-                      submenu: [
-                        { label: "GIC", href: "/courses-gic" },
-                        { label: "LT Grade", href: "/courses-ltgrade" },
-                      ],
-                    },
-                    {
-                      label: "Interview Preparation",
-                      isSection: true,
-                      submenu: [
-                        {
-                          label: "Communication Skills",
-                          href: "/courses-communication-skills",
-                        },
-                      ],
-                    },
-                  ]}
-                />
-                <a
-                  href="/research-assistance"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Research Assistance
-                </a>
-                <a
-                  href="#pyqs"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  PYQs
-                </a>
-                <a
-                  href="/achievers"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  LePearl Achievers
-                </a>
-                <a
-                  href="#reviews"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {"Student's Reviews"}
-                </a>
-                <a
-                  href="#mock"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Mock Test
-                </a>
-                <a
-                  href="#books"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Books
-                </a>
-              </nav>
-
-              {/* Right Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  flexShrink: 0,
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  borderRight: "1px solid #fff",
+                  paddingRight: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
                   whiteSpace: "nowrap",
                 }}
               >
-                <a
-                  href="#live-class"
-                  style={{
-                    color: "#222",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Live Class
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "#ef4444",
-                      marginLeft: 2,
-                    }}
-                  />
-                </a>
-                <a
-                  href="#contact"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    border: "1.5px solid #065f46",
-                    background: "#065f46",
-                    color: "#fff",
-                    borderRadius: 8,
-                    padding: "9px 14px",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    fontSize: 15,
-                    whiteSpace: "nowrap",
-                  }}
-                  aria-label="Contact"
-                >
-                  <Phone size={16} />
-                </a>
-                <a
-                  href="/login"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)",
-                    color: "#fff",
-                    borderRadius: 8,
-                    padding: "7px 22px",
-                    fontWeight: 700,
-                    textDecoration: "none",
-                    fontSize: 15,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Login
-                </a>
-              </div>
-            </div>
+                NTA NET Jun 2026 Paper 1
+              </Link>
+              <Link
+                href="/courses-net-paper2"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  borderRight: "1px solid #fff",
+                  paddingRight: "clamp(4px, 1vw, 8px)",
+                  paddingLeft: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                NTA NET Jun 2026 Paper 2 (English)
+              </Link>
+              <Link
+                href="/courses-mppsc"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  borderRight: "1px solid #fff",
+                  paddingRight: "clamp(4px, 1vw, 8px)",
+                  paddingLeft: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                MPPSC
+              </Link>
+              <Link
+                href="/courses-uphesc"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  borderRight: "1px solid #fff",
+                  paddingRight: "clamp(4px, 1vw, 8px)",
+                  paddingLeft: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                UPHESC
+              </Link>
+              <Link
+                href="/courses-upgdc"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  borderRight: "1px solid #fff",
+                  paddingRight: "clamp(4px, 1vw, 8px)",
+                  paddingLeft: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                UP GDC
+              </Link>
+              <Link
+                href="/courses-ltgrade"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  borderRight: "1px solid #fff",
+                  paddingRight: "clamp(4px, 1vw, 8px)",
+                  paddingLeft: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                LT GRADE
+              </Link>
+              <Link
+                href="/courses-gic"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#fff",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  paddingLeft: "clamp(4px, 1vw, 8px)",
+                  fontSize: "clamp(11px, 2.5vw, 16px)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                GIC
+              </Link>
+            </span>
           </div>
-        </header>
+        </div>
+
+        {/* Header */}
+        <Header />
 
         {/* Spacing below header */}
         <div style={{ height: 28 }} />

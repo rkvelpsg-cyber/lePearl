@@ -478,10 +478,6 @@ function EnrollmentSection() {
   );
 }
 
-function Footer() {
-  return <CoursePageFooter />;
-}
-
 export default function NETPaper2CoursePage() {
   return (
     <div className="min-h-screen bg-white">
@@ -492,7 +488,7 @@ export default function NETPaper2CoursePage() {
       <SyllabusCoverage />
       <Testimonials />
       <EnrollmentSection />
-      <Footer />
+      <CoursePageFooter />
     </div>
   );
 }

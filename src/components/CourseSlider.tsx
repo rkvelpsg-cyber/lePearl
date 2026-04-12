@@ -171,20 +171,20 @@ export default function App() {
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-900 via-purple-900 to-blue-900">
         {/* Animated Background */}
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-500 rounded-full blur-3xl animate-pulse"></div>
           <div
-            className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-pulse"
+            className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-500 rounded-full blur-3xl animate-pulse"
             style={{ animationDelay: "1s" }}
           ></div>
         </div>
 
         {/* Hero Overlay Text */}
-        <div className="relative z-10 pt-8 pb-4 px-4 text-center">
+        <div className="relative z-10 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 text-center">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl md:text-5xl font-bold text-white mb-3"
+            className="text-xl sm:text-3xl md:text-5xl font-bold text-white mb-2 sm:mb-3 leading-tight break-words"
           >
             Shape Your Academic Career with{" "}
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -195,14 +195,14 @@ export default function App() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg md:text-xl text-blue-200 mb-4"
+            className="text-sm sm:text-lg md:text-xl text-blue-200 mb-4 px-2 break-words"
           >
             From NET to Assistant Professor – we guide your journey
           </motion.p>
         </div>
 
         {/* Carousel Section */}
-        <div className="relative z-10 pb-8">
+        <div className="relative z-10 pb-6 sm:pb-8">
           <div className="w-full">
             <Slider ref={sliderRef} {...settings}>
               {courseData.map((course) => (
@@ -210,39 +210,41 @@ export default function App() {
                   <motion.div
                     whileHover={{ scale: 1.01, y: -3 }}
                     transition={{ duration: 0.3 }}
-                    className={`bg-gradient-to-br ${course.gradient} backdrop-blur-lg overflow-hidden shadow-2xl border-y border-white/20 h-[550px] md:h-[600px] lg:h-[650px]`}
+                    className={`bg-gradient-to-br ${course.gradient} backdrop-blur-lg overflow-hidden shadow-2xl border-y border-white/20 h-[480px] sm:h-[550px] md:h-[600px] lg:h-[650px]`}
                     style={{
                       background: `linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)`,
                     }}
                   >
-                    <div className="grid md:grid-cols-2 gap-8 p-10 md:p-14 lg:p-16 h-full max-w-[1600px] mx-auto">
+                    <div className="grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-6 sm:p-10 md:p-14 lg:p-16 h-full max-w-[1600px] mx-auto max-h-full overflow-y-auto md:overflow-y-visible">
                       {/* Left Side - Content */}
-                      <div className="flex flex-col justify-center space-y-6">
+                      <div className="flex flex-col justify-center space-y-4 sm:space-y-6 min-w-0">
                         <motion.div
                           initial={{ opacity: 0, x: -20 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.6 }}
                         >
-                          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4 break-words">
                             {course.title}
                           </h2>
-                          <p className="text-lg text-blue-100 mb-6">
+                          <p className="text-sm sm:text-lg text-blue-100 mb-4 sm:mb-6 line-clamp-3 sm:line-clamp-4 break-words">
                             {course.description}
                           </p>
                         </motion.div>
 
                         {/* Features */}
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {course.features.map((feature, index) => (
                             <motion.div
                               key={index}
                               initial={{ opacity: 0, x: -20 }}
                               whileInView={{ opacity: 1, x: 0 }}
                               transition={{ duration: 0.4, delay: index * 0.1 }}
-                              className="flex items-center space-x-3"
+                              className="flex items-start space-x-2 sm:space-x-3 min-w-0"
                             >
-                              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                              <span className="text-white">{feature.text}</span>
+                              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-white text-xs sm:text-sm md:text-base break-words">
+                                {feature.text}
+                              </span>
                             </motion.div>
                           ))}
                         </div>
@@ -251,14 +253,14 @@ export default function App() {
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className={`w-full md:w-auto px-8 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl font-semibold transition-all border border-white/30 shadow-lg`}
+                          className={`w-full md:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg sm:rounded-xl font-semibold transition-all border border-white/30 shadow-lg text-sm sm:text-base`}
                         >
                           Explore Program
                         </motion.button>
                       </div>
 
                       {/* Right Side - Image */}
-                      <div className="hidden md:flex items-center justify-center">
+                      <div className="hidden md:flex items-center justify-center min-w-0">
                         <motion.div
                           animate={{ y: [0, -10, 0] }}
                           transition={{
@@ -274,7 +276,7 @@ export default function App() {
                           <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl"></div>
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div
-                              className={`w-32 h-32 bg-gradient-to-br ${course.gradient} rounded-full opacity-40 blur-2xl`}
+                              className={`w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br ${course.gradient} rounded-full opacity-40 blur-2xl`}
                             ></div>
                           </div>
                           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl"></div>
@@ -287,17 +289,17 @@ export default function App() {
             </Slider>
 
             {/* Custom Navigation Arrows */}
-            <div className="flex justify-center items-center gap-4 mt-8">
+            <div className="flex justify-center items-center gap-2 sm:gap-4 mt-6 sm:mt-8">
               <button
                 onClick={() => sliderRef.current?.slickPrev()}
-                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all border border-white/20 group"
+                className="p-2 sm:p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all border border-white/20 group"
                 aria-label="Previous slide"
               >
-                <ChevronLeft className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:scale-110 transition-transform" />
               </button>
               <button
                 onClick={() => sliderRef.current?.slickNext()}
-                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all border border-white/20 group"
+                className="p-2 sm:p-4 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full transition-all border border-white/20 group"
                 aria-label="Next slide"
               >
                 <ChevronRight className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />

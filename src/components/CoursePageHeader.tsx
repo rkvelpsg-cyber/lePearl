@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { VideoPrefetcher } from "@/components/VideoPrefetcher";
 
 type TopButton = {
   label: string;
@@ -15,48 +16,64 @@ export function CoursePageHeader({
   topButtons,
 }: CoursePageHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
-      <div className="flex w-full items-center justify-between gap-3 px-3 py-2 sm:px-5 sm:py-3">
-        {/* Logo and Branding — matches homepage style */}
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm overflow-x-hidden">
+      <VideoPrefetcher />
+
+      {/* Mobile Header - Logo and Button Only */}
+      <div className="md:hidden flex items-center justify-between gap-2 px-3 py-2 min-h-[60px]">
+        <a href="/" className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="relative h-12 w-12 flex-shrink-0">
+            <Image
+              src="/logo_vectorformat.png"
+              alt="LePearl logo"
+              fill
+              quality={100}
+              className="object-contain"
+            />
+          </div>
+          <div className="min-w-0 hidden xs:flex flex-col">
+            <p className="text-sm font-bold text-purple-700 truncate">
+              LePearl
+            </p>
+            <p className="text-[9px] leading-tight text-slate-600 truncate">
+              Excellence in English
+            </p>
+          </div>
+        </a>
         <a
-          href="/"
-          style={{
-            textDecoration: "none",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            minWidth: 120,
-          }}
+          href="/login"
+          className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap flex-shrink-0"
         >
-          <Image
-            src="/logo_vectorformat.png"
-            alt="LePearl logo"
-            width={110}
-            height={110}
-            quality={100}
-            style={{ objectFit: "contain" }}
-          />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              lineHeight: 1.2,
-              textAlign: "center",
-              marginTop: -10,
-            }}
-          >
-            <span style={{ fontWeight: 700, fontSize: 16, color: "#a21caf" }}>
+          Enroll
+        </a>
+      </div>
+
+      {/* Desktop Header - Full Logo and Branding */}
+      <div className="hidden md:flex w-full flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Logo and Branding — homepage-style company brand for all course pages */}
+        <a href="/" className="flex min-w-0 items-center gap-3 text-left">
+          <div className="relative h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0">
+            <Image
+              src="/logo_vectorformat.png"
+              alt="LePearl logo"
+              fill
+              quality={100}
+              className="object-contain"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-base font-bold text-purple-700 sm:text-lg">
               LePearl Education
-            </span>
-            <span style={{ fontSize: 10, color: "#4c1d95", fontWeight: 500 }}>
+            </p>
+            <p className="text-[10px] leading-tight text-slate-600 sm:text-xs">
               Centre of Excellence in English Language &amp; Literature
-            </span>
+            </p>
           </div>
         </a>
 
-        {topButtons && topButtons.length > 0 ? (
-          <div className="hidden flex-1 justify-center lg:flex">
-            <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+          {topButtons && topButtons.length > 0 ? (
+            <div className="hidden flex-wrap justify-center gap-2 lg:flex">
               {topButtons.map(({ label, sectionId }) => (
                 <button
                   key={sectionId}
@@ -66,23 +83,21 @@ export function CoursePageHeader({
                       .getElementById(sectionId)
                       ?.scrollIntoView({ behavior: "smooth", block: "start" })
                   }
-                  className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 cursor-pointer"
+                  className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 cursor-pointer whitespace-nowrap"
                 >
                   {label}
                 </button>
               ))}
             </div>
-          </div>
-        ) : (
-          <div className="hidden flex-1 lg:block" />
-        )}
+          ) : null}
 
-        <a
-          href="/login"
-          className="rounded-lg bg-amber-500 px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap flex-shrink-0 ml-2"
-        >
-          Enroll Now
-        </a>
+          <a
+            href="/login"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap"
+          >
+            Enroll Now
+          </a>
+        </div>
       </div>
     </header>
   );

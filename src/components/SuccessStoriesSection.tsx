@@ -274,8 +274,8 @@ function VideoCard({ story }: { story: VideoStory }) {
     story.videoUrl ?? `https://www.youtube.com/watch?v=${story.videoId}`;
 
   return (
-    <article className="relative flex-[0_0_clamp(280px,31vw,440px)] snap-start overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-      <div className="absolute left-4 top-4 z-10 flex items-center gap-1 rounded-full bg-white/95 px-3 py-1 shadow-md backdrop-blur-sm">
+    <article className="relative flex-[0_0_clamp(260px,80vw,440px)] snap-start overflow-hidden rounded-lg sm:rounded-2xl bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+      <div className="absolute left-3 sm:left-4 top-3 sm:top-4 z-10 flex items-center gap-1 rounded-full bg-white/95 px-2 sm:px-3 py-1 shadow-md backdrop-blur-sm">
         <Star className="h-3 w-3 fill-[#6A0DAD] text-[#6A0DAD]" />
         <span className="text-xs font-semibold text-[#6A0DAD]">
           Success Story

@@ -66,6 +66,8 @@ export function NavDropdown({
     whiteSpace: "nowrap",
     transition: "all .2s ease",
     minHeight: "44px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   };
 
   if (!hasSubmenu) {
@@ -96,7 +98,7 @@ export function NavDropdown({
 
   const renderSubmenuItem = (
     item: NavSubItem,
-    index: number
+    index: number,
   ): React.ReactNode => {
     const itemKey = `${item.label}-${index}`;
     const hasNested = Boolean(item.submenu?.length);
@@ -157,7 +159,9 @@ export function NavDropdown({
             <ChevronRight
               size={isMobile ? 20 : 16}
               style={{
-                transform: openNested[itemKey] ? "rotate(90deg)" : "rotate(0deg)",
+                transform: openNested[itemKey]
+                  ? "rotate(90deg)"
+                  : "rotate(0deg)",
                 transition: "transform .2s ease",
                 marginLeft: 8,
               }}
@@ -201,7 +205,8 @@ export function NavDropdown({
                   }}
                   onMouseEnter={(e) => {
                     if (!isMobile) {
-                      e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
+                      e.currentTarget.style.background =
+                        "rgba(59, 130, 246, .08)";
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -210,7 +215,8 @@ export function NavDropdown({
                     }
                   }}
                   onTouchStart={(e) => {
-                    e.currentTarget.style.background = "rgba(59, 130, 246, .08)";
+                    e.currentTarget.style.background =
+                      "rgba(59, 130, 246, .08)";
                   }}
                   onTouchEnd={(e) => {
                     e.currentTarget.style.background = "transparent";
@@ -236,8 +242,8 @@ export function NavDropdown({
                 ? "12px 16px 8px"
                 : "16px 16px 8px"
               : index === 0
-              ? "8px 12px 6px"
-              : "12px 12px 6px",
+                ? "8px 12px 6px"
+                : "12px 12px 6px",
             fontSize: isMobile ? 13 : 12,
             fontWeight: 700,
             letterSpacing: 0.4,

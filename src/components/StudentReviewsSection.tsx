@@ -72,7 +72,7 @@ export function StudentReviewsSection({ reviews }: StudentReviewsSectionProps) {
 
       <div
         ref={scrollRef}
-        className="student-reviews-scroll relative left-1/2 w-screen -translate-x-1/2 overflow-x-auto"
+        className="student-reviews-scroll relative left-1/2 w-screen -translate-x-1/2 overflow-x-auto px-4 sm:px-6"
         onMouseEnter={() => {
           pausedRef.current = true;
         }}
@@ -80,11 +80,11 @@ export function StudentReviewsSection({ reviews }: StudentReviewsSectionProps) {
           pausedRef.current = false;
         }}
       >
-        <div className="flex w-max gap-5 px-0 sm:gap-6">
+        <div className="flex w-max gap-3 sm:gap-4 md:gap-5">
           {reviews.map((review) => (
             <article
               key={review.id}
-              className="w-[290px] sm:w-[320px] flex-shrink-0 rounded-2xl border border-indigo-100 bg-white p-5 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              className="w-[280px] sm:w-[300px] md:w-[320px] flex-shrink-0 rounded-xl sm:rounded-2xl border border-indigo-100 bg-white p-4 sm:p-5 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="relative h-16 w-16 overflow-hidden rounded-full ring-2 ring-indigo-200">
