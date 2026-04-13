@@ -45,9 +45,10 @@ export default async function FacultyProfilePage({
       >
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-white text-sm font-semibold hover:text-cyan-200 transition-colors duration-200"
+          className="inline-flex items-center gap-2 !text-white text-sm font-semibold hover:opacity-85 transition-opacity duration-200"
+          style={{ color: "#ffffff" }}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4 !text-white" />
           Back to Home
         </Link>
         <span className="text-white/80 text-sm font-medium hidden sm:block">
@@ -96,6 +97,7 @@ export default async function FacultyProfilePage({
                   alt={faculty.name}
                   fill
                   className="object-cover"
+                  style={{ objectPosition: faculty.imagePosition ?? "center" }}
                   priority
                 />
               </div>

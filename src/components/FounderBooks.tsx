@@ -9,7 +9,8 @@ import book2 from "../../public/book2.jpeg";
 import book3 from "../../public/book3.jpeg";
 import book4 from "../../public/book4.jpeg";
 import book5 from "../../public/book5.jpeg";
-import book6 from "../../public/book6.jpeg";
+import book6 from "../../public/Book_6.jpg";
+import book7 from "../../public/Book_7.jpg";
 
 interface Book {
   id: number;
@@ -23,37 +24,43 @@ const books: Book[] = [
     id: 1,
     image: book1,
     title: "World Literature In Your Fist - Volume 1",
-    amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_1",
+    amazonLink: "https://amzn.in/d/0aj4gJS6",
   },
   {
     id: 2,
     image: book2,
     title: "Literary Theories and Criticism on Your Lips",
-    amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_2",
+    amazonLink: "https://amzn.in/d/0id23cCn",
   },
   {
     id: 3,
     image: book3,
     title: "Practice Workbook of English Literature",
-    amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_3",
+    amazonLink: "https://amzn.in/d/05hR80Sh",
   },
   {
     id: 4,
     image: book4,
     title: "Literature and Psychology - Volume I",
-    amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_4",
+    amazonLink: "https://amzn.in/d/0bRBggeX",
   },
   {
     id: 5,
     image: book5,
     title: "Literature and Trauma - Volume II",
-    amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_5",
+    amazonLink: "https://amzn.in/d/01ntjC96",
   },
   {
     id: 6,
     image: book6,
-    title: "Challenging the Challenges of Life",
-    amazonLink: "https://www.amazon.com/dp/YOUR_BOOK_ID_6",
+    title: "Advanced Academic Writing",
+    amazonLink: "https://amzn.in/d/08xNCOhK",
+  },
+  {
+    id: 7,
+    image: book7,
+    title: "Prepare Like a Shooter Reply Like a Hooter",
+    amazonLink: "https://amzn.in/d/03zQI3NN",
   },
 ];
 
