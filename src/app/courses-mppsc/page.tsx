@@ -29,6 +29,7 @@ import {
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
+import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
 
 // ─────────────────────────────────────────────────────────────
 // Header
@@ -465,7 +466,11 @@ export default function MPPSCCoursePage() {
       <Features />
       <Testimonials />
       <Pricing />
+      <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
+
+
+

@@ -15,7 +15,6 @@ import {
   Mail,
   MessageCircle,
   Phone,
-  Quote,
   Sparkles,
   Target,
   TrendingUp,
@@ -28,6 +27,8 @@ import {
 } from "lucide-react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
+import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
+import { NtaNetSuccessCarousel } from "@/components/NtaNetSuccessCarousel";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -306,49 +307,46 @@ function SyllabusCoverage() {
   );
 }
 
-function Testimonials() {
-  const stories = [
-    "Add - many available.",
-    "Add - many available.",
-    "Add - many available.",
-  ];
+const netSuccessStories = [
+  {
+    name: "Nidhi Shukla",
+    examName: "NTA-NET Dec 2025",
+    imageUrl: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg",
+    quote:
+      "LePearl's structured NET coaching helped me build confidence and score high in both teaching and research aptitude.",
+  },
+  {
+    name: "Ms Alvina Parveen",
+    examName: "NTA-NET Jun 2025",
+    imageUrl: "/Alvina%20Parveen.jpeg",
+    quote:
+      "Weekly doubts, mock tests, and expert guidance turned a difficult syllabus into a clear success path.",
+  },
+  {
+    name: "Richa Singh",
+    examName: "NTA-NET Dec 2026",
+    imageUrl: "/Richa%20Singh_NET_Dec_2026.jpeg",
+    quote:
+      "The course made literature preparation logical, memorable, and aligned with the NET exam pattern.",
+  },
+  {
+    name: "Ms Kanika Sharma",
+    examName: "NTA-NET Dec 2025",
+    imageUrl: "/Kanika%20Sharma.jpeg",
+    quote:
+      "Focused revision strategies and live mentorship helped me clear NET with confidence.",
+  },
+  {
+    name: "Mr Abhishesh Verma",
+    examName: "NTA-NET Jun 2025",
+    imageUrl: "/Abhishesh%20Verma.jpeg",
+    quote:
+      "Practical teaching methods and constant evaluation made all the difference in my NET journey.",
+  },
+];
 
-  return (
-    <section className="relative overflow-hidden py-16 md:py-24">
-      <div className="absolute inset-0">
-        <Image
-          src="/book6.jpeg"
-          alt="Testimonials background"
-          fill
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-white/88" />
-      </div>
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-blue-900 md:text-4xl">
-            Testimonials
-          </h2>
-          <div className="mx-auto h-1 w-24 bg-amber-500" />
-        </div>
-
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {stories.map((story, index) => (
-            <div
-              key={index}
-              className="relative rounded-2xl bg-blue-50 p-8 shadow-lg"
-            >
-              <Quote className="absolute right-6 top-6 h-10 w-10 text-amber-300" />
-              <p className="mt-6 italic leading-relaxed text-gray-700">
-                &ldquo;{story}&rdquo;
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+function SuccessStories() {
+  return <NtaNetSuccessCarousel stories={netSuccessStories} />;
 }
 
 const oneTimeFeatures = [
@@ -486,9 +484,13 @@ export default function NETPaper2CoursePage() {
       <CourseOverview />
       <FeaturesBenefits />
       <SyllabusCoverage />
-      <Testimonials />
+      <SuccessStories />
       <EnrollmentSection />
+      <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
+
+
+

@@ -1,0 +1,180 @@
+H:\newLePearl\src\app\courses-communication-skills\page.tsx:56
+                href="/login"
+                className="bg-amber-500 hover:bg-amber-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105 min-h-[44px] flex items-center justify-center"
+              >
+                Enroll Now
+              </a>
+              <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-all flex items-center justify-center gap-2 min-h-[44px]">
+                <Download className="w-5 h-5" />
+
+
+H:\newLePearl\src\app\courses-communication-skills\page.tsx:556
+              href="/login"
+              className="bg-amber-500 hover:bg-amber-600 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105 inline-block min-h-[44px] flex items-center justify-center"
+            >
+              Enroll Now & Start Your Journey
+            </a>
+            <a
+              href="#"
+
+
+H:\newLePearl\src\app\courses-gic\page.tsx:243
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
+              >
+                Enroll Now
+              </a>
+            </div>
+
+
+
+H:\newLePearl\src\app\courses-ltgrade\page.tsx:243
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
+              >
+                Enroll Now
+              </a>
+            </div>
+
+
+
+H:\newLePearl\src\app\courses-mppsc\page.tsx:82
+              href="/login"
+              className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+            >
+              Enroll Now
+            </a>
+            <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2">
+              <Download className="w-5 h-5" />
+
+
+H:\newLePearl\src\app\courses-mppsc\page.tsx:399
+              className="block w-full bg-blue-900 hover:bg-blue-800 text-white hover:text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
+              style={{ color: "white" }}
+            >
+              Enroll Now
+            </a>
+          </div>
+
+
+
+H:\newLePearl\src\app\courses-net-paper1\page.tsx:77
+              href="/login"
+              className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
+            >
+              Enroll Now
+            </a>
+            <button className="flex items-center justify-center gap-2 rounded-lg border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition hover:bg-white/20">
+              <Download className="h-5 w-5" />
+
+
+H:\newLePearl\src\app\courses-net-paper1\page.tsx:515
+              href="/login"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
+            >
+              Enroll Now
+            </a>
+          </div>
+
+
+
+H:\newLePearl\src\app\courses-net-paper2\page.tsx:77
+              href="/login"
+              className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
+            >
+              Enroll Now
+            </a>
+            <button className="flex items-center justify-center gap-2 rounded-lg border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition hover:bg-white/20">
+              <Download className="h-5 w-5" />
+
+
+H:\newLePearl\src\app\courses-net-paper2\page.tsx:455
+              href="/login"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
+            >
+              Enroll Now
+            </a>
+          </div>
+
+
+
+H:\newLePearl\src\app\courses-upgdc\page.tsx:203
+                href="/login"
+                className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
+              >
+                Enroll Now
+              </a>
+              <button
+                type="button"
+
+
+H:\newLePearl\src\app\courses-upgdc\page.tsx:449
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              >
+                Enroll Now
+              </a>
+            </div>
+
+
+
+H:\newLePearl\src\app\courses-upgdc\page.tsx:513
+                href="/login"
+                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              >
+                Enroll Now
+              </a>
+            </div>
+
+
+
+H:\newLePearl\src\app\courses-uphesc\page.tsx:82
+              href="/login"
+              className="bg-yellow-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
+            >
+              Enroll Now
+            </a>
+            <button className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white/20 transition-all duration-300">
+              Download Course Details
+
+
+H:\newLePearl\src\app\courses-uphesc\page.tsx:520
+                      : "bg-gradient-to-r from-teal-700 to-cyan-600 text-white hover:shadow-lg hover:scale-105"
+                  }`}
+                >
+                  Enroll Now
+                </a>
+              </div>
+            );
+
+
+H:\newLePearl\src\components\CoachingCard.tsx:228
+                className="group relative inline-flex items-center w-full sm:w-auto justify-center bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-xs sm:text-sm md:text-base lg:text-lg px-4 sm:px-6 md:px-8 lg:px-10 py-2.5 sm:py-3 md:py-4 lg:py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-yellow-500/50 whitespace-nowrap min-h-[44px]"
+              >
+                <span className="relative z-10 flex items-center gap-2 sm:gap-3 justify-center">
+                  Enroll Now
+                  <svg
+                    className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0"
+                    fill="none"
+
+
+H:\newLePearl\src\components\CoursePageHeader.tsx:98
+            href="/login"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap"
+          >
+            Enroll Now
+          </a>
+        </div>
+      </div>
+
+
+H:\newLePearl\src\components\NTANetHeroBanner.tsx:188
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button className="flex items-center justify-center gap-2 rounded-full bg-white px-6 py-2.5 text-base font-semibold text-purple-600 shadow-2xl transition-transform duration-200 hover:scale-105 hover:shadow-xl">
+                <span>Enroll Now</span>
+              </button>
+              <button className="rounded-full border-2 border-white bg-transparent px-6 py-2.5 text-base font-semibold text-white shadow-lg transition-colors duration-200 hover:bg-white hover:text-purple-600">
+                View Course Details
+
+

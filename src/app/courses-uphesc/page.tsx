@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
+import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -555,7 +556,11 @@ export default function UPHESCPage() {
       <FeaturesSection />
       <TestimonialsSection />
       <EnrollmentSection />
+      <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
+
+
+

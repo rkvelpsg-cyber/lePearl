@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { IntroPopup } from "@/components/IntroPopup";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
 export const metadata: Metadata = {
@@ -26,7 +25,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <IntroPopup />
         {children}
         <ScrollToTop />
       </body>

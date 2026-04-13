@@ -15,7 +15,6 @@ import {
   Mail,
   MessageCircle,
   Phone,
-  Quote,
   Sparkles,
   Target,
   TrendingUp,
@@ -25,10 +24,11 @@ import {
   Facebook,
   Instagram,
   Linkedin,
-  Star,
 } from "lucide-react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
+import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
+import { NtaNetSuccessCarousel } from "@/components/NtaNetSuccessCarousel";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -386,62 +386,6 @@ const netAchievers = [
   },
 ];
 
-function Testimonials() {
-  return (
-    <section className="py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-blue-900 mb-4">
-            NTA NET Success Stories
-          </h2>
-          <div className="w-24 h-1 bg-amber-500 mx-auto" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {netAchievers.map((testimonial, index) => (
-            <div
-              key={index}
-              className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow relative"
-            >
-              <Quote className="absolute top-6 right-6 w-10 h-10 text-amber-200" />
-
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-4 border-amber-400">
-                  <Image
-                    src={testimonial.imageUrl}
-                    alt={testimonial.name}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h3 className="font-bold text-lg text-blue-900 mb-1">
-                  {testimonial.name}
-                </h3>
-                <p className="text-sm text-amber-600 font-semibold mb-3">
-                  {testimonial.examName}
-                </p>
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-4 h-4 fill-amber-400 text-amber-400"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <p className="text-gray-600 leading-relaxed italic">
-                &ldquo;{testimonial.quote}&rdquo;
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 const oneTimeFeatures = [
   "Full course access",
   "Study materials",
@@ -567,9 +511,13 @@ export default function NETPaper1CoursePage() {
       <CourseOverview />
       <FeaturesBenefits />
       <SyllabusCoverage />
-      <Testimonials />
+      <NtaNetSuccessCarousel stories={netAchievers} />
       <EnrollmentSection />
+      <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
+
+
+

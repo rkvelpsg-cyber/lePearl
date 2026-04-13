@@ -162,10 +162,34 @@ export function Header() {
             </DrawerSubSection>
             <DrawerSubSection label="Interview Preparation">
               <DrawerLink
-                href="/courses-communication-skills"
-                label="Communication Skills"
+                href="/interview-preparation/assistant-professor-1"
+                label="Assistant Professor 1"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+              <DrawerLink
+                href="/interview-preparation/du-interview"
+                label="DU Interview"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+              <DrawerLink
+                href="/interview-preparation/phd-interview"
+                label="PhD Interview"
+                target="_blank"
+                rel="noopener noreferrer"
               />
             </DrawerSubSection>
+            <DrawerLink
+              href="/courses-communication-skills"
+              label="Communication Skills"
+            />
+            <DrawerLink
+              href="/courses-set"
+              label="SET"
+              target="_blank"
+              rel="noopener noreferrer"
+            />
           </DrawerSection>
 
           <DrawerLink
@@ -346,10 +370,26 @@ function DesktopHeader() {
                 isSection: true,
                 submenu: [
                   {
-                    label: "Communication Skills",
-                    href: "/courses-communication-skills",
+                    label: "Assistant Professor 1",
+                    href: "/interview-preparation/assistant-professor-1",
+                  },
+                  {
+                    label: "DU Interview",
+                    href: "/interview-preparation/du-interview",
+                  },
+                  {
+                    label: "PhD Interview",
+                    href: "/interview-preparation/phd-interview",
                   },
                 ],
+              },
+              {
+                label: "Communication Skills",
+                href: "/courses-communication-skills",
+              },
+              {
+                label: "SET",
+                href: "/courses-set",
               },
             ]}
           />

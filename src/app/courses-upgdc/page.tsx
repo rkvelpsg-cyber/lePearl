@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
+import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
 
 type Feature = {
   icon: LucideIcon;
@@ -554,9 +555,13 @@ function UPGDCPage() {
         </div>
       </section>
 
+      <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
 
 export default UPGDCPage;
+
+
+

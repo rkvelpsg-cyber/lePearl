@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
+import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
 
 const overviewPoints = [
   {
@@ -276,7 +277,11 @@ export default function LTGradeCoursePage() {
         </div>
       </section>
 
+      <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
+
+
+
