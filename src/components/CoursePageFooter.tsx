@@ -49,11 +49,11 @@ export function CoursePageFooter() {
           <div className="space-y-4">
             <div className="mb-4 flex items-start gap-3 sm:gap-4">
               <Image
-                src="/logo_vectorformat.png"
+                src="/LePearl_Logo_Canva_1.png"
                 alt="LePearl Education Logo"
                 width={80}
                 height={80}
-                className="object-contain flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20"
+                className="object-contain flex-shrink-0 h-16 w-20 sm:h-20 sm:w-24 mr-1 sm:mr-2 translate-y-2"
               />
               <div className="min-w-0">
                 <h3 className="text-lg sm:text-xl font-bold break-words">

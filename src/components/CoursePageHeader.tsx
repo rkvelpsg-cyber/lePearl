@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import { VideoPrefetcher } from "@/components/VideoPrefetcher";
 
 type TopButton = {
@@ -10,6 +11,34 @@ type CoursePageHeaderProps = {
   onEnroll: () => void;
   topButtons?: TopButton[];
 };
+
+const socialLinks = [
+  {
+    href: "https://www.youtube.com/channel/UCnxWNpUm3iltu922GwWnRHg",
+    label: "YouTube",
+    Icon: Youtube,
+  },
+  {
+    href: "https://www.facebook.com/The-Pearl-Education-104234304455338/",
+    label: "Facebook",
+    Icon: Facebook,
+  },
+  {
+    href: "https://www.instagram.com/thepearlseducation/",
+    label: "Instagram",
+    Icon: Instagram,
+  },
+  {
+    href: "https://twitter.com/EducationPearl",
+    label: "Twitter",
+    Icon: Twitter,
+  },
+  {
+    href: "https://www.linkedin.com/in/the-pearl-education-4a43151a0/",
+    label: "LinkedIn",
+    Icon: Linkedin,
+  },
+];
 
 export function CoursePageHeader({
   onEnroll,
@@ -24,7 +53,7 @@ export function CoursePageHeader({
         <a href="/" className="flex items-center gap-2 flex-1 min-w-0">
           <div className="relative h-12 w-12 flex-shrink-0">
             <Image
-              src="/logo_vectorformat.png"
+              src="/LePearl_Logo_Canva_1.png"
               alt="LePearl logo"
               fill
               quality={100}
@@ -40,6 +69,20 @@ export function CoursePageHeader({
             </p>
           </div>
         </a>
+        <div className="flex items-center gap-1">
+          {socialLinks.map(({ href, label, Icon }) => (
+            <a
+              key={`mobile-${label}`}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-teal-700/90 p-1.5 text-white transition-colors hover:bg-teal-600"
+              aria-label={label}
+            >
+              <Icon className="h-3.5 w-3.5" color="#ffffff" />
+            </a>
+          ))}
+        </div>
         <a
           href="/login"
           className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap flex-shrink-0"
@@ -54,7 +97,7 @@ export function CoursePageHeader({
         <a href="/" className="flex min-w-0 items-center gap-3 text-left">
           <div className="relative h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0">
             <Image
-              src="/logo_vectorformat.png"
+              src="/LePearl_Logo_Canva_1.png"
               alt="LePearl logo"
               fill
               quality={100}
@@ -91,12 +134,27 @@ export function CoursePageHeader({
             </div>
           ) : null}
 
-          <a
-            href="/login"
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap"
-          >
-            Enroll Now
-          </a>
+          <div className="flex items-center justify-end gap-2">
+            {socialLinks.map(({ href, label, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full bg-teal-700/90 p-2 text-white transition-all duration-300 hover:scale-110 hover:bg-teal-600"
+                aria-label={label}
+              >
+                <Icon className="h-4 w-4" color="#ffffff" />
+              </a>
+            ))}
+
+            <a
+              href="/login"
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap"
+            >
+              Enroll Now
+            </a>
+          </div>
         </div>
       </div>
     </header>
