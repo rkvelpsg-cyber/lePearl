@@ -1,5 +1,4 @@
-import { Trophy, Award, Sparkles } from "lucide-react";
-import Image from "next/image";
+import { Trophy, Award } from "lucide-react";
 
 interface AchieverCardProps {
   name: string;
@@ -369,32 +368,6 @@ export default function AchieversPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50/30 to-slate-50">
-      <div className="w-full bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-6 py-16">
-        <div className="mx-auto max-w-7xl text-center">
-          <div className="mb-5 flex h-[56px] items-center justify-center overflow-visible">
-            <Image
-              src="/logo_vectorformat.png"
-              alt="LePearl Education logo"
-              width={220}
-              height={70}
-              className="h-auto w-[220px] sm:w-[280px] scale-[1.45]"
-              priority
-            />
-          </div>
-          <div className="mb-4 flex items-center justify-center gap-3">
-            <Sparkles className="h-8 w-8 text-amber-400" />
-            <h1 className="text-4xl text-white md:text-5xl">
-              LePearl Achievers
-            </h1>
-            <Sparkles className="h-8 w-8 text-amber-400" />
-          </div>
-          <p className="mx-auto max-w-3xl text-lg leading-relaxed text-blue-100 md:text-xl">
-            Celebrating the success of our brilliant students who qualified
-            prestigious examinations.
-          </p>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-7xl px-6">
         <AchieversSection
           title="Assistant Professor Achievers"

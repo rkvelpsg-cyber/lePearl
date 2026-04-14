@@ -16,7 +16,6 @@ import { FacultyCarousel } from "@/components/FacultyCarousel";
 import { FounderBooks } from "@/components/FounderBooks";
 import { LiveClassesPortalSection } from "@/components/LiveClassesPortalSection";
 import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
-import { LePearlAchieversCarousel } from "@/components/LePearlAchieversCarousel";
 import { CoursesBooksSection } from "@/components/CoursesBooksSection";
 import { PreviousPapersSection } from "@/components/PreviousPapersSection";
 import { MissionSection } from "@/components/MissionSection";
@@ -442,7 +441,6 @@ export default async function Home() {
 
         <main id="home">
           <SuccessStoriesSection />
-          <LePearlAchieversCarousel />
           <CoursesBooksSection />
           <PreviousPapersSection />
           <MissionSection />
