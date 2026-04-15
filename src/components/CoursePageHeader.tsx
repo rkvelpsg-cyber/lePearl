@@ -84,7 +84,7 @@ export function CoursePageHeader({
           ))}
         </div>
         <a
-          href="/login"
+          href="/login-portal" target="_blank" rel="noopener noreferrer"
           className="rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap flex-shrink-0"
         >
           Enroll
@@ -149,7 +149,7 @@ export function CoursePageHeader({
             ))}
 
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 whitespace-nowrap"
             >
               Enroll Now

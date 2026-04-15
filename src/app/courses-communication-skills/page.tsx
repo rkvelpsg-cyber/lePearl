@@ -41,7 +41,7 @@ function HeroSection() {
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row">
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="rounded-lg bg-amber-500 px-8 py-4 text-center text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
             >
               Enroll Now

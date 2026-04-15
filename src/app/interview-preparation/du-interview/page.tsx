@@ -55,7 +55,7 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Start Preparation
@@ -344,7 +344,7 @@ function FinalCallout() {
         </div>
 
         <a
-          href="/login"
+          href="/login-portal" target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
         >
           <Sparkles className="w-5 h-5" />

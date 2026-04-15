@@ -386,7 +386,7 @@ export function LePearlAchieversCarousel() {
           View All Achievers
         </a>
         <a
-          href="/login"
+          href="/login-portal" target="_blank" rel="noopener noreferrer"
           className="px-8 py-4 bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105 border-2 border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 inline-block text-center"
         >
           Join LePearl Courses

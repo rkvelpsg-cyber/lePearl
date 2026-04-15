@@ -221,7 +221,7 @@ export function CoachingCard() {
 
             <div className="mt-6 sm:mt-8 lg:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-5 w-full px-2">
               <Link
-                href="/login"
+                href="/login-portal" target="_blank" rel="noopener noreferrer"
                 className="group relative inline-flex items-center w-full sm:w-auto justify-center bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold text-xs sm:text-sm md:text-base lg:text-lg px-4 sm:px-6 md:px-8 lg:px-10 py-2.5 sm:py-3 md:py-4 lg:py-5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-yellow-500/50 whitespace-nowrap min-h-[44px]"
               >
                 <span className="relative z-10 flex items-center gap-2 sm:gap-3 justify-center">

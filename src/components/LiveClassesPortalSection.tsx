@@ -194,7 +194,7 @@ export function LiveClassesPortalSection() {
                     {classItem.time}
                   </p>
                   <a
-                    href="/login"
+                    href="/login-portal"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`mt-auto block w-full rounded-lg py-2.5 text-center text-sm font-semibold text-white transition ${

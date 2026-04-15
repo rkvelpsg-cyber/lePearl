@@ -238,7 +238,7 @@ export default function LTGradeCoursePage() {
                 ))}
               </ul>
               <a
-                href="/login"
+                href="/login-portal" target="_blank" rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
                 style={{ color: "#ffffff" }}
               >
@@ -268,7 +268,7 @@ export default function LTGradeCoursePage() {
                 ))}
               </ul>
               <a
-                href="/login"
+                href="/login-portal" target="_blank" rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-amber-500 py-3.5 text-center font-bold text-white hover:bg-amber-600"
               >
                 Fill Registration Form

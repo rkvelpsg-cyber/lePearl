@@ -77,7 +77,7 @@ function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="bg-yellow-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               Enroll Now
@@ -511,7 +511,7 @@ function EnrollmentSection() {
                 </ul>
 
                 <a
-                  href="/login"
+                  href="/login-portal" target="_blank" rel="noopener noreferrer"
                   className={`block w-full py-4 rounded-lg font-bold text-lg text-center transition-all duration-300 ${
                     option.popular
                       ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-teal-900 hover:shadow-xl hover:scale-105"
@@ -536,7 +536,7 @@ function EnrollmentSection() {
               the enrollment process
             </p>
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="inline-block bg-yellow-500 text-teal-900 px-10 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               Fill Registration Form

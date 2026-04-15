@@ -238,7 +238,7 @@ export function Header() {
               Live Class
             </a>
             <a
-              href="/login"
+              href="/login-portal"
               target="_blank"
               rel="noopener noreferrer"
               className="block px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 rounded hover:from-purple-700 hover:to-purple-800 transition-colors text-center"
@@ -531,7 +531,7 @@ function DesktopHeader() {
             </svg>
           </a>
           <a
-            href="/login"
+            href="/login-portal"
             target="_blank"
             rel="noopener noreferrer"
             style={{

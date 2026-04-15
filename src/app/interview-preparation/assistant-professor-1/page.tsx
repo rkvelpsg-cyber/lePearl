@@ -63,7 +63,7 @@ function HeroSection() {
 
           <div className="mb-12 flex flex-col justify-center gap-4 sm:flex-row">
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-yellow-400"
             >
               Enroll Now
@@ -337,7 +337,7 @@ function FinalCallout() {
         </p>
 
         <a
-          href="/login"
+          href="/login-portal" target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-yellow-400"
         >
           <Sparkles className="h-5 w-5" />

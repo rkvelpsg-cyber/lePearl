@@ -71,7 +71,7 @@ function Hero() {
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row">
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
             >
               Enroll Now
@@ -453,7 +453,7 @@ function EnrollmentSection() {
             </div>
 
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
               style={{ color: "#ffffff" }}
             >
@@ -492,7 +492,7 @@ function EnrollmentSection() {
             </div>
 
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="block w-full rounded-lg bg-amber-500 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-amber-600"
             >
               Fill Registration Form

@@ -245,7 +245,7 @@ function FinalSection() {
         </p>
 
         <a
-          href="/login"
+          href="/login-portal" target="_blank" rel="noopener noreferrer"
           className="inline-block rounded-lg bg-yellow-500 px-10 py-4 text-lg font-bold text-teal-900 transition hover:bg-yellow-400"
         >
           Start Preparing Now

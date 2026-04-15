@@ -77,7 +77,7 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Enroll Now
@@ -400,7 +400,7 @@ function Pricing() {
             </div>
 
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="block w-full bg-blue-900 hover:bg-blue-800 text-white hover:text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
               style={{ color: "white" }}
             >
@@ -440,7 +440,7 @@ function Pricing() {
             </div>
 
             <a
-              href="/login"
+              href="/login-portal" target="_blank" rel="noopener noreferrer"
               className="block w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
             >
               Fill Registration Form
