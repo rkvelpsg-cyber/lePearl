@@ -34,6 +34,7 @@ type CourseCard = {
   iconBorder: string;
   Icon: typeof BookOpen;
   href: string;
+  subLinks?: { label: string; href: string }[];
 };
 
 type OrbitCard =
@@ -77,10 +78,10 @@ const courseCards: CourseCard[] = [
       "Answer Writing Practice",
     ],
     border: "rgba(168,85,247,0.2)",
-    iconColor: "#A855F7",
+    iconColor: "#C084FC",
     iconBg:
-      "linear-gradient(135deg,rgba(168,85,247,0.2),rgba(168,85,247,0.05))",
-    iconBorder: "1px solid rgba(168,85,247,0.3)",
+      "linear-gradient(135deg,rgba(192,132,252,0.25),rgba(192,132,252,0.08))",
+    iconBorder: "1px solid rgba(192,132,252,0.4)",
     Icon: PenTool,
     href: "/courses-net-paper2",
   },
@@ -122,6 +123,12 @@ const courseCards: CourseCard[] = [
     iconBorder: "1px solid rgba(251,146,60,0.3)",
     Icon: GraduationCap,
     href: "/courses-uphesc",
+    subLinks: [
+      { label: "UPHESC", href: "/courses-uphesc" },
+      { label: "GDC", href: "/courses-upgdc" },
+      { label: "GIC", href: "/courses-gic" },
+      { label: "LT Grade", href: "/courses-ltgrade" },
+    ],
   },
   {
     id: "set-and-interview",
@@ -166,22 +173,59 @@ const courseCards: CourseCard[] = [
 ];
 
 const netAchieverThumbs = [
-  { src: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg", name: "Nidhi Shukla" },
-  { src: "/Alvina%20Parveen.jpeg", name: "Ms Alvina Parveen" },
-  { src: "/Richa%20Singh_NET_Dec_2026.jpeg", name: "Richa Singh" },
-  { src: "/Kanika%20Sharma.jpeg", name: "Ms Kanika Sharma" },
-  { src: "/Abhishesh%20Verma.jpeg", name: "Mr Abhishesh Verma" },
+  {
+    src: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg",
+    name: "Nidhi Shukla",
+    exam: "NET Dec 2025",
+  },
+  {
+    src: "/Alvina%20Parveen.jpeg",
+    name: "Ms Alvina Parveen",
+    exam: "NET Jun 2025",
+  },
+  {
+    src: "/Richa%20Singh_NET_Dec_2026.jpeg",
+    name: "Richa Singh",
+    exam: "NET Dec 2026",
+  },
+  {
+    src: "/Kanika%20Sharma.jpeg",
+    name: "Ms Kanika Sharma",
+    exam: "NET Dec 2025",
+  },
+  {
+    src: "/Abhishesh%20Verma.jpeg",
+    name: "Mr Abhishesh Verma",
+    exam: "NET Jun 2025",
+  },
 ];
 
 const assistantProfessorThumbs = [
   {
     src: "/Soumya%20Panigrahi,%20Lecturer,%20Odisha%20Public%20Service%20Commission-2025.jpeg",
     name: "Soumya Panigrahi",
+    exam: "OPSC-2025",
   },
-  { src: "/babil_faculty2.jpeg", name: "Dr. Babli Mallick" },
-  { src: "/Shubham%20Singh.jpeg", name: "Mr Shubham Singh" },
-  { src: "/Asit%20Kumar%20Mohanty.jpeg", name: "Asit Kumar Mohanty" },
-  { src: "/Vishal%20Damahe.jpeg", name: "Mr. Vishal Damahe" },
+  {
+    src: "/babil_faculty2.jpeg",
+    name: "Dr. Babli Mallick",
+    exam: "MPPSC-2025",
+  },
+  {
+    src: "/Shubham%20Singh.jpeg",
+    name: "Mr Shubham Singh",
+    exam: "MPPSC-2025",
+  },
+  {
+    src: "/Asit%20Kumar%20Mohanty.jpeg",
+    name: "Asit Kumar Mohanty",
+    exam: "OPSC-2024",
+  },
+  {
+    src: "/Vishal%20Damahe.jpeg",
+    name: "Mr. Vishal Damahe",
+    exam: "MPPSC-2025",
+  },
 ];
 
 function AchieversShowcaseCard({
@@ -193,14 +237,14 @@ function AchieversShowcaseCard({
   title: string;
   subtitle: string;
   accentColor: string;
-  thumbs: { src: string; name: string }[];
+  thumbs: { src: string; name: string; exam?: string }[];
 }) {
   return (
     <div
       className="rounded-2xl p-7"
       style={{
         background:
-          "linear-gradient(135deg, rgba(109,40,217,0.84) 0%, rgba(99,102,241,0.78) 100%)",
+          "linear-gradient(135deg, rgba(109,40,217,0.97) 0%, rgba(99,102,241,0.95) 100%)",
         backdropFilter: "blur(14px)",
         border: "1px solid rgba(255,255,255,0.18)",
         boxShadow:
@@ -294,6 +338,24 @@ function AchieversShowcaseCard({
             >
               {thumb.name}
             </p>
+            {thumb.exam && (
+              <p
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.56rem",
+                  color: accentColor,
+                  lineHeight: 1.2,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  marginTop: "0.1rem",
+                  fontWeight: 600,
+                }}
+                title={thumb.exam}
+              >
+                {thumb.exam}
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -301,6 +363,8 @@ function AchieversShowcaseCard({
       <div style={{ marginTop: "auto", paddingTop: "0.75rem" }}>
         <Link
           href="/achievers"
+          target="_blank"
+          rel="noopener noreferrer"
           className="block w-full rounded-xl py-2.5 text-center text-sm font-semibold transition-all duration-300 hover:opacity-90 hover:shadow-lg"
           style={{
             background: `linear-gradient(135deg, ${accentColor}33, ${accentColor}16)`,
@@ -344,7 +408,7 @@ function CourseProgramCard({ course }: { course: CourseCard }) {
       className="rounded-2xl p-7"
       style={{
         background:
-          "linear-gradient(135deg, rgba(109,40,217,0.84) 0%, rgba(99,102,241,0.78) 100%)",
+          "linear-gradient(135deg, rgba(109,40,217,0.97) 0%, rgba(99,102,241,0.95) 100%)",
         backdropFilter: "blur(14px)",
         border: "1px solid rgba(255,255,255,0.18)",
         boxShadow:
@@ -429,21 +493,51 @@ function CourseProgramCard({ course }: { course: CourseCard }) {
       </ul>
 
       {/* CTA button — pushes to the bottom via mt-auto */}
-      <div style={{ marginTop: "auto" }}>
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          flexWrap: "wrap",
+        }}
+      >
         <Link
           href={course.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full rounded-xl py-2.5 text-center text-sm font-semibold transition-all duration-300 hover:opacity-90 hover:shadow-lg"
+          className="rounded-xl py-2.5 text-center text-sm font-semibold transition-all duration-300 hover:opacity-90 hover:shadow-lg"
           style={{
             background: `linear-gradient(135deg, ${course.iconColor}33, ${course.iconColor}18)`,
             border: `1px solid ${course.iconColor}55`,
             color: course.iconColor,
             fontFamily: "DM Sans, sans-serif",
+            paddingLeft: "1.25rem",
+            paddingRight: "1.25rem",
+            whiteSpace: "nowrap",
           }}
         >
           Explore Course →
         </Link>
+        {course.subLinks &&
+          course.subLinks.map((sub) => (
+            <Link
+              key={sub.label}
+              href={sub.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg px-3 py-2.5 text-xs font-semibold transition-all duration-200 hover:opacity-90"
+              style={{
+                background: `${course.iconColor}22`,
+                border: `1px solid ${course.iconColor}66`,
+                color: course.iconColor,
+                fontFamily: "DM Sans, sans-serif",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {sub.label}
+            </Link>
+          ))}
       </div>
     </div>
   );
@@ -455,7 +549,7 @@ function InterviewCard() {
       className="rounded-2xl p-7"
       style={{
         background:
-          "linear-gradient(135deg, rgba(109,40,217,0.84) 0%, rgba(99,102,241,0.78) 100%)",
+          "linear-gradient(135deg, rgba(109,40,217,0.97) 0%, rgba(99,102,241,0.95) 100%)",
         backdropFilter: "blur(14px)",
         border: "1px solid rgba(255,255,255,0.18)",
         boxShadow:
@@ -538,7 +632,14 @@ function InterviewCard() {
         )}
       </ul>
 
-      <div style={{ marginTop: "auto" }}>
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.45rem",
+        }}
+      >
         <Link
           href="/interview-preparation/assistant-professor-1"
           target="_blank"
@@ -554,6 +655,38 @@ function InterviewCard() {
         >
           Prepare for Interview →
         </Link>
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          {[
+            {
+              label: "Asst. Professor",
+              href: "/interview-preparation/assistant-professor-1",
+            },
+            {
+              label: "DU Interview",
+              href: "/interview-preparation/du-interview",
+            },
+            {
+              label: "Ph.D Interview",
+              href: "/interview-preparation/phd-interview",
+            },
+          ].map((sub) => (
+            <Link
+              key={sub.label}
+              href={sub.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 rounded-lg py-2 text-xs font-semibold text-center transition-all duration-200 hover:opacity-90"
+              style={{
+                background: "rgba(34,211,238,0.13)",
+                border: "1px solid rgba(34,211,238,0.4)",
+                color: "#22D3EE",
+                fontFamily: "DM Sans, sans-serif",
+              }}
+            >
+              {sub.label}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -565,7 +698,7 @@ function BooksCard() {
       className="rounded-2xl p-7"
       style={{
         background:
-          "linear-gradient(135deg, rgba(109,40,217,0.84) 0%, rgba(99,102,241,0.78) 100%)",
+          "linear-gradient(135deg, rgba(109,40,217,0.97) 0%, rgba(99,102,241,0.95) 100%)",
         backdropFilter: "blur(14px)",
         border: "1px solid rgba(255,255,255,0.18)",
         boxShadow:
@@ -665,7 +798,7 @@ function BooksCard() {
 
       <div style={{ marginTop: "auto", paddingTop: "0.75rem" }}>
         <Link
-          href="/#founder"
+          href="/#books"
           className="block w-full rounded-xl py-2.5 text-center text-sm font-semibold transition-all duration-300 hover:opacity-90 hover:shadow-lg"
           style={{
             background:
@@ -727,16 +860,16 @@ export function CoursesBooksSection() {
 
   const orbitCards = useMemo<OrbitCard[]>(
     () => [
-      { id: courseCards[0].id, kind: "course", course: courseCards[0] },
-      { id: "net-achievers", kind: "net-achievers" },
-      { id: courseCards[1].id, kind: "course", course: courseCards[1] },
-      { id: courseCards[2].id, kind: "course", course: courseCards[2] },
-      { id: "interview", kind: "interview" },
-      { id: courseCards[3].id, kind: "course", course: courseCards[3] },
-      { id: "assistant-prof-achievers", kind: "assistant-prof-achievers" },
-      { id: courseCards[4].id, kind: "course", course: courseCards[4] },
-      { id: courseCards[5].id, kind: "course", course: courseCards[5] },
-      { id: "books", kind: "books" },
+      { id: "assistant-prof-achievers", kind: "assistant-prof-achievers" }, // 1. Assistant Professor Achievers
+      { id: "net-achievers", kind: "net-achievers" }, // 2. NTA NET Achievers 2026
+      { id: courseCards[2].id, kind: "course", course: courseCards[2] }, // 3. MPPSC
+      { id: courseCards[3].id, kind: "course", course: courseCards[3] }, // 4. UP Teaching Exams
+      { id: courseCards[0].id, kind: "course", course: courseCards[0] }, // 5. NTA NET Paper 1
+      { id: courseCards[1].id, kind: "course", course: courseCards[1] }, // 6. NTA NET Paper 2
+      { id: "interview", kind: "interview" }, // 7. Interview Preparation
+      { id: courseCards[5].id, kind: "course", course: courseCards[5] }, // 8. Ph.D Research
+      { id: courseCards[4].id, kind: "course", course: courseCards[4] }, // 9. SET & Interview
+      { id: "books", kind: "books" }, // 10. Books by Dr. Prem Shankar Pandey
     ],
     [],
   );
@@ -786,12 +919,12 @@ export function CoursesBooksSection() {
       ? 340
       : 560;
   // Stage = card height (450) * centre scale (1.4) = 630 + bottom curve offset (115) → round up
-  const stageHeight = isMobile ? 820 : 780;
+  const stageHeight = isMobile ? 720 : 680;
 
   return (
     <section
       id="courses"
-      className="relative overflow-x-hidden overflow-y-visible border-y px-4 pt-6 pb-24 md:px-12 md:pt-8 md:pb-32 lg:px-20"
+      className="relative overflow-x-hidden overflow-y-visible border-y px-4 pt-4 pb-2 md:px-12 md:pt-4 md:pb-2 lg:px-20"
       style={{
         borderColor: "rgba(168,85,247,0.22)",
         background:
@@ -924,7 +1057,7 @@ export function CoursesBooksSection() {
       </svg>
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mb-20 text-center">
+        <div className="mb-6 text-center">
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
@@ -972,6 +1105,7 @@ export function CoursesBooksSection() {
             transformStyle: "preserve-3d",
             cursor: "grab",
             userSelect: "none",
+            marginTop: "7rem",
           }}
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}

@@ -517,6 +517,7 @@ function EnrollmentSection() {
                       ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-teal-900 hover:shadow-xl hover:scale-105"
                       : "bg-gradient-to-r from-teal-700 to-cyan-600 text-white hover:shadow-lg hover:scale-105"
                   }`}
+                  style={{ color: "#ffffff" }}
                 >
                   Enroll Now
                 </a>
@@ -561,6 +562,3 @@ export default function UPHESCPage() {
     </div>
   );
 }
-
-
-

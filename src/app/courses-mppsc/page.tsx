@@ -266,6 +266,13 @@ const testimonials = [
     quote:
       "The live doubt sessions and study plan at LePearl gave me the confidence to secure my MPPSC faculty role.",
   },
+  {
+    name: "Ms Neelu Patel",
+    image: "/Neelu%20Patel.jpeg",
+    role: "Assistant Professor, Madhya Pradesh Public Service Commission-2025 (AIR 39)",
+    quote:
+      "LePearl's expert faculty and focused preparation strategy helped me achieve AIR 39 in the MPPSC Assistant Professor exam.",
+  },
 ];
 
 function Testimonials() {
@@ -279,7 +286,7 @@ function Testimonials() {
           <div className="w-24 h-1 bg-amber-500 mx-auto"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
@@ -471,6 +478,3 @@ export default function MPPSCCoursePage() {
     </div>
   );
 }
-
-
-

@@ -210,12 +210,14 @@ export default function App() {
                   <motion.div
                     whileHover={{ scale: 1.01, y: -3 }}
                     transition={{ duration: 0.3 }}
-                    className={`bg-gradient-to-br ${course.gradient} backdrop-blur-lg overflow-hidden shadow-2xl border-y border-white/20 h-[480px] sm:h-[550px] md:h-[600px] lg:h-[650px]`}
+                    className={`relative bg-gradient-to-br ${course.gradient} backdrop-blur-lg overflow-hidden shadow-2xl border-y border-white/20 h-[480px] sm:h-[550px] md:h-[600px] lg:h-[650px]`}
                     style={{
                       background: `linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)`,
                     }}
                   >
-                    <div className="grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-6 sm:p-10 md:p-14 lg:p-16 h-full max-w-[1600px] mx-auto max-h-full overflow-y-auto md:overflow-y-visible">
+                    {/* Dark overlay to improve text readability without changing card background */}
+                    <div className="absolute inset-0 bg-black/40 z-0 pointer-events-none" />
+                    <div className="relative z-10 grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-6 sm:p-10 md:p-14 lg:p-16 h-full max-w-[1600px] mx-auto max-h-full overflow-y-auto md:overflow-y-visible">
                       {/* Left Side - Content */}
                       <div className="flex flex-col justify-center space-y-4 sm:space-y-6 min-w-0">
                         <motion.div
@@ -223,10 +225,16 @@ export default function App() {
                           whileInView={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.6 }}
                         >
-                          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4 break-words">
+                          <h2
+                            className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-4 break-words"
+                            style={{ textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}
+                          >
                             {course.title}
                           </h2>
-                          <p className="text-sm sm:text-lg text-blue-100 mb-4 sm:mb-6 line-clamp-3 sm:line-clamp-4 break-words">
+                          <p
+                            className="text-sm sm:text-lg text-white/95 mb-4 sm:mb-6 line-clamp-3 sm:line-clamp-4 break-words"
+                            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+                          >
                             {course.description}
                           </p>
                         </motion.div>
@@ -242,7 +250,12 @@ export default function App() {
                               className="flex items-start space-x-2 sm:space-x-3 min-w-0"
                             >
                               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                              <span className="text-white text-xs sm:text-sm md:text-base break-words">
+                              <span
+                                className="text-white text-xs sm:text-sm md:text-base break-words"
+                                style={{
+                                  textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                                }}
+                              >
                                 {feature.text}
                               </span>
                             </motion.div>

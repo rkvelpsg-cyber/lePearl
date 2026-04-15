@@ -240,6 +240,7 @@ export default function GICCoursePage() {
               <a
                 href="/login"
                 className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
+                style={{ color: "#ffffff" }}
               >
                 Enroll Now
               </a>
@@ -282,6 +283,3 @@ export default function GICCoursePage() {
     </div>
   );
 }
-
-
-

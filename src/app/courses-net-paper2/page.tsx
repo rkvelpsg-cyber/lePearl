@@ -428,6 +428,7 @@ function EnrollmentSection() {
             <a
               href="/login"
               className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -491,6 +492,3 @@ export default function NETPaper2CoursePage() {
     </div>
   );
 }
-
-
-

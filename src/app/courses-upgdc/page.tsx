@@ -446,6 +446,7 @@ function UPGDCPage() {
               <a
                 href="/login"
                 className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+                style={{ color: "#ffffff" }}
               >
                 Enroll Now
               </a>
@@ -510,6 +511,7 @@ function UPGDCPage() {
               <a
                 href="/login"
                 className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+                style={{ color: "#ffffff" }}
               >
                 Enroll Now
               </a>
@@ -562,6 +564,3 @@ function UPGDCPage() {
 }
 
 export default UPGDCPage;
-
-
-
