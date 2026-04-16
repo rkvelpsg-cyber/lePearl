@@ -131,7 +131,7 @@ export function MockTestsSection() {
       tests: ["MPPSC", "UPHESC", "UP GDC"],
       duration: "180 min",
       buttonText: "Start Mock Test",
-      loginUrl: "/login",
+      loginUrl: "/login-portal",
     },
     {
       id: 2,
@@ -140,7 +140,7 @@ export function MockTestsSection() {
       tests: ["Paper I", "Paper II"],
       duration: "180 min",
       buttonText: "Start Mock Test",
-      loginUrl: "/login",
+      loginUrl: "/login-portal",
     },
     {
       id: 3,
@@ -149,7 +149,7 @@ export function MockTestsSection() {
       tests: ["GIC", "LT Grade"],
       duration: "120 min",
       buttonText: "Start Mock Test",
-      loginUrl: "/login",
+      loginUrl: "/login-portal",
     },
     {
       id: 4,
@@ -158,6 +158,7 @@ export function MockTestsSection() {
       tests: ["Communication Skills"],
       duration: "60 min",
       buttonText: "Practice Now",
+      loginUrl: "/login-portal",
     },
     {
       id: 5,
@@ -165,8 +166,8 @@ export function MockTestsSection() {
       title: "SET Examination",
       tests: ["SET Mock Test"],
       duration: "180 min",
-      buttonText: "Start Mock Tset",
-      loginUrl: "/login",
+      buttonText: "Start Mock Test",
+      loginUrl: "/login-portal",
     },
   ];
 
@@ -232,16 +233,20 @@ export function MockTestsSection() {
               Join thousands of students who have improved their scores with our
               comprehensive test series
             </p>
-            <button
-              type="button"
-              className="rounded-full px-8 py-3 font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95"
+            <a
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-full px-8 py-3 font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
+                color: "#FFFFFF",
+                textDecoration: "none",
                 backgroundColor: "#6A0DAD",
                 boxShadow: "0 4px 15px rgba(106, 13, 173, 0.3)",
               }}
             >
               View All Tests
-            </button>
+            </a>
           </div>
         </div>
       </div>

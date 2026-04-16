@@ -78,56 +78,134 @@ export function SiteFooter() {
             <ul className="space-y-2 sm:space-y-3">
               <li>
                 <a
-                  href="#courses"
+                  href="/courses-mppsc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">MPPSC</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/courses-uphesc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">UPHESC</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/courses-upgdc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">UP GDC</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/courses-net-paper1"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">UGC NET Coaching</span>
+                  <span className="truncate">NTA NET Paper 1</span>
                 </a>
               </li>
               <li>
                 <a
-                  href="#courses"
+                  href="/courses-net-paper2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">NTA NET Paper 2 (English)</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/courses-gic"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">UP GIC</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/courses-ltgrade"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">SET Exam Preparation</span>
+                  <span className="truncate">LT Grade</span>
                 </a>
               </li>
               <li>
                 <a
-                  href="#courses"
+                  href="/courses-set"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">SET</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/research-assistance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
+                >
+                  <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">Research Assistance</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/interview-preparation/assistant-professor-1"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">PhD Entrance Prep</span>
+                  <span className="truncate">Interview Prep - AP</span>
                 </a>
               </li>
               <li>
                 <a
-                  href="#courses"
+                  href="/interview-preparation/du-interview"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">UPHESC Prof</span>
+                  <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">Interview Prep - DU</span>
                 </a>
               </li>
               <li>
                 <a
-                  href="#courses"
+                  href="/interview-preparation/phd-interview"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
-                  <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">MPPSC Prof</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#courses"
-                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
-                >
-                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">LT Grade Prep</span>
+                  <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="truncate">Interview Prep - PhD</span>
                 </a>
               </li>
             </ul>
@@ -148,7 +226,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <a
-                  href="#achievers"
+                  href="#faculty"
                   className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Faculty
@@ -164,7 +242,7 @@ export function SiteFooter() {
               </li>
               <li>
                 <a
-                  href="#live-class"
+                  href="#weekly-schedule"
                   className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Schedule
@@ -291,14 +369,18 @@ export function SiteFooter() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
             <a
-              href="#"
+              href="/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-gray-200 transition-colors duration-200 hover:text-white whitespace-nowrap"
             >
               Privacy Policy
             </a>
             <span className="text-gray-400">|</span>
             <a
-              href="#"
+              href="/terms-conditions"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-gray-200 transition-colors duration-200 hover:text-white whitespace-nowrap"
             >
               Terms &amp; Conditions

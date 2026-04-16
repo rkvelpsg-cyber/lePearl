@@ -133,7 +133,7 @@ export default async function Home() {
   ];
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", width: "100%", overflow: "hidden" }}>
       {/* Background Video - Homepage Only */}
       <div
         style={{
@@ -161,7 +161,15 @@ export default async function Home() {
       </div>
 
       {/* Content Wrapper */}
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          boxSizing: "border-box",
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
         {/* Top Banner */}
         <div
           style={{
@@ -175,12 +183,13 @@ export default async function Home() {
             fontSize: "clamp(12px, 2.5vw, 18px)",
             padding: "clamp(6px, 2vw, 12px) clamp(12px, 3vw, 20px)",
             letterSpacing: 0.2,
-            overflowX: "auto",
+            overflowX: "hidden",
             overflowY: "hidden",
             scrollbarWidth: "none",
             display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "center",
             gap: "clamp(8px, 2vw, 16px)",
           }}
         >
@@ -190,7 +199,6 @@ export default async function Home() {
               display: "flex",
               gap: "clamp(8px, 1.5vw, 12px)",
               flexShrink: 0,
-              order: 2,
             }}
           >
             <a
@@ -301,7 +309,7 @@ export default async function Home() {
           </div>
 
           {/* Admission Text - Center/Left */}
-          <div style={{ order: 1, flex: 1, minWidth: 0 }}>
+          <div style={{ flex: "1 1 auto", minWidth: 0, maxWidth: "100%" }}>
             Admission opened for:{" "}
             <span
               className="top-admission-highlight"
@@ -439,6 +447,34 @@ export default async function Home() {
         {/* Spacing below header */}
         <div style={{ height: 28 }} />
 
+        {/* Mobile/Tablet-only Hero Section - shows logo and video background */}
+        <div
+          className="lg:hidden flex flex-col items-center justify-center min-h-[45vh] px-4 py-10"
+          style={{ background: "rgba(0,0,0,0.18)" }}
+        >
+          <Image
+            src="/logo_vectorformat.png"
+            alt="LePearl Education Logo"
+            width={120}
+            height={120}
+            quality={100}
+            style={{ objectFit: "contain" }}
+            className="mb-3 drop-shadow-xl"
+          />
+          <h1
+            className="text-2xl font-bold text-white text-center drop-shadow-lg"
+            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}
+          >
+            LePearl Education
+          </h1>
+          <p
+            className="text-sm text-white/90 text-center mt-1 drop-shadow"
+            style={{ textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}
+          >
+            Centre of Excellence in English Language &amp; Literature
+          </p>
+        </div>
+
         <main id="home">
           <SuccessStoriesSection />
           <CoursesBooksSection />
@@ -451,7 +487,9 @@ export default async function Home() {
           >
             <FounderContent />
           </div>
-          <FacultyCarousel />
+          <div id="faculty">
+            <FacultyCarousel />
+          </div>
           <WhyChooseSection />
           <FounderBooks />
           <MockTestsSection />
