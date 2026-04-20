@@ -32,7 +32,7 @@ const roles = [
     title: "Faculty Login",
     description:
       "Manage your classes, upload study materials, track student performance, and schedule sessions.",
-    href: null,
+    href: "/faculty-login",
     gradient: "from-emerald-500 to-teal-600",
     border: "border-emerald-300",
     bg: "bg-emerald-50",
@@ -53,7 +53,7 @@ const roles = [
     title: "Admin Login",
     description:
       "Full platform control — manage users, courses, payments, analytics, and institutional settings.",
-    href: null,
+    href: "/admin-login",
     gradient: "from-amber-500 to-orange-500",
     border: "border-amber-300",
     bg: "bg-amber-50",

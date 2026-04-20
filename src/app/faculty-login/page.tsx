@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithEmail } from "@/lib/supabase/auth";
+import { signInWithEmail, signOutIfRoleMismatch } from "@/lib/supabase/auth";
 import { AlertCircle, LogIn, Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+export default function FacultyLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,20 +38,17 @@ export default function LoginPage() {
         return;
       }
 
-      // Role-based redirect
-      switch (role) {
-        case "student":
-          router.push("/student-dashboard");
-          break;
-        case "faculty":
-          router.push("/faculty-dashboard");
-          break;
-        case "admin":
-          router.push("/admin-dashboard");
-          break;
-        default:
-          router.push("/");
+      const mismatch = await signOutIfRoleMismatch(role, "faculty");
+      if (mismatch) {
+        setError(
+          "This account does not have faculty access. Please use the correct credentials.",
+        );
+        setLoading(false);
+        return;
       }
+
+      // Faculty redirect
+      router.push("/faculty-dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
@@ -59,11 +56,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 flex flex-col items-center justify-center px-4 py-12">
       {/* Background blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-purple-700/20 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-700/20 blur-3xl" />
+        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-emerald-700/20 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-teal-700/20 blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
@@ -80,13 +77,13 @@ export default function LoginPage() {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
-            <span className="text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+            <span className="text-xl font-bold text-white group-hover:text-emerald-300 transition-colors">
               LePearl Education
             </span>
           </a>
-          <h1 className="text-3xl font-bold text-white mb-2">Student Login</h1>
-          <p className="text-purple-200">
-            Access your course dashboard and track your progress
+          <h1 className="text-3xl font-bold text-white mb-2">Faculty Login</h1>
+          <p className="text-emerald-200">
+            Access your faculty portal and manage your classes
           </p>
         </div>
 
@@ -114,11 +111,11 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 required
-                placeholder="priya.sharma@lepearl.education"
+                placeholder="faculty@lepearl.education"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none transition-colors disabled:bg-gray-100"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-transparent outline-none transition-colors disabled:bg-gray-100"
               />
             </div>
 
@@ -138,22 +135,22 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none transition-colors disabled:bg-gray-100"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-transparent outline-none transition-colors disabled:bg-gray-100"
               />
             </div>
 
             {/* Demo Credentials Hint */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-900">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm text-emerald-900">
               <p className="font-semibold mb-1">Demo Credentials:</p>
-              <p>Email: priya.sharma@lepearl.education</p>
-              <p>Password: LpPriya#2026!</p>
+              <p>Email: faculty@lepearl.education</p>
+              <p>Password: Faculty@123</p>
             </div>
 
             {/* Sign In Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -173,7 +170,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <a
               href="/login-portal"
-              className="text-sm text-purple-600 hover:text-purple-700 font-semibold"
+              className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
             >
               Back to Login Portal
             </a>
@@ -181,13 +178,13 @@ export default function LoginPage() {
         </div>
 
         {/* Support Link */}
-        <p className="text-center text-sm text-purple-300">
+        <p className="text-center text-sm text-emerald-300">
           Having trouble?{" "}
           <a
             href="https://wa.me/919994990639"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-white underline underline-offset-2 hover:text-purple-200"
+            className="font-semibold text-white underline underline-offset-2 hover:text-emerald-200"
           >
             Contact Support
           </a>

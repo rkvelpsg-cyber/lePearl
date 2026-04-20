@@ -27,9 +27,11 @@ export async function signInWithEmail(email: string, password: string) {
   const supabase = createClient();
 
   try {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: normalizedEmail,
+      password: password.trim(),
     });
 
     if (error) throw error;
@@ -49,11 +51,23 @@ export async function signInWithEmail(email: string, password: string) {
       sessionError: null,
     };
   } catch (error) {
-    console.error("Sign in error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Sign in failed";
+    const isInvalidCredentials = errorMessage
+      .toLowerCase()
+      .includes("invalid login credentials");
+
+    // Invalid credentials are expected user input errors, so avoid noisy console errors.
+    if (!isInvalidCredentials) {
+      console.error("Sign in error:", error);
+    }
+
     return {
       user: null,
       role: null,
-      sessionError: error instanceof Error ? error.message : "Sign in failed",
+      sessionError: isInvalidCredentials
+        ? "Invalid email or password. Please check and try again."
+        : errorMessage,
     };
   }
 }
@@ -62,4 +76,16 @@ export async function signOut() {
   const supabase = createClient();
   const { error } = await supabase.auth.signOut();
   return error;
+}
+
+export async function signOutIfRoleMismatch(
+  actualRole: string | null,
+  expectedRole: "student" | "faculty" | "admin",
+) {
+  if (!actualRole || actualRole !== expectedRole) {
+    await signOut();
+    return true;
+  }
+
+  return false;
 }
