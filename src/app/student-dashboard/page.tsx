@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Script from "next/script";
 import { signOut } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -29,14 +28,6 @@ import {
   Timer,
   X,
 } from "lucide-react";
-
-/* â”€â”€ Razorpay global type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay: new (options: Record<string, unknown>) => { open(): void };
-  }
-}
 
 /* â”€â”€ types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 type Section =
@@ -238,7 +229,6 @@ function NavBtn({
 export default function StudentDashboardPage() {
   const router = useRouter();
   const supabase = createClient();
-  const razorpayLoaded = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -547,11 +537,9 @@ export default function StudentDashboardPage() {
           is_correct: chosen !== null && chosen === correct,
         };
       });
-      await supabase
-        .from("mcq_student_answers")
-        .upsert(answers, {
-          onConflict: "mock_test_id,student_user_id,question_id",
-        });
+      await supabase.from("mcq_student_answers").upsert(answers, {
+        onConflict: "mock_test_id,student_user_id,question_id",
+      });
       const scored = answers.reduce(
         (s, a) =>
           a.is_correct
@@ -562,16 +550,14 @@ export default function StudentDashboardPage() {
         0,
       );
       const totalMarks = activeTest.questions.reduce((s, q) => s + q.marks, 0);
-      await supabase
-        .from("mock_test_attempts")
-        .upsert(
-          {
-            mock_test_id: activeTest.test.id,
-            student_user_id: user.id,
-            scored_marks: scored,
-          },
-          { onConflict: "mock_test_id,student_user_id" },
-        );
+      await supabase.from("mock_test_attempts").upsert(
+        {
+          mock_test_id: activeTest.test.id,
+          student_user_id: user.id,
+          scored_marks: scored,
+        },
+        { onConflict: "mock_test_id,student_user_id" },
+      );
       setTestResult({
         scored,
         total: totalMarks,
@@ -623,90 +609,11 @@ export default function StudentDashboardPage() {
 
   /* â”€â”€ Razorpay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function handlePay() {
-    const amt = parseFloat(payAmount);
-    if (!amt || amt <= 0) {
-      setPayMsg({ type: "err", text: "Enter a valid amount." });
-      return;
-    }
-    if (!razorpayLoaded.current) {
-      setPayMsg({ type: "err", text: "Payment gateway loading. Try again." });
-      return;
-    }
-    setPaying(true);
-    setPayMsg(null);
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      const res = await fetch("/api/payment/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amt,
-          receipt: `rcpt_${user.id.slice(0, 8)}_${Date.now()}`,
-        }),
-      });
-      const order = await res.json();
-      if (!res.ok) {
-        setPayMsg({
-          type: "err",
-          text: order.error ?? "Order creation failed.",
-        });
-        setPaying(false);
-        return;
-      }
-      const rzp = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
-        name: "LePearl Education",
-        description: payDesc,
-        order_id: order.id,
-        prefill: {
-          name: profile?.full_name ?? "",
-          contact: profile?.phone ?? "",
-        },
-        theme: { color: "#7C3AED" },
-        handler: async (response: Record<string, string>) => {
-          const verRes = await fetch("/api/payment/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(response),
-          });
-          const verData = await verRes.json();
-          if (verData.verified) {
-            await supabase.from("payments").insert({
-              student_user_id: user.id,
-              amount: amt,
-              payment_date: new Date().toISOString().split("T")[0],
-              payment_mode: "Razorpay",
-              status: "paid",
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              description: payDesc,
-            });
-            setPayMsg({
-              type: "ok",
-              text: `Payment of â‚¹${fmt(amt)} successful! ID: ${response.razorpay_payment_id}`,
-            });
-            setPayAmount("");
-            load();
-          } else {
-            setPayMsg({
-              type: "err",
-              text: "Payment verification failed. Contact support.",
-            });
-          }
-          setPaying(false);
-        },
-      });
-      rzp.open();
-    } catch {
-      setPayMsg({ type: "err", text: "Payment error. Try again." });
-      setPaying(false);
-    }
+    setPaying(false);
+    setPayMsg({
+      type: "err",
+      text: "Online payment is temporarily disabled. Please contact support.",
+    });
   }
 
   /* â”€â”€ computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -748,13 +655,6 @@ export default function StudentDashboardPage() {
   /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RENDER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
   return (
     <>
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => {
-          razorpayLoaded.current = true;
-        }}
-      />
-
       {/* â”€â”€ MCQ TEST OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTest && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4">
@@ -1515,7 +1415,8 @@ export default function StudentDashboardPage() {
                       Fees &amp; Payments
                     </h1>
                     <p className="text-amber-100 text-sm">
-                      Pay securely via Razorpay Â· All transactions are encrypted
+                      Pay securely via Razorpay Â· All transactions are
+                      encrypted
                     </p>
                   </div>
                   {feePlan && (
