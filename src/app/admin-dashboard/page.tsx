@@ -197,7 +197,6 @@ function Badge({
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,6 +247,7 @@ export default function AdminDashboardPage() {
 
   const load = useCallback(async () => {
     try {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -494,7 +494,7 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, supabase]);
+  }, [router]);
 
   useEffect(() => {
     load();
@@ -509,6 +509,7 @@ export default function AdminDashboardPage() {
     setPaySubmitting(true);
     setPayMsg(null);
     try {
+      const supabase = createClient();
       const { error } = await supabase.from("payments").insert({
         student_user_id: payForm.studentId,
         course_id: parseInt(payForm.courseId),
