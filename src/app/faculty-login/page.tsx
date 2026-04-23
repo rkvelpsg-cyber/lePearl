@@ -139,11 +139,44 @@ export default function FacultyLoginPage() {
               />
             </div>
 
-            {/* Demo Credentials Hint */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm text-emerald-900">
-              <p className="font-semibold mb-1">Demo Credentials:</p>
-              <p>Email: faculty@lepearl.education</p>
-              <p>Password: Faculty@123</p>
+            {/* Faculty Credentials Hint */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm text-emerald-900 space-y-2">
+              <p className="font-semibold mb-2">Faculty Login Credentials:</p>
+              {[
+                {
+                  name: "Ms. Sadhana",
+                  email: "sadhana@lepearl.education",
+                  password: "LpSadhana#2026!",
+                },
+                {
+                  name: "Dr. Babli Mallick",
+                  email: "babli.mallick@lepearl.education",
+                  password: "LpBabli#2026!",
+                },
+                {
+                  name: "Ms. Neelu Patel",
+                  email: "neelu.patel@lepearl.education",
+                  password: "LpNeelu#2026!",
+                },
+                {
+                  name: "Dr. Harendra K Tripathi",
+                  email: "harendra.tripathi@lepearl.education",
+                  password: "LpHarendra#2026!",
+                },
+              ].map((f) => (
+                <button
+                  key={f.email}
+                  type="button"
+                  onClick={() => {
+                    setEmail(f.email);
+                    setPassword(f.password);
+                  }}
+                  className="w-full text-left bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg px-3 py-2 transition-colors"
+                >
+                  <span className="font-semibold block">{f.name}</span>
+                  <span className="text-emerald-700 text-xs">{f.email}</span>
+                </button>
+              ))}
             </div>
 
             {/* Sign In Button */}
