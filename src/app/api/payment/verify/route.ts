@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
@@ -13,7 +15,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const secret = process.env.RAZORPAY_KEY_SECRET ?? "";
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return NextResponse.json(
+        { error: "Razorpay is not configured on the server" },
+        { status: 500 },
+      );
+    }
+
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
       .createHmac("sha256", secret)
