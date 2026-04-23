@@ -228,7 +228,6 @@ function NavBtn({
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function StudentDashboardPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -285,6 +284,7 @@ export default function StudentDashboardPage() {
   /* â”€â”€ load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
     try {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -470,7 +470,7 @@ export default function StudentDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, supabase]);
+  }, [router]);
 
   useEffect(() => {
     load();
@@ -514,6 +514,7 @@ export default function StudentDashboardPage() {
   /* â”€â”€ MCQ timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const handleSubmitTest = useCallback(async () => {
     if (!activeTest) return;
+    const supabase = createClient();
     if (timerRef.current) clearInterval(timerRef.current);
     setTestSubmitting(true);
     try {
@@ -568,7 +569,7 @@ export default function StudentDashboardPage() {
     } finally {
       setTestSubmitting(false);
     }
-  }, [activeTest, testAnswers, supabase]);
+  }, [activeTest, testAnswers]);
 
   useEffect(() => {
     if (!activeTest || testResult) {
@@ -590,6 +591,7 @@ export default function StudentDashboardPage() {
   }, [activeTest, testResult, handleSubmitTest]);
 
   async function startTest(test: McqTest) {
+    const supabase = createClient();
     const { data: qData } = await supabase
       .from("mcq_questions")
       .select(

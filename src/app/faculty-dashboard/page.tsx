@@ -218,7 +218,6 @@ function NavBtn({
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function FacultyDashboardPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -332,6 +331,7 @@ export default function FacultyDashboardPage() {
   /* â”€â”€ load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
     try {
+      const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -507,7 +507,7 @@ export default function FacultyDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, supabase]);
+  }, [router]);
 
   useEffect(() => {
     load();
@@ -520,6 +520,7 @@ export default function FacultyDashboardPage() {
 
   /* â”€â”€ attendance: load session students & existing marks â”€â”€ */
   async function selectSession(session: AttendanceSession) {
+    const supabase = createClient();
     setSelectedSession(session);
     const students = batchStudents.filter(
       (s) =>
@@ -575,6 +576,7 @@ export default function FacultyDashboardPage() {
 
   async function saveAttendance() {
     if (!selectedSession) return;
+    const supabase = createClient();
     setAttendanceSubmitting(true);
     setAttendanceMsg(null);
     try {
@@ -602,6 +604,7 @@ export default function FacultyDashboardPage() {
 
   /* â”€â”€ MCQ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function createMcqTest() {
+    const supabase = createClient();
     setMcqSubmitting(true);
     setMcqMsg(null);
     try {
@@ -652,6 +655,7 @@ export default function FacultyDashboardPage() {
   }
 
   async function loadQuestions(test: McqTestFaculty) {
+    const supabase = createClient();
     setSelectedTest(test);
     const { data } = await supabase
       .from("mcq_questions")
@@ -663,6 +667,7 @@ export default function FacultyDashboardPage() {
 
   async function addQuestion() {
     if (!selectedTest) return;
+    const supabase = createClient();
     setMcqSubmitting(true);
     try {
       const { error } = await supabase.from("mcq_questions").insert({
@@ -696,6 +701,7 @@ export default function FacultyDashboardPage() {
   }
 
   async function togglePublish(test: McqTestFaculty) {
+    const supabase = createClient();
     const { error } = await supabase
       .from("mock_tests")
       .update({ is_published: !test.is_published })
@@ -705,12 +711,14 @@ export default function FacultyDashboardPage() {
 
   async function deleteQuestion(qId: number) {
     if (!confirm("Delete this question?")) return;
+    const supabase = createClient();
     await supabase.from("mcq_questions").delete().eq("id", qId);
     if (selectedTest) loadQuestions(selectedTest);
   }
 
   /* â”€â”€ create class session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function createClass() {
+    const supabase = createClient();
     setClassSubmitting(true);
     setClassMsg(null);
     try {
@@ -749,6 +757,7 @@ export default function FacultyDashboardPage() {
   }
 
   async function toggleLive(session: ClassSession) {
+    const supabase = createClient();
     await supabase
       .from("class_sessions")
       .update({ is_live: !session.is_live })
@@ -758,6 +767,7 @@ export default function FacultyDashboardPage() {
 
   /* â”€â”€ recorded lectures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function addLecture() {
+    const supabase = createClient();
     setLectureSubmitting(true);
     setLectureMsg(null);
     try {
@@ -793,6 +803,7 @@ export default function FacultyDashboardPage() {
 
   async function deleteLecture(id: number) {
     if (!confirm("Delete this lecture link?")) return;
+    const supabase = createClient();
     await supabase
       .from("recorded_lectures")
       .update({ is_active: false })
@@ -802,6 +813,7 @@ export default function FacultyDashboardPage() {
 
   /* â”€â”€ tasks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function submitTask() {
+    const supabase = createClient();
     setTaskSubmitting(true);
     setTaskMsg(null);
     try {
@@ -837,6 +849,7 @@ export default function FacultyDashboardPage() {
   }
 
   async function updateTaskStatus(taskId: number, status: string) {
+    const supabase = createClient();
     await supabase.from("faculty_tasks").update({ status }).eq("id", taskId);
     load();
   }
@@ -847,6 +860,7 @@ export default function FacultyDashboardPage() {
     courseId: number,
     newPct: number,
   ) {
+    const supabase = createClient();
     const key = `${studentUserId}_${courseId}`;
     setProgressUpdating(key);
     const { error } = await supabase
