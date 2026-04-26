@@ -34,7 +34,8 @@ type AdminSection =
   | "attendance"
   | "payments"
   | "courses"
-  | "mcq";
+  | "mcq"
+  | "registrations";
 
 type StudentRow = {
   user_id: string;
@@ -95,6 +96,16 @@ type McqRow = {
   is_published: boolean;
   batch_name: string;
   attempt_count: number;
+};
+type RegistrationRow = {
+  id: string;
+  full_name: string;
+  qualification: string;
+  course: string;
+  phone: string;
+  email: string;
+  created_at: string;
+  status: string;
 };
 
 function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
@@ -218,6 +229,7 @@ export default function AdminDashboardPage() {
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [mcqTests, setMcqTests] = useState<McqRow[]>([]);
+  const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
 
   /* payment form */
   const [showPayForm, setShowPayForm] = useState(false);
@@ -263,6 +275,7 @@ export default function AdminDashboardPage() {
         paymentsRes,
         coursesRes,
         batchesRes,
+        registrationsRes,
         mcqRes,
       ] = await Promise.all([
         supabase
@@ -297,6 +310,10 @@ export default function AdminDashboardPage() {
           .select(
             "id, batch_name, start_date, end_date, enrollments(count), courses(title), profiles(full_name)",
           ),
+        supabase
+          .from("student_registrations")
+          .select("id, full_name, qualification, course, phone, email, created_at, status")
+          .order("created_at", { ascending: false }),
         supabase
           .from("mock_tests")
           .select(
@@ -488,6 +505,11 @@ export default function AdminDashboardPage() {
         setMcqTests(rows);
         setTotalTests(rows.length);
       }
+
+      /* registrations */
+      if (registrationsRes.data) {
+        setRegistrations(registrationsRes.data as RegistrationRow[]);
+      }
     } catch (err) {
       console.error(err);
       setError("Failed to load admin data.");
@@ -678,6 +700,13 @@ export default function AdminDashboardPage() {
                 onClick={setActiveSection}
                 icon={FileQuestion}
                 label={`MCQ Tests (${totalTests})`}
+              />
+              <SideBtn
+                s="registrations"
+                active={activeSection}
+                onClick={setActiveSection}
+                icon={Bell}
+                label={`New Registrations (${registrations.length})`}
               />
             </nav>
           </aside>
@@ -1564,6 +1593,103 @@ export default function AdminDashboardPage() {
                     {mcqTests.length === 0 && (
                       <p className="text-center py-8 text-sm text-gray-400">
                         No MCQ tests created yet.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeSection === "registrations" && (
+              <>
+                <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white">
+                  <h1 className="text-xl font-bold mb-1">
+                    New Student Registrations
+                  </h1>
+                  <p className="text-blue-100 text-sm">
+                    {registrations.length} new enrollment requests submitted
+                  </p>
+                </div>
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Name
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Qualification
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Course
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Phone
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Email
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Submitted
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {registrations
+                          .filter((r) =>
+                            search
+                              ? r.full_name
+                                  .toLowerCase()
+                                  .includes(search.toLowerCase()) ||
+                                r.email.toLowerCase().includes(search.toLowerCase()) ||
+                                r.phone.includes(search) ||
+                                r.course
+                                  .toLowerCase()
+                                  .includes(search.toLowerCase())
+                              : true,
+                          )
+                          .map((r) => (
+                            <tr key={r.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-900">
+                                {r.full_name}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {r.qualification}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
+                                {r.course}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {r.phone}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 text-xs">
+                                <a
+                                  href={`mailto:${r.email}`}
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {r.email}
+                                </a>
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 text-xs">
+                                {fmtDate(r.created_at)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={r.status || "pending"}
+                                  color="yellow"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                    {registrations.length === 0 && (
+                      <p className="text-center py-8 text-sm text-gray-400">
+                        No student registrations yet.
                       </p>
                     )}
                   </div>
