@@ -156,7 +156,7 @@ export function Header() {
             <DrawerSubSection label="Interview Preparation">
               <DrawerLink
                 href="/interview-preparation/assistant-professor-1"
-                label="Assistant Professor 1"
+                label="Assistant Professor"
                 target="_blank"
                 rel="noopener noreferrer"
               />
@@ -353,7 +353,7 @@ function DesktopHeader() {
                 isSection: true,
                 submenu: [
                   {
-                    label: "Assistant Professor 1",
+                    label: "Assistant Professor",
                     href: "/interview-preparation/assistant-professor-1",
                   },
                   {

@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import { useState } from "react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
@@ -17,9 +18,9 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Header
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Header() {
   const scrollToEnrollment = () => {
     document
@@ -30,9 +31,9 @@ function Header() {
   return <CoursePageHeader onEnroll={scrollToEnrollment} />;
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Hero
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Hero() {
   const scrollToEnrollment = () => {
     document
@@ -64,7 +65,9 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Explore Programs
@@ -94,9 +97,513 @@ function Hero() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Side Navigation
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Program Tabs Panel (sidebar + tab content)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+type TabId =
+  | "research-paper"
+  | "thesis"
+  | "phd-proposal"
+  | "mla-apa"
+  | "mentoring";
+
+const tabItems: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: "research-paper", label: "Research Paper Writing", icon: FileText },
+  { id: "thesis", label: "Thesis Writing", icon: BookOpen },
+  { id: "phd-proposal", label: "PhD Proposal Making", icon: Target },
+  { id: "mla-apa", label: "MLA & APA Citation", icon: Award },
+  { id: "mentoring", label: "Guidance & Mentoring", icon: Users },
+];
+
+function ResearchPaperContent() {
+  return (
+    <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
+      <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
+        Master the Art of Research Paper Writing
+      </h3>
+      <p className="text-teal-700 font-semibold mb-4">
+        From Idea to Publication
+      </p>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Transform your research into impactful, publishable papers with expert
+        guidance. Whether you&apos;re a PhD scholar, early-career researcher, or
+        academic professional, this program equips you with the complete skill
+        set to craft high-quality research papers that meet international
+        standards.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Why Choose This Program?
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Pre-recorded lectures for flexible, self-paced learning</li>
+        <li>Live interactive classes with real-time doubt clearing</li>
+        <li>One-to-one personalised mentoring sessions</li>
+        <li>Hands-on practical experiments and paper drafting exercises</li>
+        <li>Comprehensive feedback on your actual research drafts</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        What You Will Master
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>
+          Identifying research gaps and formulating strong research questions
+        </li>
+        <li>
+          Structuring a compelling Introduction, Literature Review, Methodology,
+          Results, Discussion, and Conclusion
+        </li>
+        <li>Effective data presentation, visualisation, and interpretation</li>
+        <li>
+          Avoiding common pitfalls in academic writing (plagiarism, weak
+          arguments, poor flow)
+        </li>
+        <li>
+          Targeting high-impact journals and navigating the peer-review process
+        </li>
+        <li>Ethical considerations and journal submission strategies</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Program Format
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>
+          Pre-Recorded Lectures: 40+ hours of in-depth modules accessible
+          anytime
+        </li>
+        <li>
+          Live Classes: Weekly sessions with expert faculty for interactive
+          learning
+        </li>
+        <li>
+          One-to-One Interaction: Personal mentoring calls to review your drafts
+        </li>
+        <li>
+          Practical Experiments: Real-time paper writing workshops, peer review
+          simulations, and revision exercises
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Who Should Enrol?
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        PhD scholars, MPhil students, college teachers, and independent
+        researchers who want to publish on various platforms to enhance their
+        portfolios.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Outcome
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        By the end of the program, you will have a complete, publication-ready
+        research paper with expert feedback and a clear roadmap for successful
+        journal submission.
+      </p>
+      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
+        Enrol Now - Limited seats | Fee- 2995/-
+      </div>
+    </div>
+  );
+}
+
+function ThesisContent() {
+  return (
+    <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
+      <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
+        Art of Thesis Writing
+      </h3>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Craft a Scholarly Masterpiece That Stands the Test of Time
+      </p>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Turn months (or years) of research into a well-structured, coherent, and
+        impactful thesis. This program demystifies thesis writing and guides you
+        step-by-step from proposal to final submission.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Program Highlights
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Pre-recorded lectures covering every chapter of a thesis</li>
+        <li>Live classes with one-to-one interaction</li>
+        <li>Practical experiments in chapter drafting and revision</li>
+        <li>Comprehensive feedback on your ongoing thesis work</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Key Skills You Will Develop
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Designing a logical thesis structure and chapter flow</li>
+        <li>Writing a powerful abstract, introduction, and conclusion</li>
+        <li>Conducting and presenting a robust literature review</li>
+        <li>Justifying methodology with clarity and rigour</li>
+        <li>
+          Presenting findings with effective tables, figures, and statistical
+          interpretation
+        </li>
+        <li>
+          Defending your thesis with confidence (viva preparation included)
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Program Format
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>
+          Pre-Recorded Lectures: Detailed video modules on thesis components
+        </li>
+        <li>Live Classes: Regular interactive sessions for doubt resolution</li>
+        <li>
+          One-to-One Mentoring: Dedicated faculty reviews of your thesis
+          chapters
+        </li>
+        <li>
+          Practical Learning: Weekly writing sprints, peer feedback sessions,
+          and revision workshops
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Who This Program Is For
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        PhD candidates, MPhil students, and research scholars across disciplines
+        who want to complete their thesis on time and with excellence.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Outcome
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Submit a thesis that is academically sound, well-written, and ready for
+        evaluation, while gaining lifelong academic writing confidence.
+      </p>
+      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
+        Join the Program - Start your thesis journey with clarity and expert
+        support at only 5995/-
+      </div>
+    </div>
+  );
+}
+
+function PhdProposalContent() {
+  return (
+    <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
+      <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
+        Get Your Research Idea Approved on the First Attempt
+      </h3>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        A strong PhD proposal is your gateway to admission and funding. Learn
+        the art of crafting a winning research proposal that impresses selection
+        committees and funding agencies.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        What Makes This Program Unique?
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Pre-recorded lectures on proposal essentials</li>
+        <li>Live classes with direct faculty interaction</li>
+        <li>One-to-one proposal review and refinement</li>
+        <li>
+          Practical experiments through proposal drafting and presentation
+          practice
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        You Will Learn
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>
+          How to identify a novel, feasible, and significant research problem
+        </li>
+        <li>Writing a clear research aim, objectives, and hypotheses</li>
+        <li>Framing a compelling theoretical framework and methodology</li>
+        <li>Budget justification and timeline planning</li>
+        <li>Preparing for PhD interview and synopsis presentation</li>
+        <li>
+          Aligning your proposal with the university and funding guidelines
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Program Format
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Pre-Recorded Lectures: Step-by-step modules on proposal writing</li>
+        <li>Live Classes: Interactive workshops and Q&amp;A</li>
+        <li>
+          One-to-One Interaction: Personalised feedback on your draft proposal
+        </li>
+        <li>
+          Practical Experiments: Mock presentations, peer reviews, and iterative
+          revisions
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Ideal For
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Aspiring PhD scholars, candidates preparing for entrance
+        tests/interviews, and researchers seeking fellowships (UGC-JRF, ICSSR,
+        etc.).
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Outcome
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        A polished, approval-ready PhD proposal that clearly communicates your
+        research vision and increases your chances of selection and funding.
+      </p>
+      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
+        Enrol Today - Turn your research dream into a funded reality at a
+        minimal cost of 1995/-
+      </div>
+    </div>
+  );
+}
+
+function MlaApaContent() {
+  return (
+    <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
+      <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
+        Master Citation Styles with Precision and Confidence
+      </h3>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Citation errors can cost you marks, publication rejection, or
+        accusations of plagiarism. Master both MLA (9th edition) and APA (7th
+        edition) with practical application.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Program Features
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Pre-recorded lectures with real examples</li>
+        <li>Live classes for interactive doubt clearing</li>
+        <li>One-to-one mentoring on your documents</li>
+        <li>Hands-on practical experiments using your own research material</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        What You Will Master
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>In-text citations, direct quotes, and paraphrasing rules</li>
+        <li>Formatting Works Cited / References pages</li>
+        <li>
+          Handling books, journal articles, websites, social media, AI tools,
+          and more
+        </li>
+        <li>Differences between MLA and APA - when to use which style</li>
+        <li>Creating accurate tables, figures, and appendices</li>
+        <li>
+          Common mistakes and how to avoid them in research papers, theses, and
+          dissertations
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Program Format
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>
+          Pre-Recorded Lectures: Clear, visual explanations of rules and
+          examples
+        </li>
+        <li>Live Classes: Weekly practice sessions</li>
+        <li>
+          One-to-One Interaction: Personal review of your citations and
+          bibliography
+        </li>
+        <li>
+          Practical Experiments: Live editing workshops on real student
+          documents
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Who is this course for?
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Research scholars, thesis writers, journal authors, and students
+        submitting assignments in the humanities, social sciences, and
+        education.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Outcome
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Error-free, professionally formatted citations and references that meet
+        university and journal standards.
+      </p>
+      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
+        Enrol Now - Never lose marks on formatting again with our cost-effective
+        course at just 1995/-
+      </div>
+    </div>
+  );
+}
+
+function MentoringContent() {
+  return (
+    <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
+      <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
+        Personalised Expert Support from Draft to Publication
+      </h3>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        Not every researcher needs a full course. Sometimes you just need
+        focused, one-to-one guidance on your specific research paper.
+      </p>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Our Mentoring Approach
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>
+          Completely personalized one-to-one sessions with experienced faculty
+        </li>
+        <li>Pre-recorded micro-lectures on topics relevant to your paper</li>
+        <li>Live interactive feedback calls</li>
+        <li>Hands-on practical help with your actual manuscript</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Services Offered
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Topic refinement and research gap identification</li>
+        <li>Full paper structuring and chapter-wise guidance</li>
+        <li>Literature review development</li>
+        <li>Methodology design and data analysis support</li>
+        <li>Draft review, editing, and language polishing</li>
+        <li>Journal selection and submission strategy</li>
+        <li>Response to reviewer comments (revision support)</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        How It Works
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Share your current draft/research idea</li>
+        <li>Schedule one-to-one sessions as per your convenience</li>
+        <li>Receive detailed written feedback + live discussion</li>
+        <li>Revise with practical experiments and iterative improvement</li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Who Benefits Most?
+      </h4>
+      <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
+        <li>Scholars are stuck at any stage of paper writing</li>
+        <li>Researchers aiming for Scopus/UGC-CARE publications</li>
+        <li>
+          Those who have completed data collection but struggle with writing
+        </li>
+      </ul>
+      <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
+        Outcome
+      </h4>
+      <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
+        A high-quality, submission-ready research paper with expert validation
+        and an increased publication success rate.
+      </p>
+      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
+        Book Your Personalised Mentoring Session | For one hour- 1000/- | For 30
+        minutes- 750/- | 10% discount for all the Pearlians.
+      </div>
+    </div>
+  );
+}
+
+const tabTitles: Record<TabId, string> = {
+  "research-paper": "Art of Research Paper Writing",
+  thesis: "Art of Thesis Writing",
+  "phd-proposal": "Art of PhD Proposal Making",
+  "mla-apa": "Learn the Art of Application of MLA and APA",
+  mentoring: "Guidance and Mentoring for Research Paper Writing",
+};
+
+const tabBg: Record<TabId, string> = {
+  "research-paper": "bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white",
+  thesis: "bg-gradient-to-b from-white via-white to-cyan-50",
+  "phd-proposal": "bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white",
+  "mla-apa": "bg-gradient-to-b from-white via-white to-cyan-50",
+  mentoring: "bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white",
+};
+
+function ProgramTabsPanel() {
+  const [activeTab, setActiveTab] = useState<TabId>("research-paper");
+
+  const contentMap: Record<TabId, React.ReactNode> = {
+    "research-paper": <ResearchPaperContent />,
+    thesis: <ThesisContent />,
+    "phd-proposal": <PhdProposalContent />,
+    "mla-apa": <MlaApaContent />,
+    mentoring: <MentoringContent />,
+  };
+
+  return (
+    <div className="lg:flex lg:items-start">
+      {/* Sticky sidebar â€” desktop */}
+      <aside className="hidden lg:block w-56 xl:w-64 flex-shrink-0 sticky top-20 self-start px-3 pt-2 pb-8">
+        <div className="bg-white border border-teal-100 rounded-2xl shadow-lg p-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-3 px-2">
+            Programs
+          </p>
+          <nav className="flex flex-col gap-1.5">
+            {tabItems.map(({ id, label, icon: Icon }) => {
+              const isActive = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm font-medium transition-all duration-200 w-full group ${isActive ? "bg-teal-800 text-white shadow-md" : "text-gray-600 hover:bg-teal-50 hover:text-teal-800"}`}
+                >
+                  <span
+                    className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${isActive ? "bg-white/20" : "bg-teal-100 group-hover:bg-teal-200"}`}
+                  >
+                    <Icon
+                      className={`w-3.5 h-3.5 ${isActive ? "text-amber-300" : "text-teal-700"}`}
+                    />
+                  </span>
+                  <span className="leading-tight">{label}</span>
+                  {isActive && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Mobile tab strip */}
+      <div className="lg:hidden overflow-x-auto flex gap-2 px-4 py-3 bg-white border-b border-teal-100 sticky top-0 z-10">
+        {tabItems.map(({ id, label, icon: Icon }) => {
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isActive ? "bg-teal-800 text-white" : "bg-teal-50 text-teal-700"}`}
+            >
+              <Icon className="w-3 h-3 flex-shrink-0" />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content panel */}
+      <div
+        className={`flex-1 min-w-0 ${tabBg[activeTab]} px-4 py-10 sm:px-6 sm:py-12 lg:px-8`}
+      >
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl lg:text-4xl">
+            {tabTitles[activeTab]}
+          </h2>
+          <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
+        </div>
+        {contentMap[activeTab]}
+      </div>
+    </div>
+  );
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Programs Overview
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const programsOverview = [
   {
     icon: FileText,
@@ -154,9 +661,9 @@ function ProgramsOverview() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Programs Features
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const programFeatures = [
   {
     icon: FileText,
@@ -233,516 +740,11 @@ function ProgramFeatures() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Program Details Sections
-// ─────────────────────────────────────────────────────────────
-function ProgramDetails() {
-  return (
-    <>
-      {/* Research Paper Writing */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="absolute inset-0 opacity-10">
-          <ImageWithFallback
-            src="/research-assistance/bg-research-paper.jpg"
-            alt="Research desk background"
-            className="w-full h-full object-cover"
-          />
-        </div>
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl lg:text-4xl">
-              Art of Research Paper Writing
-            </h2>
-            <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
-          </div>
-
-          <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
-            <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
-              Master the Art of Research Paper Writing
-            </h3>
-            <p className="text-teal-700 font-semibold mb-4">
-              From Idea to Publication
-            </p>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Transform your research into impactful, publishable papers with
-              expert guidance. Whether you&apos;re a PhD scholar, early-career
-              researcher, or academic professional, this program equips you with
-              the complete skill set to craft high-quality research papers that
-              meet international standards.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Why Choose This Program?
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Pre-recorded lectures for flexible, self-paced learning</li>
-              <li>Live interactive classes with real-time doubt clearing</li>
-              <li>One-to-one personalised mentoring sessions</li>
-              <li>
-                Hands-on practical experiments and paper drafting exercises
-              </li>
-              <li>Comprehensive feedback on your actual research drafts</li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              What You Will Master
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                Identifying research gaps and formulating strong research
-                questions
-              </li>
-              <li>
-                Structuring a compelling Introduction, Literature Review,
-                Methodology, Results, Discussion, and Conclusion
-              </li>
-              <li>
-                Effective data presentation, visualisation, and interpretation
-              </li>
-              <li>
-                Avoiding common pitfalls in academic writing (plagiarism, weak
-                arguments, poor flow)
-              </li>
-              <li>
-                Targeting high-impact journals and navigating the peer-review
-                process
-              </li>
-              <li>Ethical considerations and journal submission strategies</li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Program Format
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                Pre-Recorded Lectures: 40+ hours of in-depth modules accessible
-                anytime
-              </li>
-              <li>
-                Live Classes: Weekly sessions with expert faculty for
-                interactive learning
-              </li>
-              <li>
-                One-to-One Interaction: Personal mentoring calls to review your
-                drafts
-              </li>
-              <li>
-                Practical Experiments: Real-time paper writing workshops, peer
-                review simulations, and revision exercises
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Who Should Enrol?
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              PhD scholars, MPhil students, college teachers, and independent
-              researchers who want to publish on various platforms to enhance
-              their portfolios.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Outcome
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              By the end of the program, you will have a complete,
-              publication-ready research paper with expert feedback and a clear
-              roadmap for successful journal submission.
-            </p>
-            <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-              Enrol Now - Limited seats | Fee- 2995/-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Thesis Writing */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-white to-cyan-50 px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="absolute inset-0 opacity-10">
-          <ImageWithFallback
-            src="/research-assistance/bg-thesis.jpg"
-            alt="Thesis writing background"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl lg:text-4xl">
-              Art of Thesis Writing
-            </h2>
-            <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
-          </div>
-
-          <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
-            <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
-              Art of Thesis Writing
-            </h3>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Craft a Scholarly Masterpiece That Stands the Test of Time
-            </p>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Turn months (or years) of research into a well-structured,
-              coherent, and impactful thesis. This program demystifies thesis
-              writing and guides you step-by-step from proposal to final
-              submission.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Program Highlights
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Pre-recorded lectures covering every chapter of a thesis</li>
-              <li>Live classes with one-to-one interaction</li>
-              <li>Practical experiments in chapter drafting and revision</li>
-              <li>Comprehensive feedback on your ongoing thesis work</li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Key Skills You Will Develop
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Designing a logical thesis structure and chapter flow</li>
-              <li>Writing a powerful abstract, introduction, and conclusion</li>
-              <li>Conducting and presenting a robust literature review</li>
-              <li>Justifying methodology with clarity and rigour</li>
-              <li>
-                Presenting findings with effective tables, figures, and
-                statistical interpretation
-              </li>
-              <li>
-                Defending your thesis with confidence (viva preparation
-                included)
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Program Format
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                Pre-Recorded Lectures: Detailed video modules on thesis
-                components
-              </li>
-              <li>
-                Live Classes: Regular interactive sessions for doubt resolution
-              </li>
-              <li>
-                One-to-One Mentoring: Dedicated faculty reviews of your thesis
-                chapters
-              </li>
-              <li>
-                Practical Learning: Weekly writing sprints, peer feedback
-                sessions, and revision workshops
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Who This Program Is For
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              PhD candidates, MPhil students, and research scholars across
-              disciplines who want to complete their thesis on time and with
-              excellence.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Outcome
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Submit a thesis that is academically sound, well-written, and
-              ready for evaluation, while gaining lifelong academic writing
-              confidence.
-            </p>
-            <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-              Join the Program - Start your thesis journey with clarity and
-              expert support at only 5995/-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PhD Proposal */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="absolute inset-0 opacity-10">
-          <ImageWithFallback
-            src="/research-assistance/bg-phd-proposal.jpg"
-            alt="PhD proposal planning background"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl lg:text-4xl">
-              Art of PhD Proposal Making
-            </h2>
-            <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
-          </div>
-
-          <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
-            <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
-              Get Your Research Idea Approved on the First Attempt
-            </h3>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              A strong PhD proposal is your gateway to admission and funding.
-              Learn the art of crafting a winning research proposal that
-              impresses selection committees and funding agencies.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              What Makes This Program Unique?
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Pre-recorded lectures on proposal essentials</li>
-              <li>Live classes with direct faculty interaction</li>
-              <li>One-to-one proposal review and refinement</li>
-              <li>
-                Practical experiments through proposal drafting and presentation
-                practice
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              You Will Learn
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                How to identify a novel, feasible, and significant research
-                problem
-              </li>
-              <li>Writing a clear research aim, objectives, and hypotheses</li>
-              <li>
-                Framing a compelling theoretical framework and methodology
-              </li>
-              <li>Budget justification and timeline planning</li>
-              <li>Preparing for PhD interview and synopsis presentation</li>
-              <li>
-                Aligning your proposal with the university and funding
-                guidelines
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Program Format
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                Pre-Recorded Lectures: Step-by-step modules on proposal writing
-              </li>
-              <li>Live Classes: Interactive workshops and Q&amp;A</li>
-              <li>
-                One-to-One Interaction: Personalised feedback on your draft
-                proposal
-              </li>
-              <li>
-                Practical Experiments: Mock presentations, peer reviews, and
-                iterative revisions
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Ideal For
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Aspiring PhD scholars, candidates preparing for entrance
-              tests/interviews, and researchers seeking fellowships (UGC-JRF,
-              ICSSR, etc.).
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Outcome
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              A polished, approval-ready PhD proposal that clearly communicates
-              your research vision and increases your chances of selection and
-              funding.
-            </p>
-            <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-              Enrol Today - Turn your research dream into a funded reality at a
-              minimal cost of 1995/-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* MLA & APA */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white via-white to-cyan-50 px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="absolute inset-0 opacity-10">
-          <ImageWithFallback
-            src="/research-assistance/bg-mla-apa.jpg"
-            alt="Citation and books background"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl lg:text-4xl">
-              Learn the Art of Application of MLA and APA
-            </h2>
-            <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
-          </div>
-
-          <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
-            <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
-              Master Citation Styles with Precision and Confidence
-            </h3>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Citation errors can cost you marks, publication rejection, or
-              accusations of plagiarism. Master both MLA (9th edition) and APA
-              (7th edition) with practical application.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Program Features
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Pre-recorded lectures with real examples</li>
-              <li>Live classes for interactive doubt clearing</li>
-              <li>One-to-one mentoring on your documents</li>
-              <li>
-                Hands-on practical experiments using your own research material
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              What You Will Master
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>In-text citations, direct quotes, and paraphrasing rules</li>
-              <li>Formatting Works Cited / References pages</li>
-              <li>
-                Handling books, journal articles, websites, social media, AI
-                tools, and more
-              </li>
-              <li>Differences between MLA and APA - when to use which style</li>
-              <li>Creating accurate tables, figures, and appendices</li>
-              <li>
-                Common mistakes and how to avoid them in research papers,
-                theses, and dissertations
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Program Format
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                Pre-Recorded Lectures: Clear, visual explanations of rules and
-                examples
-              </li>
-              <li>Live Classes: Weekly practice sessions</li>
-              <li>
-                One-to-One Interaction: Personal review of your citations and
-                bibliography
-              </li>
-              <li>
-                Practical Experiments: Live editing workshops on real student
-                documents
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Who is this course for?
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Research scholars, thesis writers, journal authors, and students
-              submitting assignments in the humanities, social sciences, and
-              education.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Outcome
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Error-free, professionally formatted citations and references that
-              meet university and journal standards.
-            </p>
-            <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-              Enrol Now - Never lose marks on formatting again with our
-              cost-effective course at just 1995/-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Mentoring */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <div className="absolute inset-0 opacity-10">
-          <ImageWithFallback
-            src="/research-assistance/bg-mentoring.jpg"
-            alt="Research mentoring background"
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-teal-800 sm:text-3xl lg:text-4xl">
-              Guidance and Mentoring for Research Paper Writing
-            </h2>
-            <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
-          </div>
-
-          <div className="max-w-5xl mx-auto bg-white/95 border border-teal-100 p-6 sm:p-8 rounded-2xl shadow-[0_20px_60px_-30px_rgba(13,148,136,0.35)] backdrop-blur">
-            <h3 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-800 to-cyan-700 mb-4 leading-snug">
-              Personalised Expert Support from Draft to Publication
-            </h3>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              Not every researcher needs a full course. Sometimes you just need
-              focused, one-to-one guidance on your specific research paper.
-            </p>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Our Mentoring Approach
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>
-                Completely personalized one-to-one sessions with experienced
-                faculty
-              </li>
-              <li>
-                Pre-recorded micro-lectures on topics relevant to your paper
-              </li>
-              <li>Live interactive feedback calls</li>
-              <li>Hands-on practical help with your actual manuscript</li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Services Offered
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Topic refinement and research gap identification</li>
-              <li>Full paper structuring and chapter-wise guidance</li>
-              <li>Literature review development</li>
-              <li>Methodology design and data analysis support</li>
-              <li>Draft review, editing, and language polishing</li>
-              <li>Journal selection and submission strategy</li>
-              <li>Response to reviewer comments (revision support)</li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              How It Works
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Share your current draft/research idea</li>
-              <li>Schedule one-to-one sessions as per your convenience</li>
-              <li>Receive detailed written feedback + live discussion</li>
-              <li>
-                Revise with practical experiments and iterative improvement
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Who Benefits Most?
-            </h4>
-            <ul className="list-disc space-y-2.5 pl-5 sm:pl-6 text-gray-700 mb-6 leading-7 text-[15px] sm:text-base marker:text-amber-500 marker:text-base">
-              <li>Scholars are stuck at any stage of paper writing</li>
-              <li>Researchers aiming for Scopus/UGC-CARE publications</li>
-              <li>
-                Those who have completed data collection but struggle with
-                writing
-              </li>
-            </ul>
-            <h4 className="inline-flex items-center rounded-full border border-teal-100 bg-cyan-50 px-4 py-1.5 text-base sm:text-lg font-bold text-teal-800 mb-3 mt-7">
-              Outcome
-            </h4>
-            <p className="text-gray-700 mb-6 leading-7 text-[15px] sm:text-base">
-              A high-quality, submission-ready research paper with expert
-              validation and an increased publication success rate.
-            </p>
-            <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-              Book Your Personalised Mentoring Session | For one hour- 1000/- |
-              For 30 minutes- 750/- | 10% discount for all the Pearlians.
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Testimonials
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const testimonials = [
   {
     name: "Dr. Sarah Johnson",
@@ -821,9 +823,9 @@ function Testimonials() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Enrollment Section
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function EnrollmentSection() {
   return (
     <section
@@ -865,7 +867,9 @@ function EnrollmentSection() {
               ))}
             </ul>
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full bg-teal-800 hover:bg-teal-700 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
             >
               Explore Programs
@@ -900,7 +904,9 @@ function EnrollmentSection() {
               ))}
             </ul>
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
             >
               Schedule Free Consultation
@@ -931,7 +937,9 @@ export default function ResearchAssistancePage() {
       <Hero />
       <ProgramsOverview />
       <ProgramFeatures />
-      <ProgramDetails />
+
+      <ProgramTabsPanel />
+
       <Testimonials />
       <EnrollmentSection />
       <OnlineCourseHighlights />

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Image, { type StaticImageData } from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FaAmazon } from "react-icons/fa";
@@ -17,6 +18,38 @@ interface Book {
   image: StaticImageData;
   title: string;
   amazonLink: string;
+}
+
+function BookCard({ book }: { book: Book }) {
+  return (
+    <div className="flex h-auto sm:h-96 md:h-[480px] lg:h-[560px] flex-col overflow-hidden rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 p-2 sm:p-3">
+        <Image
+          src={book.image}
+          alt={book.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 40vw, 25vw"
+          className="object-contain object-center p-1 sm:p-2"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 hover:opacity-100" />
+      </div>
+
+      <div className="flex flex-1 flex-col bg-gradient-to-b from-white to-gray-50 p-3 sm:p-4 md:p-6">
+        <h3 className="mb-2 sm:mb-4 text-sm sm:text-base md:text-lg leading-snug text-gray-800">
+          {book.title}
+        </h3>
+        <a
+          href={book.amazonLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-r from-[#FF9900] to-[#FF8000] px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm md:text-base text-white font-semibold shadow-md transition-all duration-200 hover:from-[#FA8900] hover:to-[#F57C00] hover:shadow-lg whitespace-nowrap"
+        >
+          <FaAmazon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+          <span>Purchase on Amazon</span>
+        </a>
+      </div>
+    </div>
+  );
 }
 
 const books: Book[] = [
@@ -91,6 +124,56 @@ function NextArrow({ onClick }: CustomArrowProps) {
 }
 
 export function FounderBooks() {
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = mobileScrollRef.current;
+    if (!container) return;
+
+    const isMobile = window.matchMedia("(max-width: 767px)");
+    if (!isMobile.matches) return;
+
+    const firstSlide = container.querySelector(
+      "[data-book-slide]",
+    ) as HTMLDivElement | null;
+    if (!firstSlide) return;
+
+    const styles = window.getComputedStyle(container);
+    const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
+    const step = firstSlide.getBoundingClientRect().width + gap;
+
+    let userInteracting = false;
+    const setInteracting = () => {
+      userInteracting = true;
+    };
+    const clearInteracting = () => {
+      userInteracting = false;
+    };
+
+    container.addEventListener("touchstart", setInteracting, {
+      passive: true,
+    });
+    container.addEventListener("touchend", clearInteracting);
+
+    const interval = window.setInterval(() => {
+      if (userInteracting) return;
+
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      const nextLeft = container.scrollLeft + step;
+
+      container.scrollTo({
+        left: nextLeft >= maxScrollLeft - 2 ? 0 : nextLeft,
+        behavior: "smooth",
+      });
+    }, 2800);
+
+    return () => {
+      window.clearInterval(interval);
+      container.removeEventListener("touchstart", setInteracting);
+      container.removeEventListener("touchend", clearInteracting);
+    };
+  }, []);
+
   const sliderSettings: Settings = {
     dots: false,
     arrows: true,
@@ -150,7 +233,24 @@ export function FounderBooks() {
           </p>
         </div>
 
-        <div className="relative left-1/2 w-screen -translate-x-1/2 px-2 sm:px-4 md:px-6 lg:px-10">
+        <div className="md:hidden px-1">
+          <div
+            ref={mobileScrollRef}
+            className="hide-scrollbar flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-3 px-1 pb-2"
+          >
+            {books.map((book) => (
+              <div
+                key={book.id}
+                data-book-slide
+                className="snap-center shrink-0 min-w-full py-1"
+              >
+                <BookCard book={book} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="hidden md:block relative left-1/2 w-screen -translate-x-1/2 px-2 sm:px-4 md:px-6 lg:px-10">
           <div className="books-carousel-wrapper mx-auto">
             <Slider {...sliderSettings}>
               {books.map((book) => (
@@ -158,36 +258,7 @@ export function FounderBooks() {
                   key={book.id}
                   className="px-1.5 sm:px-2 md:px-3 lg:px-4 py-1"
                 >
-                  <div className="flex h-auto sm:h-96 md:h-[480px] lg:h-[560px] flex-col overflow-hidden rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-2xl">
-                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 p-2 sm:p-3">
-                      <Image
-                        src={book.image}
-                        alt={book.title}
-                        fill
-                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 40vw, 25vw"
-                        className="object-contain object-center p-1 sm:p-2"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 hover:opacity-100" />
-                    </div>
-
-                    <div className="flex flex-1 flex-col bg-gradient-to-b from-white to-gray-50 p-3 sm:p-4 md:p-6">
-                      <h3 className="mb-2 sm:mb-4 text-sm sm:text-base md:text-lg leading-snug text-gray-800">
-                        {book.title}
-                      </h3>
-                      <a
-                        href={book.amazonLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-r from-[#FF9900] to-[#FF8000] px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm md:text-base text-white font-semibold shadow-md transition-all duration-200 hover:from-[#FA8900] hover:to-[#F57C00] hover:shadow-lg whitespace-nowrap"
-                      >
-                        <FaAmazon
-                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                          aria-hidden="true"
-                        />
-                        <span>Purchase on Amazon</span>
-                      </a>
-                    </div>
-                  </div>
+                  <BookCard book={book} />
                 </div>
               ))}
             </Slider>
@@ -196,6 +267,15 @@ export function FounderBooks() {
       </div>
 
       <style jsx global>{`
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+
         .books-carousel-wrapper .slick-track {
           display: flex !important;
         }

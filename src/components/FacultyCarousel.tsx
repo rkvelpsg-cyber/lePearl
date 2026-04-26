@@ -1,7 +1,7 @@
 "use client";
 
-import Slider, { type CustomArrowProps, type Settings } from "react-slick";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ArrowRight } from "lucide-react";
 import Image, { type StaticImageData } from "next/image";
 import sadhanaImg from "../../public/sadhana_faculty1.jpeg";
 import babliImg from "../../public/DrBablick.png";
@@ -42,71 +42,56 @@ const facultyData: FacultyMember[] = [
   },
 ];
 
-function PrevArrow({ onClick }: CustomArrowProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-3 hover:bg-blue-500 hover:text-white transition-all duration-300 transform hover:scale-110 hover:-translate-x-1 group"
-      aria-label="Previous slide"
-      type="button"
-    >
-      <ChevronLeft className="w-6 h-6 text-blue-500 group-hover:text-white transition-colors" />
-    </button>
-  );
-}
-
-function NextArrow({ onClick }: CustomArrowProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-3 hover:bg-blue-500 hover:text-white transition-all duration-300 transform hover:scale-110 hover:translate-x-1 group"
-      aria-label="Next slide"
-      type="button"
-    >
-      <ChevronRight className="w-6 h-6 text-blue-500 group-hover:text-white transition-colors" />
-    </button>
-  );
-}
-
 export function FacultyCarousel() {
-  const settings: Settings = {
-    dots: true,
-    infinite: true,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 3000,
-    cssEase: "linear",
-    pauseOnHover: true,
-    arrows: true,
-    prevArrow: <PrevArrow />,
-    nextArrow: <NextArrow />,
-    responsive: [
-      {
-        breakpoint: 1280,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
-        },
-      },
-      {
-        breakpoint: 768,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-          arrows: false,
-        },
-      },
-    ],
-  };
+  const mobileScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = mobileScrollRef.current;
+    if (!container) return;
+
+    const isMobile = window.matchMedia("(max-width: 767px)");
+    if (!isMobile.matches) return;
+
+    const firstSlide = container.querySelector(
+      "[data-faculty-slide]",
+    ) as HTMLDivElement | null;
+    if (!firstSlide) return;
+
+    const styles = window.getComputedStyle(container);
+    const gap = parseFloat(styles.columnGap || styles.gap || "0") || 0;
+    const step = firstSlide.getBoundingClientRect().width + gap;
+
+    let userInteracting = false;
+    const setInteracting = () => {
+      userInteracting = true;
+    };
+    const clearInteracting = () => {
+      userInteracting = false;
+    };
+
+    container.addEventListener("touchstart", setInteracting, {
+      passive: true,
+    });
+    container.addEventListener("touchend", clearInteracting);
+
+    const interval = window.setInterval(() => {
+      if (userInteracting) return;
+
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      const nextLeft = container.scrollLeft + step;
+
+      container.scrollTo({
+        left: nextLeft >= maxScrollLeft - 2 ? 0 : nextLeft,
+        behavior: "smooth",
+      });
+    }, 2800);
+
+    return () => {
+      window.clearInterval(interval);
+      container.removeEventListener("touchstart", setInteracting);
+      container.removeEventListener("touchend", clearInteracting);
+    };
+  }, []);
 
   return (
     <div
@@ -117,21 +102,22 @@ export function FacultyCarousel() {
         Faculty Profile
       </h2>
       <div className="faculty-carousel-wrapper max-w-7xl mx-auto">
-        <Slider {...settings}>
+        <div
+          ref={mobileScrollRef}
+          className="hide-scrollbar flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none scroll-smooth gap-3 sm:gap-4 md:gap-5 lg:gap-6 px-1 sm:px-0 pb-2"
+        >
           {facultyData.map((faculty) => (
             <div
               key={faculty.id}
-              className="px-1.5 sm:px-2 md:px-3 lg:px-4 h-full"
+              data-faculty-slide
+              className="snap-center shrink-0 min-w-full md:min-w-0"
             >
-              <div className="bg-white rounded-lg sm:rounded-lg shadow-lg overflow-hidden mx-auto max-w-xs sm:max-w-sm h-full flex flex-col transition-all duration-300 hover:shadow-2xl">
-                <div
-                  className="w-full overflow-hidden bg-gray-100"
-                  style={{ height: "280px" }}
-                >
+              <div className="faculty-card bg-white rounded-lg shadow-lg overflow-hidden w-full h-full flex flex-col transition-all duration-300 hover:shadow-2xl">
+                <div className="faculty-image w-full overflow-hidden bg-gray-100 h-[220px] sm:h-[230px] md:h-[280px]">
                   <Image
                     src={faculty.image}
                     alt={faculty.name}
-                    className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-110 cursor-pointer"
+                    className={`w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-110 cursor-pointer faculty-photo faculty-photo-${faculty.id}`}
                     style={{
                       objectPosition:
                         faculty.id === 1
@@ -145,18 +131,18 @@ export function FacultyCarousel() {
                     priority={faculty.id === 1}
                   />
                 </div>
-                <div className="p-3 sm:p-4 md:p-6 text-center flex-1 flex flex-col">
-                  <h3 className="mb-1 sm:mb-2 text-base sm:text-lg md:text-xl font-semibold text-center leading-snug">
+                <div className="p-2.5 sm:p-4 md:p-6 text-center flex-1 flex flex-col">
+                  <h3 className="faculty-name mb-1 sm:mb-2 text-[15px] sm:text-lg md:text-xl font-semibold text-center leading-snug min-h-[2.4rem] sm:min-h-0">
                     {faculty.name}
                   </h3>
-                  <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-2 sm:mb-4 leading-relaxed">
+                  <p className="faculty-description text-[11px] sm:text-sm md:text-base text-gray-600 mb-2 sm:mb-4 leading-relaxed min-h-[3.2rem] sm:min-h-0">
                     {faculty.description}
                   </p>
                   <a
                     href={`/faculty/${faculty.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="view-profile-btn group inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm md:font-bold font-semibold border-2 border-indigo-600 text-indigo-700 bg-white hover:bg-indigo-600 hover:text-white shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0 active:shadow-md mt-auto self-center whitespace-nowrap"
+                    className="view-profile-btn group inline-flex items-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-sm md:font-bold font-semibold border-2 border-indigo-600 text-indigo-700 bg-white hover:bg-indigo-600 hover:text-white shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5 active:translate-y-0 active:shadow-md mt-auto self-center whitespace-nowrap"
                   >
                     <span className="relative z-10">View Profile</span>
                     <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
@@ -165,45 +151,15 @@ export function FacultyCarousel() {
               </div>
             </div>
           ))}
-        </Slider>
+        </div>
       </div>
       <style jsx global>{`
-        .faculty-carousel-wrapper .slick-track {
-          display: flex !important;
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
 
-        .faculty-carousel-wrapper .slick-slide {
-          height: inherit !important;
-        }
-
-        .faculty-carousel-wrapper .slick-slide > div {
-          height: 100%;
-        }
-
-        .faculty-carousel-wrapper .slick-dots {
-          bottom: -40px;
-          display: flex !important;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .faculty-carousel-wrapper .slick-dots li {
-          margin: 0;
-          width: auto;
-          height: auto;
-        }
-
-        .faculty-carousel-wrapper .slick-dots li button {
-          width: 12px;
-          height: 12px;
-          padding: 0;
-          border-radius: 50%;
-          background-color: #d1d5db;
-          transition: all 0.3s ease;
-        }
-
-        .faculty-carousel-wrapper .slick-dots li button:before {
+        .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
 
@@ -228,36 +184,25 @@ export function FacultyCarousel() {
           left: 160%;
         }
 
-        .faculty-carousel-wrapper .slick-dots li.slick-active button {
-          background-color: #3b82f6;
-          width: 32px;
-          border-radius: 6px;
-        }
-
-        .faculty-carousel-wrapper .slick-prev,
-        .faculty-carousel-wrapper .slick-next {
-          z-index: 1;
-          width: 40px;
-          height: 40px;
-        }
-
-        .faculty-carousel-wrapper .slick-prev {
-          left: -15px;
-        }
-
-        .faculty-carousel-wrapper .slick-next {
-          right: -15px;
-        }
-
-        .faculty-carousel-wrapper .slick-prev:before,
-        .faculty-carousel-wrapper .slick-next:before {
-          font-size: 40px;
-          color: #3b82f6;
-        }
-
         @media (max-width: 767px) {
-          .faculty-carousel-wrapper .slick-dots {
-            bottom: -30px;
+          .faculty-carousel-wrapper .faculty-photo {
+            object-fit: contain !important;
+            object-position: center top !important;
+            background-color: #f3f4f6;
+          }
+
+          .faculty-carousel-wrapper .faculty-name {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          .faculty-carousel-wrapper .faculty-description {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
           }
         }
 

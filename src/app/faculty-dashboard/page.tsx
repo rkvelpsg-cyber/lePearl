@@ -863,16 +863,14 @@ export default function FacultyDashboardPage() {
     const supabase = createClient();
     const key = `${studentUserId}_${courseId}`;
     setProgressUpdating(key);
-    const { error } = await supabase
-      .from("student_course_progress")
-      .upsert(
-        {
-          student_user_id: studentUserId,
-          course_id: courseId,
-          progress_percent: newPct,
-        },
-        { onConflict: "student_user_id,course_id" },
-      );
+    const { error } = await supabase.from("student_course_progress").upsert(
+      {
+        student_user_id: studentUserId,
+        course_id: courseId,
+        progress_percent: newPct,
+      },
+      { onConflict: "student_user_id,course_id" },
+    );
     if (!error) {
       setStudentProgress((prev) =>
         prev.map((p) =>
@@ -1107,7 +1105,8 @@ export default function FacultyDashboardPage() {
                                 {cnt} enrolled
                               </span>
                               <span className="text-xs text-gray-400">
-                                {fmtDate(b.start_date)} â€“ {fmtDate(b.end_date)}
+                                {fmtDate(b.start_date)} â€“{" "}
+                                {fmtDate(b.end_date)}
                               </span>
                             </div>
                           </div>
