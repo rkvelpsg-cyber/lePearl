@@ -88,10 +88,28 @@ type McqTest = {
   total_marks: number;
   time_limit_minutes: number;
   exam_type: string;
+  test_type?: string; // 'mcq' or 'descriptive'
   scheduled_at: string | null;
   is_published: boolean;
   courses: { title: string } | null;
   batches: { batch_name: string } | null;
+};
+type DescriptiveQuestion = {
+  id: number;
+  mock_test_id: number;
+  question_text: string;
+  marks: number;
+  question_order: number;
+  category: string | null;
+};
+type DescriptiveAnswer = {
+  id: number;
+  mock_test_id: number;
+  question_id: number;
+  answer_file_url: string | null;
+  submitted_at: string | null;
+  marks_obtained: number | null;
+  faculty_notes: string | null;
 };
 type McqQuestion = {
   id: number;
@@ -139,8 +157,11 @@ function pct(n: number, d: number) {
 function fmt(n: number) {
   return new Intl.NumberFormat("en-IN").format(n);
 }
+function fmtCurrency(n: number) {
+  return `\u20B9${fmt(n)}`;
+}
 function fmtDate(s: string | null) {
-  if (!s) return "â€”";
+  if (!s) return "-";
   return new Date(s).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -152,6 +173,24 @@ function fmtTime(t: string | null) {
   const [h, m] = t.split(":");
   const hr = parseInt(h);
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? "PM" : "AM"}`;
+}
+function localDateKey(d: Date = new Date()) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function isUpcomingSession(sessionDate: string, startTime: string | null) {
+  const today = localDateKey();
+  if (sessionDate > today) return true;
+  if (sessionDate < today) return false;
+  if (!startTime) return true;
+
+  const [h, m] = startTime.split(":").map((v) => parseInt(v, 10));
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const sessionMinutes = h * 60 + m;
+  return sessionMinutes > nowMinutes;
 }
 
 /* â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -249,6 +288,22 @@ export default function StudentDashboardPage() {
   >("weekly");
   const [availableTests, setAvailableTests] = useState<McqTest[]>([]);
   const [testAttempted, setTestAttempted] = useState<Set<number>>(new Set());
+  const [descriptiveTests, setDescriptiveTests] = useState<McqTest[]>([]);
+  const [descriptiveQuestions, setDescriptiveQuestions] = useState<
+    DescriptiveQuestion[]
+  >([]);
+  const [descriptiveAnswers, setDescriptiveAnswers] = useState<
+    DescriptiveAnswer[]
+  >([]);
+  const [selectedDescriptiveTest, setSelectedDescriptiveTest] =
+    useState<McqTest | null>(null);
+  const [uploadingQuestion, setUploadingQuestion] = useState<number | null>(
+    null,
+  );
+  const [uploadMsg, setUploadMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
   const [classSessions, setClassSessions] = useState<ClassSession[]>([]);
   const [lectures, setLectures] = useState<RecordedLecture[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -325,7 +380,6 @@ export default function StudentDashboardPage() {
       if (firstBatch?.batch_name) setBatchLabel(firstBatch.batch_name);
 
       /* stage 2 */
-      const today = new Date().toISOString().split("T")[0];
       const [
         coursesRes,
         paymentsRes,
@@ -354,14 +408,16 @@ export default function StudentDashboardPage() {
           .select("total_fee, next_due_amount, next_due_date")
           .eq("student_user_id", uid)
           .single(),
-        supabase
-          .from("class_sessions")
-          .select(
-            "id, title, session_date, start_time, end_time, meeting_link, is_live, batches(batch_name, courses(title))",
-          )
-          .gte("session_date", today)
-          .order("session_date", { ascending: true })
-          .limit(20),
+        ids.length > 0
+          ? supabase
+              .from("class_sessions")
+              .select(
+                "id, title, session_date, start_time, end_time, meeting_link, is_live, batches(batch_name, courses(title))",
+              )
+              .in("batch_id", ids)
+              .order("session_date", { ascending: false })
+              .limit(50)
+          : Promise.resolve({ data: [], error: null }),
         supabase
           .from("student_attendance")
           .select(
@@ -457,12 +513,34 @@ export default function StudentDashboardPage() {
         const { data: testsData } = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, time_limit_minutes, exam_type, scheduled_at, is_published, courses(title), batches(batch_name)",
+            "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, courses(title), batches(batch_name)",
           )
           .in("batch_id", ids)
           .eq("is_published", true)
           .order("scheduled_at", { ascending: true });
-        if (testsData) setAvailableTests(testsData as unknown as McqTest[]);
+        if (testsData) {
+          const tests = testsData as unknown as McqTest[];
+          const mcqTests = tests.filter((t) => t.test_type !== "descriptive");
+          const descTests = tests.filter((t) => t.test_type === "descriptive");
+          setAvailableTests(mcqTests);
+          setDescriptiveTests(descTests);
+
+          // Load student's descriptive answers
+          if (user) {
+            const { data: answersData } = await supabase
+              .from("descriptive_student_answers")
+              .select("*")
+              .eq("student_user_id", user.id)
+              .in(
+                "mock_test_id",
+                descTests.map((t) => t.id),
+              );
+            if (answersData)
+              setDescriptiveAnswers(
+                answersData as unknown as DescriptiveAnswer[],
+              );
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -609,6 +687,93 @@ export default function StudentDashboardPage() {
     setTimerSecs(test.time_limit_minutes * 60);
   }
 
+  async function loadDescriptiveQuestions(test: McqTest) {
+    const supabase = createClient();
+    const now = new Date();
+
+    // Check if test has started (if scheduled_at is set)
+    if (test.scheduled_at) {
+      const scheduledTime = new Date(test.scheduled_at);
+      if (now < scheduledTime) {
+        setUploadMsg({
+          type: "err",
+          text: `This test will be available from ${scheduledTime.toLocaleString()}`,
+        });
+        return;
+      }
+    }
+
+    const { data: qData } = await supabase
+      .from("descriptive_questions")
+      .select("*")
+      .eq("mock_test_id", test.id)
+      .order("question_order", { ascending: true });
+
+    if (qData) {
+      setDescriptiveQuestions(qData as unknown as DescriptiveQuestion[]);
+      setSelectedDescriptiveTest(test);
+    }
+  }
+
+  async function handleFileUpload(questionId: number, file: File | null) {
+    if (!file || !selectedDescriptiveTest) return;
+
+    const supabase = createClient();
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+
+    setUploadingQuestion(questionId);
+    setUploadMsg(null);
+
+    try {
+      // Upload file to Supabase Storage
+      const fileName = `descriptive/${selectedDescriptiveTest.id}/${user.user.id}/${questionId}/${Date.now()}_${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("test-submissions")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("test-submissions")
+        .getPublicUrl(fileName);
+
+      // Update or insert descriptive answer record
+      const { error: answerError } = await supabase
+        .from("descriptive_student_answers")
+        .upsert({
+          mock_test_id: selectedDescriptiveTest.id,
+          student_user_id: user.user.id,
+          question_id: questionId,
+          answer_file_url: urlData.publicUrl,
+          submitted_at: new Date().toISOString(),
+        });
+
+      if (answerError) throw answerError;
+
+      setUploadMsg({ type: "ok", text: "Answer uploaded successfully!" });
+
+      // Reload answers
+      const { data: updatedAnswers } = await supabase
+        .from("descriptive_student_answers")
+        .select("*")
+        .eq("student_user_id", user.user.id)
+        .eq("mock_test_id", selectedDescriptiveTest.id);
+
+      if (updatedAnswers)
+        setDescriptiveAnswers(updatedAnswers as unknown as DescriptiveAnswer[]);
+    } catch (err) {
+      console.error(err);
+      setUploadMsg({
+        type: "err",
+        text: "Failed to upload answer. Please try again.",
+      });
+    } finally {
+      setUploadingQuestion(null);
+    }
+  }
+
   /* â”€â”€ Razorpay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function handlePay() {
     setPaying(false);
@@ -629,7 +794,14 @@ export default function StudentDashboardPage() {
         )
       : 0;
   const liveSessions = classSessions.filter((s) => s.is_live);
-  const upcomingSessions = classSessions.filter((s) => !s.is_live);
+  const upcomingSessions = classSessions.filter(
+    (s) => !s.is_live && isUpcomingSession(s.session_date, s.start_time),
+  );
+  const recentSessions = classSessions
+    .filter(
+      (s) => !s.is_live && !isUpcomingSession(s.session_date, s.start_time),
+    )
+    .slice(0, 10);
 
   /* â”€â”€ loading / error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading)
@@ -667,7 +839,7 @@ export default function StudentDashboardPage() {
                   {activeTest.test.title}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  {activeTest.questions.length} questions Â·{" "}
+                  {activeTest.questions.length} questions |{" "}
                   {activeTest.test.total_marks} marks
                 </p>
               </div>
@@ -940,7 +1112,7 @@ export default function StudentDashboardPage() {
                       value={
                         attendanceRecords.length > 0
                           ? `${pct(attendanceRecords.filter((a) => a.status === "present").length, attendanceRecords.length)}%`
-                          : "â€”"
+                          : "-"
                       }
                       icon={Calendar}
                       iconBg="bg-green-100"
@@ -951,7 +1123,7 @@ export default function StudentDashboardPage() {
                       value={
                         mockStat.total > 0
                           ? `${pct(mockStat.scored, mockStat.total)}%`
-                          : "â€”"
+                          : "-"
                       }
                       icon={BarChart2}
                       iconBg="bg-purple-100"
@@ -959,7 +1131,7 @@ export default function StudentDashboardPage() {
                     />
                     <StatCard
                       label="Course Progress"
-                      value={courses.length > 0 ? `${overallProgress}%` : "â€”"}
+                      value={courses.length > 0 ? `${overallProgress}%` : "-"}
                       icon={TrendingUp}
                       iconBg="bg-orange-100"
                       iconColor="text-orange-500"
@@ -1088,7 +1260,7 @@ export default function StudentDashboardPage() {
                       <p className="text-3xl font-bold text-purple-600">
                         {filteredAttendance.length > 0
                           ? `${filteredPct}%`
-                          : "â€”"}
+                          : "-"}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Attendance %</p>
                     </div>
@@ -1116,7 +1288,7 @@ export default function StudentDashboardPage() {
                                   {session?.title ?? "Class Session"}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {fmtDate(session?.session_date ?? null)} Â·{" "}
+                                  {fmtDate(session?.session_date ?? null)} |{" "}
                                   {batch?.batch_name ?? ""}
                                 </p>
                               </div>
@@ -1148,11 +1320,129 @@ export default function StudentDashboardPage() {
                       Mock &amp; Original Tests
                     </h1>
                     <p className="text-purple-100 text-sm">
-                      Attempt MCQ tests within the time limit and submit for
-                      instant results
+                      Attempt MCQ tests or submit descriptive test answers
                     </p>
                   </div>
-                  {availableTests.length === 0 ? (
+                  {selectedDescriptiveTest ? (
+                    <div className="bg-white rounded-2xl shadow-sm p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                            Descriptive Test
+                          </span>
+                          <h2 className="font-bold text-gray-900 mt-2">
+                            {selectedDescriptiveTest.title}
+                          </h2>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {unwrapOne(selectedDescriptiveTest.courses)?.title}{" "}
+                            | {selectedDescriptiveTest.total_marks} marks
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedDescriptiveTest(null)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {descriptiveQuestions.map((q) => {
+                          const answer = descriptiveAnswers.find(
+                            (a) => a.question_id === q.id,
+                          );
+                          return (
+                            <div
+                              key={q.id}
+                              className="border border-gray-200 rounded-xl p-4"
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    Q{q.question_order}: {q.question_text}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                      {q.marks} marks
+                                    </span>
+                                    {q.category && (
+                                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                                        {q.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                {answer?.marks_obtained !== null && (
+                                  <div className="text-right">
+                                    <p className="text-xs text-gray-500">
+                                      Marks
+                                    </p>
+                                    <p className="text-lg font-bold text-green-600">
+                                      {answer?.marks_obtained}/{q.marks}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {answer?.submitted_at ? (
+                                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                  <p className="text-xs text-blue-700 font-semibold mb-2">
+                                    ✓ Submitted
+                                  </p>
+                                  {answer.answer_file_url && (
+                                    <a
+                                      href={answer.answer_file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                    >
+                                      <ExternalLink className="w-3 h-3" /> View
+                                      Submission
+                                    </a>
+                                  )}
+                                  {answer.faculty_notes && (
+                                    <p className="text-xs text-gray-700 mt-2">
+                                      <span className="font-semibold">
+                                        Faculty Feedback:
+                                      </span>{" "}
+                                      {answer.faculty_notes}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="mt-3">
+                                  <label className="text-xs font-semibold text-gray-600 mb-2 block">
+                                    Upload Answer (Scan/Image)
+                                  </label>
+                                  <input
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    onChange={(e) => {
+                                      if (e.target.files?.[0]) {
+                                        handleFileUpload(
+                                          q.id,
+                                          e.target.files[0],
+                                        );
+                                      }
+                                    }}
+                                    disabled={uploadingQuestion === q.id}
+                                    className="text-xs"
+                                  />
+                                  {uploadingQuestion === q.id && (
+                                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      Uploading...
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : availableTests.length === 0 &&
+                    descriptiveTests.length === 0 ? (
                     <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                       <FileQuestion className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500">
@@ -1255,8 +1545,8 @@ export default function StudentDashboardPage() {
                                   {s.title}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {course?.title ?? batch?.batch_name ?? ""} Â·{" "}
-                                  {fmtTime(s.start_time)} â€“{" "}
+                                  {course?.title ?? batch?.batch_name ?? ""} |{" "}
+                                  {fmtTime(s.start_time)} -{" "}
                                   {fmtTime(s.end_time)}
                                 </p>
                               </div>
@@ -1265,6 +1555,7 @@ export default function StudentDashboardPage() {
                                   href={s.meeting_link}
                                   target="_blank"
                                   rel="noopener noreferrer"
+                                  title="Join meeting anytime - works before, during, and after scheduled time"
                                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 whitespace-nowrap"
                                 >
                                   <Video className="w-3.5 h-3.5" /> Join Now
@@ -1309,9 +1600,9 @@ export default function StudentDashboardPage() {
                                   )}
                                 </div>
                                 <p className="text-xs text-gray-500 mt-0.5">
-                                  {fmtDate(s.session_date)} Â·{" "}
+                                  {fmtDate(s.session_date)} |{" "}
                                   {fmtTime(s.start_time)}{" "}
-                                  {s.end_time && `â€“ ${fmtTime(s.end_time)}`}
+                                  {s.end_time && `- ${fmtTime(s.end_time)}`}
                                 </p>
                                 <p className="text-xs text-gray-400">
                                   {course?.title ?? batch?.batch_name ?? ""}
@@ -1322,9 +1613,59 @@ export default function StudentDashboardPage() {
                                   href={s.meeting_link}
                                   target="_blank"
                                   rel="noopener noreferrer"
+                                  title="Join meeting anytime - works before, during, and after scheduled time"
                                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 whitespace-nowrap"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" /> Join
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-sm p-5">
+                    <h2 className="font-bold text-gray-900 mb-4">
+                      Recent Classes
+                    </h2>
+                    {recentSessions.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-8">
+                        No recent class details available.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {recentSessions.map((s) => {
+                          const batch = unwrapOne(s.batches);
+                          const course = unwrapOne(batch?.courses);
+                          return (
+                            <div
+                              key={s.id}
+                              className="rounded-xl p-4 border border-gray-100 bg-gray-50 flex items-center justify-between gap-3"
+                            >
+                              <div>
+                                <p className="font-semibold text-gray-900 text-sm">
+                                  {s.title}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {fmtDate(s.session_date)} |{" "}
+                                  {fmtTime(s.start_time)}{" "}
+                                  {s.end_time && `- ${fmtTime(s.end_time)}`}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {course?.title ?? batch?.batch_name ?? ""}
+                                </p>
+                              </div>
+                              {s.meeting_link && (
+                                <a
+                                  href={s.meeting_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Access meeting recording or details anytime"
+                                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 whitespace-nowrap"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" /> Open
                                 </a>
                               )}
                             </div>
@@ -1417,8 +1758,7 @@ export default function StudentDashboardPage() {
                       Fees &amp; Payments
                     </h1>
                     <p className="text-amber-100 text-sm">
-                      Pay securely via Razorpay Â· All transactions are
-                      encrypted
+                      Pay securely via Razorpay | All transactions are encrypted
                     </p>
                   </div>
                   {feePlan && (
@@ -1428,19 +1768,19 @@ export default function StudentDashboardPage() {
                           Total Course Fee
                         </p>
                         <p className="text-2xl font-bold text-gray-900 mt-1">
-                          â‚¹{fmt(feePlan.total_fee)}
+                          {fmtCurrency(feePlan.total_fee)}
                         </p>
                       </div>
                       <div className="bg-white rounded-2xl shadow-sm p-5">
                         <p className="text-xs text-gray-500">Total Paid</p>
                         <p className="text-2xl font-bold text-green-600 mt-1">
-                          â‚¹{fmt(paidAmount)}
+                          {fmtCurrency(paidAmount)}
                         </p>
                       </div>
                       <div className="bg-white rounded-2xl shadow-sm p-5">
                         <p className="text-xs text-gray-500">Next Due Amount</p>
                         <p className="text-2xl font-bold text-red-600 mt-1">
-                          â‚¹{fmt(feePlan.next_due_amount)}
+                          {fmtCurrency(feePlan.next_due_amount)}
                         </p>
                         {feePlan.next_due_date && (
                           <p className="text-xs text-gray-400 mt-1">
@@ -1457,7 +1797,7 @@ export default function StudentDashboardPage() {
                     <div className="space-y-4 max-w-sm">
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                          Amount (â‚¹)
+                          Amount (INR)
                         </label>
                         <input
                           type="number"
@@ -1538,13 +1878,13 @@ export default function StudentDashboardPage() {
                                   {fmtDate(p.payment_date)}
                                 </td>
                                 <td className="py-3 font-semibold text-gray-900">
-                                  â‚¹{fmt(p.amount)}
+                                  {fmtCurrency(p.amount)}
                                 </td>
                                 <td className="py-3 text-gray-500 max-w-[140px] truncate">
-                                  {p.description ?? "â€”"}
+                                  {p.description ?? "-"}
                                 </td>
                                 <td className="py-3 text-gray-500">
-                                  {p.payment_mode ?? "â€”"}
+                                  {p.payment_mode ?? "-"}
                                 </td>
                                 <td className="py-3">
                                   <span

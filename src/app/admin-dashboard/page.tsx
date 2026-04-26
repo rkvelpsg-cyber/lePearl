@@ -24,6 +24,8 @@ import {
   Plus,
   Search,
   Eye,
+  Video,
+  ExternalLink,
 } from "lucide-react";
 
 /* â”€â”€ types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -97,6 +99,17 @@ type McqRow = {
   batch_name: string;
   attempt_count: number;
 };
+type LiveClassRow = {
+  id: number;
+  title: string;
+  session_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  meeting_link: string | null;
+  is_live: boolean;
+  batch_name: string;
+  faculty_name: string;
+};
 type RegistrationRow = {
   id: string;
   full_name: string;
@@ -113,7 +126,7 @@ function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 function fmtDate(s: string | null) {
-  if (!s) return "â€”";
+  if (!s) return "-";
   return new Date(s).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -121,7 +134,7 @@ function fmtDate(s: string | null) {
   });
 }
 function fmtCurrency(n: number) {
-  return `â‚¹${n.toLocaleString("en-IN")}`;
+  return `\u20B9${n.toLocaleString("en-IN")}`;
 }
 
 function StatCard({
@@ -220,6 +233,7 @@ export default function AdminDashboardPage() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalBatches, setTotalBatches] = useState(0);
   const [totalTests, setTotalTests] = useState(0);
+  const [totalLiveClasses, setTotalLiveClasses] = useState(0);
 
   /* data tables */
   const [students, setStudents] = useState<StudentRow[]>([]);
@@ -230,6 +244,7 @@ export default function AdminDashboardPage() {
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [mcqTests, setMcqTests] = useState<McqRow[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
+  const [liveClasses, setLiveClasses] = useState<LiveClassRow[]>([]);
 
   /* payment form */
   const [showPayForm, setShowPayForm] = useState(false);
@@ -277,6 +292,7 @@ export default function AdminDashboardPage() {
         batchesRes,
         registrationsRes,
         mcqRes,
+        classesRes,
       ] = await Promise.all([
         supabase
           .from("student_profiles")
@@ -312,13 +328,22 @@ export default function AdminDashboardPage() {
           ),
         supabase
           .from("student_registrations")
-          .select("id, full_name, qualification, course, phone, email, created_at, status")
+          .select(
+            "id, full_name, qualification, course, phone, email, created_at, status",
+          )
           .order("created_at", { ascending: false }),
         supabase
           .from("mock_tests")
           .select(
             "id, title, total_marks, exam_type, is_published, batch_id, batches(batch_name), mock_test_attempts(count)",
           ),
+        supabase
+          .from("class_sessions")
+          .select(
+            "id, title, session_date, start_time, end_time, meeting_link, is_live, batches(batch_name), profiles(full_name)",
+          )
+          .order("session_date", { ascending: false })
+          .limit(100),
       ]);
 
       /* students */
@@ -388,14 +413,14 @@ export default function AdminDashboardPage() {
           marked_at: a.marked_at,
           student_name:
             unwrapOne(a.student_profiles)?.profiles?.full_name ?? "Student",
-          session_title: unwrapOne(a.class_sessions)?.title ?? "â€”",
+          session_title: unwrapOne(a.class_sessions)?.title ?? "-",
           session_date: unwrapOne(a.class_sessions)?.session_date ?? "",
           batch_name:
             (
               unwrapOne(a.class_sessions)?.batches as {
                 batch_name: string;
               } | null
-            )?.batch_name ?? "â€”",
+            )?.batch_name ?? "-",
         }));
         setAttendance(rows);
       }
@@ -424,7 +449,7 @@ export default function AdminDashboardPage() {
             description: p.description,
             student_name:
               unwrapOne(p.student_profiles)?.profiles?.full_name ?? "Student",
-            course_title: unwrapOne(p.courses)?.title ?? "â€”",
+            course_title: unwrapOne(p.courses)?.title ?? "-",
           };
         });
         setPayments(rows);
@@ -472,8 +497,8 @@ export default function AdminDashboardPage() {
           end_date: b.end_date,
           student_count:
             (b.enrollments as unknown as { count: number }[])?.[0]?.count ?? 0,
-          course_title: unwrapOne(b.courses)?.title ?? "â€”",
-          faculty_name: unwrapOne(b.profiles)?.full_name ?? "â€”",
+          course_title: unwrapOne(b.courses)?.title ?? "-",
+          faculty_name: unwrapOne(b.profiles)?.full_name ?? "-",
         }));
         setBatches(rows);
         setTotalBatches(rows.length);
@@ -497,7 +522,7 @@ export default function AdminDashboardPage() {
           total_marks: t.total_marks,
           exam_type: t.exam_type,
           is_published: t.is_published,
-          batch_name: unwrapOne(t.batches)?.batch_name ?? "â€”",
+          batch_name: unwrapOne(t.batches)?.batch_name ?? "-",
           attempt_count:
             (t.mock_test_attempts as unknown as { count: number }[])?.[0]
               ?.count ?? 0,
@@ -509,6 +534,34 @@ export default function AdminDashboardPage() {
       /* registrations */
       if (registrationsRes.data) {
         setRegistrations(registrationsRes.data as RegistrationRow[]);
+      }
+
+      if (classesRes.data) {
+        const rows: LiveClassRow[] = (
+          classesRes.data as unknown as {
+            id: number;
+            title: string;
+            session_date: string;
+            start_time: string | null;
+            end_time: string | null;
+            meeting_link: string | null;
+            is_live: boolean;
+            batches: { batch_name: string } | null;
+            profiles: { full_name: string } | null;
+          }[]
+        ).map((c) => ({
+          id: c.id,
+          title: c.title,
+          session_date: c.session_date,
+          start_time: c.start_time,
+          end_time: c.end_time,
+          meeting_link: c.meeting_link,
+          is_live: c.is_live,
+          batch_name: unwrapOne(c.batches)?.batch_name ?? "-",
+          faculty_name: unwrapOne(c.profiles)?.full_name ?? "-",
+        }));
+        setLiveClasses(rows);
+        setTotalLiveClasses(rows.length);
       }
     } catch (err) {
       console.error(err);
@@ -732,7 +785,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-6 text-white">
                   <h1 className="text-2xl font-bold mb-0.5">Admin Dashboard</h1>
                   <p className="text-amber-200 text-sm">
-                    Complete platform overview â€” LePearl Education
+                    Complete platform overview - LePearl Education
                   </p>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -781,6 +834,16 @@ export default function AdminDashboardPage() {
                     iconBg="bg-teal-100"
                     iconColor="text-teal-600"
                     sub="Last 100 records"
+                  />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <StatCard
+                    label="Live Classes"
+                    value={totalLiveClasses}
+                    icon={Video}
+                    iconBg="bg-blue-100"
+                    iconColor="text-blue-600"
+                    sub={`${liveClasses.filter((c) => c.is_live).length} live now`}
                   />
                 </div>
                 {/* quick tables */}
@@ -863,6 +926,58 @@ export default function AdminDashboardPage() {
                       ))}
                     </div>
                   </div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-bold text-gray-900">
+                      Recent Live Class Details
+                    </h2>
+                    <span className="text-xs text-gray-400">
+                      Last 10 classes
+                    </span>
+                  </div>
+                  {liveClasses.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-6 text-center">
+                      No class sessions available.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {liveClasses.slice(0, 10).map((c) => (
+                        <div
+                          key={c.id}
+                          className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${c.is_live ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-100"}`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-gray-900">
+                                {c.title}
+                              </p>
+                              {c.is_live && (
+                                <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full">
+                                  LIVE
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {fmtDate(c.session_date)} | {c.batch_name} |
+                              Faculty: {c.faculty_name}
+                            </p>
+                          </div>
+                          {c.meeting_link && (
+                            <a
+                              href={c.meeting_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" /> Link
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -1182,7 +1297,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
                   <h1 className="text-xl font-bold mb-1">Payment Records</h1>
                   <p className="text-emerald-100 text-sm">
-                    Total Revenue: {fmtCurrency(totalRevenue)} Â·{" "}
+                    Total Revenue: {fmtCurrency(totalRevenue)} |{" "}
                     {payments.length} records
                   </p>
                 </div>
@@ -1260,7 +1375,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                          Amount (â‚¹)
+                          Amount (INR)
                         </label>
                         <input
                           type="number"
@@ -1645,7 +1760,9 @@ export default function AdminDashboardPage() {
                               ? r.full_name
                                   .toLowerCase()
                                   .includes(search.toLowerCase()) ||
-                                r.email.toLowerCase().includes(search.toLowerCase()) ||
+                                r.email
+                                  .toLowerCase()
+                                  .includes(search.toLowerCase()) ||
                                 r.phone.includes(search) ||
                                 r.course
                                   .toLowerCase()

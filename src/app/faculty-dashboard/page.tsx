@@ -28,6 +28,9 @@ import {
   FileQuestion,
   Trash2,
   Edit3,
+  FileDown,
+  Zap,
+  ChevronRight,
 } from "lucide-react";
 
 /* â”€â”€ types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -35,6 +38,7 @@ type Section =
   | "dashboard"
   | "attendance"
   | "mcq"
+  | "evaluations"
   | "classes"
   | "lectures"
   | "tasks"
@@ -50,6 +54,7 @@ type Batch = {
 };
 type ClassSession = {
   id: number;
+  batch_id: number;
   title: string;
   session_date: string;
   start_time: string | null;
@@ -88,6 +93,7 @@ type McqTestFaculty = {
   total_marks: number;
   time_limit_minutes: number;
   exam_type: string;
+  test_type?: string; // 'mcq' or 'descriptive'
   scheduled_at: string | null;
   is_published: boolean;
   batch_id: number | null;
@@ -106,6 +112,26 @@ type McqQuestion = {
   marks: number;
   question_order: number;
 };
+type DescriptiveQuestion = {
+  id: number;
+  mock_test_id: number;
+  question_text: string;
+  marks: number;
+  question_order: number;
+  category: string | null;
+};
+type DescriptiveAnswer = {
+  id: number;
+  mock_test_id: number;
+  student_user_id: string;
+  question_id: number;
+  answer_file_url: string | null;
+  submitted_at: string | null;
+  marks_obtained: number | null;
+  faculty_notes: string | null;
+  evaluated_at: string | null;
+  student_name?: string; // For display purposes
+};
 type RecordedLectureFaculty = {
   id: number;
   title: string;
@@ -118,6 +144,7 @@ type RecordedLectureFaculty = {
 };
 type AttendanceSession = {
   id: number;
+  batch_id: number;
   title: string;
   session_date: string;
   start_time: string | null;
@@ -130,7 +157,7 @@ function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 function fmtDate(s: string | null) {
-  if (!s) return "â€”";
+  if (!s) return "-";
   return new Date(s).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -142,6 +169,62 @@ function fmtTime(t: string | null) {
   const [h, m] = t.split(":");
   const hr = parseInt(h);
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? "PM" : "AM"}`;
+}
+function localDateKey(d: Date = new Date()) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function isCompletedSession(sessionDate: string, startTime: string | null) {
+  const today = localDateKey();
+  if (sessionDate < today) return true;
+  if (sessionDate > today) return false;
+  if (!startTime) return false;
+
+  const [h, m] = startTime.split(":").map((v) => parseInt(v, 10));
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const sessionMinutes = h * 60 + m;
+  return sessionMinutes <= nowMinutes;
+}
+function isUpcomingSession(sessionDate: string, startTime: string | null) {
+  const today = localDateKey();
+  if (sessionDate > today) return true;
+  if (sessionDate < today) return false;
+  if (!startTime) return true;
+
+  const [h, m] = startTime.split(":").map((v) => parseInt(v, 10));
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const sessionMinutes = h * 60 + m;
+  return sessionMinutes > nowMinutes;
+}
+function normalizeAttendanceTitle(title: string) {
+  return title.replace(/\s*\(upcoming\)\s*$/i, "").trim();
+}
+function csvEscape(value: string | number | null | undefined) {
+  const raw = String(value ?? "");
+  return `"${raw.replace(/"/g, '""')}"`;
+}
+function downloadCsv(
+  filename: string,
+  headers: string[],
+  rows: (string | number)[][],
+) {
+  const csv = [
+    headers.map((h) => csvEscape(h)).join(","),
+    ...rows.map((row) => row.map((cell) => csvEscape(cell)).join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.setAttribute("download", filename);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 function pct(n: number, d: number) {
   return d === 0 ? 0 : Math.round((n / d) * 100);
@@ -226,6 +309,7 @@ export default function FacultyDashboardPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [upcomingClasses, setUpcomingClasses] = useState<ClassSession[]>([]);
   const [totalStudents, setTotalStudents] = useState(0);
+  const [activeTasksCount, setActiveTasksCount] = useState(0);
   const [batchStudents, setBatchStudents] = useState<BatchStudent[]>([]);
   const [studentProgress, setStudentProgress] = useState<StudentProgress[]>([]);
   const [progressUpdating, setProgressUpdating] = useState<string | null>(null);
@@ -264,6 +348,7 @@ export default function FacultyDashboardPage() {
   const [mcqForm, setMcqForm] = useState({
     batchId: "",
     title: "",
+    testType: "mcq", // 'mcq' or 'descriptive'
     timeLimitMinutes: "60",
     examType: "mock",
     scheduledAt: "",
@@ -278,9 +363,39 @@ export default function FacultyDashboardPage() {
     correctOption: "A",
     marks: "1",
   });
+  const [descriptiveQForm, setDescriptiveQForm] = useState({
+    questionText: "",
+    marks: "5",
+    category: "",
+  });
+
+  /* evaluations - descriptive test grading */
+  const [descriptiveTests, setDescriptiveTests] = useState<McqTestFaculty[]>(
+    [],
+  );
+  const [selectedEvalTest, setSelectedEvalTest] =
+    useState<McqTestFaculty | null>(null);
+  const [descriptiveQuestions, setDescriptiveQuestions] = useState<
+    DescriptiveQuestion[]
+  >([]);
+  const [studentSubmissions, setStudentSubmissions] = useState<
+    DescriptiveAnswer[]
+  >([]);
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<DescriptiveAnswer | null>(null);
+  const [evaluationForm, setEvaluationForm] = useState({
+    marksObtained: "",
+    facultyNotes: "",
+  });
+  const [evaluationUpdating, setEvaluationUpdating] = useState(false);
+  const [evaluationMsg, setEvaluationMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
 
   /* classes */
   const [showClassForm, setShowClassForm] = useState(false);
+  const [editingClassId, setEditingClassId] = useState<number | null>(null);
   const [classMsg, setClassMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -323,6 +438,7 @@ export default function FacultyDashboardPage() {
     {},
   );
   const [attendanceSubmitting, setAttendanceSubmitting] = useState(false);
+  const [attendanceExporting, setAttendanceExporting] = useState(false);
   const [attendanceMsg, setAttendanceMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -332,6 +448,9 @@ export default function FacultyDashboardPage() {
   const load = useCallback(async () => {
     try {
       const supabase = createClient();
+      setTotalStudents(0);
+      setActiveTasksCount(0);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -344,7 +463,6 @@ export default function FacultyDashboardPage() {
       const [
         profileRes,
         batchesRes,
-        classesRes,
         tasksRes,
         mcqRes,
         lecturesRes,
@@ -361,15 +479,6 @@ export default function FacultyDashboardPage() {
             "id, batch_name, start_date, end_date, courses(id, title), enrollments(count)",
           )
           .eq("faculty_user_id", uid),
-        supabase
-          .from("class_sessions")
-          .select(
-            "id, title, session_date, start_time, end_time, meeting_link, is_live, batches(batch_name, courses(title))",
-          )
-          .eq("created_by", uid)
-          .gte("session_date", new Date().toISOString().split("T")[0])
-          .order("session_date", { ascending: true })
-          .limit(10),
         supabase
           .from("faculty_tasks")
           .select(
@@ -393,35 +502,69 @@ export default function FacultyDashboardPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("class_sessions")
-          .select("id, title, session_date, start_time, batches(batch_name)")
-          .eq("created_by", uid)
+          .select(
+            "id, batch_id, title, session_date, start_time, batches(batch_name)",
+          )
           .order("session_date", { ascending: false })
           .limit(30),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data as Profile);
-      if (tasksRes.data) setTasks(tasksRes.data as unknown as FacultyTask[]);
+      if (tasksRes.data) {
+        const taskRows = tasksRes.data as unknown as FacultyTask[];
+        setTasks(taskRows);
+        setActiveTasksCount(
+          taskRows.filter((t) => t.status !== "completed").length,
+        );
+      }
       if (mcqRes.data) setMcqTests(mcqRes.data as unknown as McqTestFaculty[]);
       if (lecturesRes.data)
         setLectures(lecturesRes.data as unknown as RecordedLectureFaculty[]);
-      if (classesRes.data)
-        setUpcomingClasses(classesRes.data as unknown as ClassSession[]);
+
+      // Load classes with backward-compatible fallback for DBs missing is_live.
+      const { data: classesData, error: classesError } = await supabase
+        .from("class_sessions")
+        .select(
+          "id, batch_id, title, session_date, start_time, end_time, meeting_link, is_live, batches(batch_name, courses(title))",
+        )
+        .order("session_date", { ascending: false })
+        .limit(50);
+
+      if (!classesError && classesData) {
+        setUpcomingClasses(classesData as unknown as ClassSession[]);
+      } else if (classesError && /is_live/i.test(classesError.message)) {
+        const { data: legacyClassesData, error: legacyClassesError } =
+          await supabase
+            .from("class_sessions")
+            .select(
+              "id, batch_id, title, session_date, start_time, end_time, meeting_link, batches(batch_name, courses(title))",
+            )
+            .order("session_date", { ascending: false })
+            .limit(50);
+
+        if (legacyClassesError) throw legacyClassesError;
+        const normalized =
+          (
+            legacyClassesData as unknown as Omit<ClassSession, "is_live">[]
+          )?.map((row) => ({
+            ...row,
+            is_live: false,
+          })) ?? [];
+        setUpcomingClasses(normalized);
+      } else if (classesError) {
+        throw classesError;
+      }
+
       if (attSessionsRes.data)
         setAttendanceSessions(
-          attSessionsRes.data as unknown as AttendanceSession[],
+          (attSessionsRes.data as unknown as AttendanceSession[]).filter((s) =>
+            isCompletedSession(s.session_date, s.start_time),
+          ),
         );
 
       if (batchesRes.data) {
         const batchData = batchesRes.data as unknown as Batch[];
         setBatches(batchData);
-        const total = batchData.reduce(
-          (s, b) =>
-            s +
-            ((b.enrollments as unknown as { count: number }[])?.[0]?.count ??
-              0),
-          0,
-        );
-        setTotalStudents(total);
 
         if (batchData.length > 0) {
           const batchIds = batchData.map((b) => b.id);
@@ -433,6 +576,7 @@ export default function FacultyDashboardPage() {
             const studentIds = [
               ...new Set(enrollData.map((e) => e.student_user_id)),
             ];
+            setTotalStudents(studentIds.length);
             const { data: profilesData } = await supabase
               .from("profiles")
               .select("user_id, full_name")
@@ -498,7 +642,11 @@ export default function FacultyDashboardPage() {
                 );
               }
             }
+          } else {
+            setTotalStudents(0);
           }
+        } else {
+          setTotalStudents(0);
         }
       }
     } catch (err) {
@@ -513,6 +661,20 @@ export default function FacultyDashboardPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (activeSection === "evaluations") {
+      loadDescriptiveTests();
+    }
+  }, [activeSection]);
+
+  const dashboardUpcomingClasses = upcomingClasses.filter((s) =>
+    isUpcomingSession(s.session_date, s.start_time),
+  );
+
+  const upcomingLiveClassesCount = dashboardUpcomingClasses.filter(
+    (s) => s.is_live,
+  ).length;
+
   async function handleLogout() {
     await signOut();
     router.push("/login-portal");
@@ -521,25 +683,25 @@ export default function FacultyDashboardPage() {
   /* â”€â”€ attendance: load session students & existing marks â”€â”€ */
   async function selectSession(session: AttendanceSession) {
     const supabase = createClient();
+    if (!isCompletedSession(session.session_date, session.start_time)) {
+      setAttendanceMsg({
+        type: "err",
+        text: "Attendance can be marked only for completed sessions.",
+      });
+      return;
+    }
     setSelectedSession(session);
     const students = batchStudents.filter(
-      (s) =>
-        s.batch_id ===
-        (session.batches
-          ? Array.isArray(session.batches)
-            ? session.batches[0]?.batch_name
-            : (session.batches as { batch_name: string }).batch_name
-          : null),
+      (s) => s.batch_id === session.batch_id,
     );
     // fallback: get students from that batch via DB
-    const batchName = unwrapOne(session.batches)?.batch_name;
-    if (students.length === 0 && batchName) {
-      const batch = batches.find((b) => b.batch_name === batchName);
+    if (students.length === 0) {
+      const batch = batches.find((b) => b.id === session.batch_id);
       if (batch) {
         const { data: enrollData } = await supabase
           .from("enrollments")
           .select("student_user_id")
-          .eq("batch_id", batch.id);
+          .eq("batch_id", session.batch_id);
         const ids = enrollData?.map((e) => e.student_user_id) ?? [];
         if (ids.length > 0) {
           const { data: profilesData } = await supabase
@@ -553,14 +715,12 @@ export default function FacultyDashboardPage() {
             batch_name: batch.batch_name,
           }));
           setSessionStudents(mapped);
+        } else {
+          setSessionStudents([]);
         }
       }
     } else {
-      const batch = batches.find((b) => b.batch_name === batchName);
-      if (batch)
-        setSessionStudents(
-          batchStudents.filter((s) => s.batch_id === batch.id),
-        );
+      setSessionStudents(students);
     }
     // load existing attendance
     const { data: existingData } = await supabase
@@ -569,7 +729,7 @@ export default function FacultyDashboardPage() {
       .eq("session_id", session.id);
     const map: Record<string, string> = {};
     ((existingData as unknown as StudentAttendance[]) ?? []).forEach((a) => {
-      map[a.student_user_id] = a.status;
+      map[a.student_user_id] = a.status === "present" ? "present" : "absent";
     });
     setAttendanceMap(map);
   }
@@ -602,6 +762,117 @@ export default function FacultyDashboardPage() {
     }
   }
 
+  function exportAttendanceSectionWise() {
+    if (!selectedSession) {
+      setAttendanceMsg({
+        type: "err",
+        text: "Select a session to export section-wise attendance.",
+      });
+      return;
+    }
+    if (sessionStudents.length === 0) {
+      setAttendanceMsg({
+        type: "err",
+        text: "No students found to export.",
+      });
+      return;
+    }
+
+    const batch = unwrapOne(selectedSession.batches)?.batch_name ?? "-";
+    const rows = sessionStudents.map((s) => [
+      normalizeAttendanceTitle(selectedSession.title),
+      fmtDate(selectedSession.session_date),
+      fmtTime(selectedSession.start_time),
+      batch,
+      s.full_name,
+      attendanceMap[s.student_user_id] === "present" ? "Present" : "Absent",
+    ]);
+    downloadCsv(
+      `attendance_section_${selectedSession.id}.csv`,
+      ["Session", "Date", "Time", "Batch", "Student", "Status"],
+      rows,
+    );
+    setAttendanceMsg({ type: "ok", text: "Section-wise attendance exported." });
+  }
+
+  async function exportAttendanceConsolidated() {
+    if (attendanceSessions.length === 0) {
+      setAttendanceMsg({
+        type: "err",
+        text: "No completed sessions available for consolidated export.",
+      });
+      return;
+    }
+
+    const supabase = createClient();
+    setAttendanceExporting(true);
+    setAttendanceMsg(null);
+    try {
+      const sessionMap = new Map(attendanceSessions.map((s) => [s.id, s]));
+      const sessionIds = attendanceSessions.map((s) => s.id);
+      const { data, error } = await supabase
+        .from("student_attendance")
+        .select("session_id, student_user_id, status")
+        .in("session_id", sessionIds);
+      if (error) throw error;
+
+      const nameMap: Record<string, string> = {};
+      batchStudents.forEach((s) => {
+        nameMap[s.student_user_id] = s.full_name;
+      });
+      sessionStudents.forEach((s) => {
+        nameMap[s.student_user_id] = s.full_name;
+      });
+
+      const rows = (
+        (data as unknown as {
+          session_id: number;
+          student_user_id: string;
+          status: string;
+        }[]) ?? []
+      )
+        .map((r) => {
+          const session = sessionMap.get(r.session_id);
+          if (!session) return null;
+          const batch = unwrapOne(session.batches)?.batch_name ?? "-";
+          return [
+            normalizeAttendanceTitle(session.title),
+            fmtDate(session.session_date),
+            fmtTime(session.start_time),
+            batch,
+            nameMap[r.student_user_id] ?? "Student",
+            r.status === "present" ? "Present" : "Absent",
+          ];
+        })
+        .filter(Boolean) as (string | number)[][];
+
+      if (rows.length === 0) {
+        setAttendanceMsg({
+          type: "err",
+          text: "No attendance records found for consolidated export.",
+        });
+        return;
+      }
+
+      downloadCsv(
+        "attendance_consolidated.csv",
+        ["Session", "Date", "Time", "Batch", "Student", "Status"],
+        rows,
+      );
+      setAttendanceMsg({
+        type: "ok",
+        text: "Consolidated attendance exported.",
+      });
+    } catch {
+      setAttendanceMsg({
+        type: "err",
+        text: "Failed to export consolidated attendance.",
+      });
+    } finally {
+      setAttendanceExporting(false);
+    }
+  }
+
   /* â”€â”€ MCQ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function createMcqTest() {
     const supabase = createClient();
@@ -619,36 +890,78 @@ export default function FacultyDashboardPage() {
           | { id: number; title: string }[]
           | null,
       )?.id;
-      const { data, error } = await supabase
+      const fullPayload = {
+        title: mcqForm.title,
+        total_marks: parseInt(mcqForm.totalMarks),
+        time_limit_minutes: parseInt(mcqForm.timeLimitMinutes),
+        exam_type: mcqForm.examType,
+        test_type: mcqForm.testType,
+        batch_id: parseInt(mcqForm.batchId) || null,
+        course_id: courseId ?? 1,
+        is_published: false,
+        scheduled_at: mcqForm.scheduledAt || null,
+        created_by: user.id,
+      };
+
+      const minimalPayload = {
+        title: mcqForm.title,
+        total_marks: parseInt(mcqForm.totalMarks),
+        test_type: mcqForm.testType,
+        course_id: courseId ?? 1,
+        scheduled_at: mcqForm.scheduledAt || null,
+        created_by: user.id,
+      };
+
+      // Some DB instances still have the older mock_tests schema.
+      // Try full insert first; if columns are missing, retry with minimal payload.
+      let insertData: unknown = null;
+      let insertError: { code?: string; message?: string } | null = null;
+
+      const fullInsert = await supabase
         .from("mock_tests")
-        .insert({
-          title: mcqForm.title,
-          total_marks: parseInt(mcqForm.totalMarks),
-          time_limit_minutes: parseInt(mcqForm.timeLimitMinutes),
-          exam_type: mcqForm.examType,
-          batch_id: parseInt(mcqForm.batchId) || null,
-          course_id: courseId ?? 1,
-          is_published: false,
-          scheduled_at: mcqForm.scheduledAt || null,
-          created_by: user.id,
-        })
+        .insert(fullPayload)
         .select()
         .single();
-      if (error) throw error;
+      insertData = fullInsert.data;
+      insertError = fullInsert.error as {
+        code?: string;
+        message?: string;
+      } | null;
+
+      if (insertError?.code === "42703") {
+        const fallbackInsert = await supabase
+          .from("mock_tests")
+          .insert(minimalPayload)
+          .select()
+          .single();
+        insertData = fallbackInsert.data;
+        insertError = fallbackInsert.error as {
+          code?: string;
+          message?: string;
+        } | null;
+      }
+
+      if (insertError) throw insertError;
+
       setMcqMsg({ type: "ok", text: "Test created! Add questions now." });
       setShowMcqForm(false);
       setMcqForm({
         batchId: "",
         title: "",
+        testType: "mcq",
         timeLimitMinutes: "60",
         examType: "mock",
         scheduledAt: "",
         totalMarks: "100",
       });
       load();
-      if (data) setSelectedTest(data as unknown as McqTestFaculty);
-    } catch {
-      setMcqMsg({ type: "err", text: "Failed to create test." });
+      if (insertData) setSelectedTest(insertData as McqTestFaculty);
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message)
+          : "Failed to create test.";
+      setMcqMsg({ type: "err", text: msg });
     } finally {
       setMcqSubmitting(false);
     }
@@ -657,12 +970,37 @@ export default function FacultyDashboardPage() {
   async function loadQuestions(test: McqTestFaculty) {
     const supabase = createClient();
     setSelectedTest(test);
-    const { data } = await supabase
-      .from("mcq_questions")
-      .select("*")
-      .eq("mock_test_id", test.id)
-      .order("question_order", { ascending: true });
-    setTestQuestions((data ?? []) as McqQuestion[]);
+
+    if (test.test_type === "mcq") {
+      const { data } = await supabase
+        .from("mcq_questions")
+        .select("*")
+        .eq("mock_test_id", test.id)
+        .order("question_order", { ascending: true });
+      setTestQuestions((data ?? []) as McqQuestion[]);
+    } else {
+      // For descriptive tests, fetch from descriptive_questions table
+      const { data } = await supabase
+        .from("descriptive_questions")
+        .select("*")
+        .eq("mock_test_id", test.id)
+        .order("question_order", { ascending: true });
+      // Convert descriptive questions to a format compatible with testQuestions
+      setTestQuestions(
+        (data ?? []).map((q: any) => ({
+          id: q.id,
+          question_text: q.question_text,
+          marks: q.marks,
+          question_order: q.question_order,
+          category: q.category,
+          option_a: "",
+          option_b: "",
+          option_c: "",
+          option_d: "",
+          correct_option: "",
+        })) as unknown as McqQuestion[],
+      );
+    }
   }
 
   async function addQuestion() {
@@ -670,30 +1008,49 @@ export default function FacultyDashboardPage() {
     const supabase = createClient();
     setMcqSubmitting(true);
     try {
-      const { error } = await supabase.from("mcq_questions").insert({
-        mock_test_id: selectedTest.id,
-        question_text: qForm.questionText,
-        option_a: qForm.optionA,
-        option_b: qForm.optionB,
-        option_c: qForm.optionC,
-        option_d: qForm.optionD,
-        correct_option: qForm.correctOption,
-        marks: parseInt(qForm.marks),
-        question_order: testQuestions.length + 1,
-      });
-      if (error) throw error;
-      setQForm({
-        questionText: "",
-        optionA: "",
-        optionB: "",
-        optionC: "",
-        optionD: "",
-        correctOption: "A",
-        marks: "1",
-      });
+      // Handle MCQ questions
+      if (selectedTest.test_type === "mcq") {
+        const { error } = await supabase.from("mcq_questions").insert({
+          mock_test_id: selectedTest.id,
+          question_text: qForm.questionText,
+          option_a: qForm.optionA,
+          option_b: qForm.optionB,
+          option_c: qForm.optionC,
+          option_d: qForm.optionD,
+          correct_option: qForm.correctOption,
+          marks: parseInt(qForm.marks),
+          question_order: testQuestions.length + 1,
+        });
+        if (error) throw error;
+        setQForm({
+          questionText: "",
+          optionA: "",
+          optionB: "",
+          optionC: "",
+          optionD: "",
+          correctOption: "A",
+          marks: "1",
+        });
+      } else {
+        // Handle Descriptive questions
+        const { error } = await supabase.from("descriptive_questions").insert({
+          mock_test_id: selectedTest.id,
+          question_text: descriptiveQForm.questionText,
+          marks: parseInt(descriptiveQForm.marks),
+          category: descriptiveQForm.category || null,
+          question_order: testQuestions.length + 1,
+        });
+        if (error) throw error;
+        setDescriptiveQForm({
+          questionText: "",
+          marks: "5",
+          category: "",
+        });
+      }
       setShowQForm(false);
       loadQuestions(selectedTest);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setMcqMsg({ type: "err", text: "Failed to add question." });
     } finally {
       setMcqSubmitting(false);
@@ -716,6 +1073,65 @@ export default function FacultyDashboardPage() {
     if (selectedTest) loadQuestions(selectedTest);
   }
 
+  async function loadDescriptiveTests() {
+    const supabase = createClient();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("mock_tests")
+        .select("*,batches(batch_name),courses(title)")
+        .eq("test_type", "descriptive");
+
+      if (error) throw error;
+      setDescriptiveTests(data || []);
+    } catch (err) {
+      console.error("Error loading descriptive tests:", err);
+    }
+  }
+
+  async function loadDescriptiveQuestions(test: McqTestFaculty) {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from("descriptive_questions")
+        .select("*")
+        .eq("mock_test_id", test.id)
+        .order("question_order");
+
+      if (error) throw error;
+      setDescriptiveQuestions(data || []);
+
+      await loadSubmissions(test.id);
+    } catch (err) {
+      console.error("Error loading descriptive questions:", err);
+    }
+  }
+
+  async function loadSubmissions(testId: number) {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from("descriptive_student_answers")
+        .select("*, student_profiles(full_name)")
+        .eq("mock_test_id", testId);
+
+      if (error) throw error;
+
+      const submissions = (data || []).map((s: any) => ({
+        ...s,
+        student_name: s.student_profiles?.full_name || "Unknown Student",
+      }));
+
+      setStudentSubmissions(submissions);
+    } catch (err) {
+      console.error("Error loading submissions:", err);
+    }
+  }
+
   /* â”€â”€ create class session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function createClass() {
     const supabase = createClient();
@@ -726,19 +1142,119 @@ export default function FacultyDashboardPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const { error } = await supabase.from("class_sessions").insert({
-        batch_id: parseInt(classForm.batchId),
-        title: classForm.title,
+
+      const batchId = parseInt(classForm.batchId, 10);
+      if (!classForm.title.trim()) {
+        setClassMsg({ type: "err", text: "Please enter class title." });
+        return;
+      }
+      if (!Number.isFinite(batchId)) {
+        setClassMsg({ type: "err", text: "Please select a valid batch." });
+        return;
+      }
+      if (!classForm.sessionDate) {
+        setClassMsg({ type: "err", text: "Please select class date." });
+        return;
+      }
+      if (classForm.startTime && classForm.endTime) {
+        const start = classForm.startTime;
+        const end = classForm.endTime;
+        if (end <= start) {
+          setClassMsg({
+            type: "err",
+            text: "End time must be later than start time.",
+          });
+          return;
+        }
+      }
+
+      const { data: ownBatch, error: ownBatchErr } = await supabase
+        .from("batches")
+        .select("id")
+        .eq("id", batchId)
+        .eq("faculty_user_id", user.id)
+        .maybeSingle();
+
+      if (ownBatchErr) throw ownBatchErr;
+      if (!ownBatch) {
+        setClassMsg({
+          type: "err",
+          text: "You can create classes only for your assigned batches.",
+        });
+        return;
+      }
+
+      const payload = {
+        batch_id: batchId,
+        title: classForm.title.trim(),
         session_date: classForm.sessionDate,
         start_time: classForm.startTime || null,
         end_time: classForm.endTime || null,
         meeting_link: classForm.meetingLink || null,
         is_live: classForm.isLive,
         created_by: user.id,
-      });
+      };
+
+      let error: { message?: string } | null = null;
+
+      if (editingClassId) {
+        const { error: updateError } = await supabase
+          .from("class_sessions")
+          .update({
+            batch_id: batchId,
+            title: classForm.title.trim(),
+            session_date: classForm.sessionDate,
+            start_time: classForm.startTime || null,
+            end_time: classForm.endTime || null,
+            meeting_link: classForm.meetingLink || null,
+            is_live: classForm.isLive,
+          })
+          .eq("id", editingClassId);
+
+        error = updateError;
+        // Backward compatibility if DB has not yet received is_live column migration.
+        if (error && /is_live/i.test(error.message ?? "")) {
+          const fallback = await supabase
+            .from("class_sessions")
+            .update({
+              batch_id: batchId,
+              title: classForm.title.trim(),
+              session_date: classForm.sessionDate,
+              start_time: classForm.startTime || null,
+              end_time: classForm.endTime || null,
+              meeting_link: classForm.meetingLink || null,
+            })
+            .eq("id", editingClassId);
+          error = fallback.error;
+        }
+      } else {
+        const insertRes = await supabase.from("class_sessions").insert(payload);
+        error = insertRes.error;
+
+        // Backward compatibility if DB has not yet received is_live column migration.
+        if (error && /is_live/i.test(error.message ?? "")) {
+          const fallback = await supabase.from("class_sessions").insert({
+            batch_id: batchId,
+            title: classForm.title.trim(),
+            session_date: classForm.sessionDate,
+            start_time: classForm.startTime || null,
+            end_time: classForm.endTime || null,
+            meeting_link: classForm.meetingLink || null,
+            created_by: user.id,
+          });
+          error = fallback.error;
+        }
+      }
+
       if (error) throw error;
-      setClassMsg({ type: "ok", text: "Class session created!" });
+      setClassMsg({
+        type: "ok",
+        text: editingClassId
+          ? "Class session updated!"
+          : "Class session created!",
+      });
       setShowClassForm(false);
+      setEditingClassId(null);
       setClassForm({
         batchId: "",
         title: "",
@@ -749,14 +1265,90 @@ export default function FacultyDashboardPage() {
         isLive: false,
       });
       load();
-    } catch {
-      setClassMsg({ type: "err", text: "Failed to create class." });
+    } catch (err) {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message)
+          : "Failed to create class.";
+      setClassMsg({ type: "err", text: msg });
     } finally {
       setClassSubmitting(false);
     }
   }
 
+  function startEditClass(session: ClassSession) {
+    setEditingClassId(session.id);
+    setShowClassForm(true);
+    setClassMsg(null);
+    setClassForm({
+      batchId: String(session.batch_id),
+      title: session.title,
+      sessionDate: session.session_date,
+      startTime: session.start_time ?? "",
+      endTime: session.end_time ?? "",
+      meetingLink: session.meeting_link ?? "",
+      isLive: session.is_live,
+    });
+  }
+
+  async function deleteClass(session: ClassSession) {
+    if (!confirm(`Delete class session \"${session.title}\"?`)) return;
+    const supabase = createClient();
+    setClassMsg(null);
+    try {
+      const { error: deleteError } = await supabase
+        .from("class_sessions")
+        .delete()
+        .eq("id", session.id);
+
+      if (deleteError) {
+        console.error("Delete error:", deleteError);
+        setClassMsg({
+          type: "err",
+          text:
+            deleteError.message ||
+            "Failed to delete class session. Please ensure you have permission to delete this session.",
+        });
+        return;
+      }
+
+      if (editingClassId === session.id) {
+        setEditingClassId(null);
+        setShowClassForm(false);
+        setClassForm({
+          batchId: "",
+          title: "",
+          sessionDate: "",
+          startTime: "",
+          endTime: "",
+          meetingLink: "",
+          isLive: false,
+        });
+      }
+
+      setClassMsg({ type: "ok", text: "Class session deleted." });
+      load();
+    } catch (err) {
+      console.error("Delete exception:", err);
+      setClassMsg({
+        type: "err",
+        text: "Failed to delete class session. An unexpected error occurred.",
+      });
+    }
+  }
+
   async function toggleLive(session: ClassSession) {
+    if (!session.meeting_link) {
+      setClassMsg({
+        type: "err",
+        text: "No meeting link available. Please add a meeting link to this session.",
+      });
+      return;
+    }
+    // Open meeting in new tab
+    window.open(session.meeting_link, "_blank");
+
+    // Also update is_live status in database
     const supabase = createClient();
     await supabase
       .from("class_sessions")
@@ -887,6 +1479,77 @@ export default function FacultyDashboardPage() {
     setTimeout(() => setProgressMsg(null), 2500);
   }
 
+  function exportProgressSectionWise() {
+    if (studentProgress.length === 0) {
+      setProgressMsg({ type: "err", text: "No progress data to export." });
+      return;
+    }
+    const studentBatchMap: Record<string, string> = {};
+    batchStudents.forEach((s) => {
+      studentBatchMap[s.student_user_id] = s.batch_name;
+    });
+
+    const rows = studentProgress.map((p) => [
+      p.full_name,
+      studentBatchMap[p.student_user_id] ?? "-",
+      p.course_title,
+      p.progress_percent,
+    ]);
+    downloadCsv(
+      "student_progress_section_wise.csv",
+      ["Student", "Batch", "Course", "Progress (%)"],
+      rows,
+    );
+    setProgressMsg({ type: "ok", text: "Section-wise progress exported." });
+    setTimeout(() => setProgressMsg(null), 2500);
+  }
+
+  function exportProgressConsolidated() {
+    if (studentProgress.length === 0) {
+      setProgressMsg({ type: "err", text: "No progress data to export." });
+      return;
+    }
+    const studentBatchMap: Record<string, string> = {};
+    batchStudents.forEach((s) => {
+      studentBatchMap[s.student_user_id] = s.batch_name;
+    });
+
+    const grouped = new Map<
+      string,
+      { name: string; batch: string; total: number; count: number }
+    >();
+
+    studentProgress.forEach((p) => {
+      const prev = grouped.get(p.student_user_id);
+      if (!prev) {
+        grouped.set(p.student_user_id, {
+          name: p.full_name,
+          batch: studentBatchMap[p.student_user_id] ?? "-",
+          total: p.progress_percent,
+          count: 1,
+        });
+      } else {
+        prev.total += p.progress_percent;
+        prev.count += 1;
+      }
+    });
+
+    const rows = Array.from(grouped.values()).map((g) => [
+      g.name,
+      g.batch,
+      g.count,
+      Math.round(g.total / g.count),
+    ]);
+
+    downloadCsv(
+      "student_progress_consolidated.csv",
+      ["Student", "Batch", "Courses", "Average Progress (%)"],
+      rows,
+    );
+    setProgressMsg({ type: "ok", text: "Consolidated progress exported." });
+    setTimeout(() => setProgressMsg(null), 2500);
+  }
+
   /* â”€â”€ loading / error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading)
     return (
@@ -965,7 +1628,7 @@ export default function FacultyDashboardPage() {
                   {profile?.full_name ?? "Faculty"}
                 </p>
                 <p className="text-xs text-emerald-700 font-semibold mt-1">
-                  {batches.length} batch{batches.length !== 1 ? "es" : ""} Â·{" "}
+                  {batches.length} batch{batches.length !== 1 ? "es" : ""} |{" "}
                   {totalStudents} students
                 </p>
               </div>
@@ -990,7 +1653,14 @@ export default function FacultyDashboardPage() {
                 active={activeSection}
                 onClick={setActiveSection}
                 icon={FileQuestion}
-                label="MCQ Tests"
+                label="Mock Tests"
+              />
+              <NavBtn
+                section="evaluations"
+                active={activeSection}
+                onClick={setActiveSection}
+                icon={CheckCircle}
+                label="Evaluations"
               />
               <NavBtn
                 section="classes"
@@ -1036,7 +1706,7 @@ export default function FacultyDashboardPage() {
                     Manage your batches, students, and content from here
                   </p>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                   <StatCard
                     label="My Batches"
                     value={batches.length}
@@ -1053,14 +1723,21 @@ export default function FacultyDashboardPage() {
                   />
                   <StatCard
                     label="Upcoming Classes"
-                    value={upcomingClasses.length}
+                    value={dashboardUpcomingClasses.length}
                     icon={Video}
                     iconBg="bg-purple-100"
                     iconColor="text-purple-600"
                   />
                   <StatCard
+                    label="Live Classes"
+                    value={upcomingLiveClassesCount}
+                    icon={Zap}
+                    iconBg="bg-red-100"
+                    iconColor="text-red-600"
+                  />
+                  <StatCard
                     label="Active Tasks"
-                    value={tasks.filter((t) => t.status !== "completed").length}
+                    value={activeTasksCount}
                     icon={ClipboardList}
                     iconBg="bg-amber-100"
                     iconColor="text-amber-600"
@@ -1097,7 +1774,7 @@ export default function FacultyDashboardPage() {
                               {b.batch_name}
                             </p>
                             <p className="text-xs text-gray-600 mt-0.5">
-                              {course?.title ?? "â€”"}
+                              {course?.title ?? "-"}
                             </p>
                             <div className="flex items-center justify-between mt-3">
                               <span className="text-xs text-gray-500">
@@ -1105,8 +1782,7 @@ export default function FacultyDashboardPage() {
                                 {cnt} enrolled
                               </span>
                               <span className="text-xs text-gray-400">
-                                {fmtDate(b.start_date)} â€“{" "}
-                                {fmtDate(b.end_date)}
+                                {fmtDate(b.start_date)} - {fmtDate(b.end_date)}
                               </span>
                             </div>
                           </div>
@@ -1117,13 +1793,13 @@ export default function FacultyDashboardPage() {
                 </div>
 
                 {/* upcoming classes */}
-                {upcomingClasses.length > 0 && (
+                {dashboardUpcomingClasses.length > 0 && (
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <h2 className="text-base font-bold text-gray-900 mb-3">
                       Upcoming Classes
                     </h2>
                     <div className="space-y-2">
-                      {upcomingClasses.map((s) => {
+                      {dashboardUpcomingClasses.map((s) => {
                         const batch = unwrapOne(s.batches);
                         return (
                           <div
@@ -1142,8 +1818,8 @@ export default function FacultyDashboardPage() {
                                 )}
                               </div>
                               <p className="text-xs text-gray-500">
-                                {fmtDate(s.session_date)} Â·{" "}
-                                {fmtTime(s.start_time)} Â· {batch?.batch_name}
+                                {fmtDate(s.session_date)} |{" "}
+                                {fmtTime(s.start_time)} | {batch?.batch_name}
                               </p>
                             </div>
                             <button
@@ -1165,12 +1841,37 @@ export default function FacultyDashboardPage() {
             {activeSection === "attendance" && (
               <>
                 <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-6 text-white">
-                  <h1 className="text-xl font-bold mb-1">
-                    Attendance Management
-                  </h1>
-                  <p className="text-green-100 text-sm">
-                    Select a session to mark or modify student attendance
-                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h1 className="text-xl font-bold mb-1">
+                        Attendance Management
+                      </h1>
+                      <p className="text-green-100 text-sm">
+                        Select a session to mark or modify student attendance
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={exportAttendanceSectionWise}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/20 hover:bg-white/30"
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Export Section Wise
+                      </button>
+                      <button
+                        onClick={exportAttendanceConsolidated}
+                        disabled={attendanceExporting}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/20 hover:bg-white/30 disabled:opacity-60"
+                      >
+                        {attendanceExporting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <FileDown className="w-4 h-4" />
+                        )}
+                        Export Consolidated
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-6">
@@ -1181,7 +1882,7 @@ export default function FacultyDashboardPage() {
                     </h2>
                     {attendanceSessions.length === 0 ? (
                       <p className="text-sm text-gray-500">
-                        No class sessions found. Create classes first.
+                        No completed class sessions found.
                       </p>
                     ) : (
                       <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -1194,11 +1895,11 @@ export default function FacultyDashboardPage() {
                               className={`w-full text-left p-3 rounded-xl border transition-colors ${selectedSession?.id === s.id ? "border-green-500 bg-green-50" : "border-gray-200 hover:border-green-200"}`}
                             >
                               <p className="text-sm font-semibold text-gray-900">
-                                {s.title}
+                                {normalizeAttendanceTitle(s.title)}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {fmtDate(s.session_date)} Â·{" "}
-                                {fmtTime(s.start_time)} Â· {batch?.batch_name}
+                                {fmtDate(s.session_date)} |{" "}
+                                {fmtTime(s.start_time)} | {batch?.batch_name}
                               </p>
                             </button>
                           );
@@ -1221,7 +1922,7 @@ export default function FacultyDashboardPage() {
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h2 className="font-bold text-gray-900">
-                              {selectedSession.title}
+                              {normalizeAttendanceTitle(selectedSession.title)}
                             </h2>
                             <p className="text-xs text-gray-500">
                               {fmtDate(selectedSession.session_date)}
@@ -1262,7 +1963,7 @@ export default function FacultyDashboardPage() {
                                   {s.full_name}
                                 </span>
                                 <div className="flex gap-1">
-                                  {(["present", "late", "absent"] as const).map(
+                                  {(["present", "absent"] as const).map(
                                     (st) => (
                                       <button
                                         key={st}
@@ -1277,9 +1978,7 @@ export default function FacultyDashboardPage() {
                                           st
                                             ? st === "present"
                                               ? "bg-green-600 text-white"
-                                              : st === "late"
-                                                ? "bg-amber-500 text-white"
-                                                : "bg-red-500 text-white"
+                                              : "bg-red-500 text-white"
                                             : "bg-gray-200 text-gray-600"
                                         }`}
                                       >
@@ -1304,11 +2003,11 @@ export default function FacultyDashboardPage() {
               <>
                 <div className="bg-gradient-to-r from-purple-600 to-violet-600 rounded-2xl p-6 text-white">
                   <h1 className="text-xl font-bold mb-1">
-                    MCQ Test Management
+                    Mock Test Management
                   </h1>
                   <p className="text-purple-100 text-sm">
-                    Create tests, add questions, publish to students, and view
-                    results
+                    Create MCQ or Descriptive tests, add questions, publish to
+                    students, and manage results
                   </p>
                 </div>
 
@@ -1352,6 +2051,24 @@ export default function FacultyDashboardPage() {
                           }
                           placeholder="e.g., UGC NET Paper 1 Mock Test 1"
                         />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Test Type
+                        </label>
+                        <select
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                          value={mcqForm.testType}
+                          onChange={(e) =>
+                            setMcqForm((p) => ({
+                              ...p,
+                              testType: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="mcq">MCQ Test</option>
+                          <option value="descriptive">Descriptive Test</option>
+                        </select>
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -1471,12 +2188,21 @@ export default function FacultyDashboardPage() {
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h2 className="font-bold text-gray-900">
-                          {selectedTest.title}
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-bold text-gray-900">
+                            {selectedTest.title}
+                          </h2>
+                          <span
+                            className={`text-xs px-2.5 py-1 rounded-full font-semibold ${selectedTest.test_type === "mcq" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}
+                          >
+                            {selectedTest.test_type === "mcq"
+                              ? "MCQ"
+                              : "Descriptive"}
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-500">
-                          {testQuestions.length} questions Â·{" "}
-                          {selectedTest.total_marks} marks Â·{" "}
+                          {testQuestions.length} questions |{" "}
+                          {selectedTest.total_marks} marks |{" "}
                           {selectedTest.time_limit_minutes} min
                         </p>
                       </div>
@@ -1491,87 +2217,156 @@ export default function FacultyDashboardPage() {
                     {showQForm ? (
                       <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 mb-4 space-y-3">
                         <h3 className="text-sm font-bold text-gray-900">
-                          Add Question
+                          Add{" "}
+                          {selectedTest?.test_type === "mcq"
+                            ? "MCQ"
+                            : "Descriptive"}{" "}
+                          Question
                         </h3>
-                        <textarea
-                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                          rows={2}
-                          placeholder="Question text"
-                          value={qForm.questionText}
-                          onChange={(e) =>
-                            setQForm((p) => ({
-                              ...p,
-                              questionText: e.target.value,
-                            }))
-                          }
-                        />
-                        <div className="grid grid-cols-2 gap-2">
-                          {(["A", "B", "C", "D"] as const).map((opt) => (
-                            <input
-                              key={opt}
-                              className="border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                              placeholder={`Option ${opt}`}
-                              value={
-                                qForm[
-                                  `option${opt}` as
-                                    | "optionA"
-                                    | "optionB"
-                                    | "optionC"
-                                    | "optionD"
-                                ]
-                              }
+
+                        {/* MCQ QUESTION FORM */}
+                        {selectedTest?.test_type === "mcq" ? (
+                          <>
+                            <textarea
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                              rows={2}
+                              placeholder="Question text"
+                              value={qForm.questionText}
                               onChange={(e) =>
                                 setQForm((p) => ({
                                   ...p,
-                                  [`option${opt}`]: e.target.value,
+                                  questionText: e.target.value,
                                 }))
                               }
                             />
-                          ))}
-                        </div>
-                        <div className="flex gap-4">
-                          <div className="flex-1">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                              Correct Answer
-                            </label>
-                            <select
-                              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                              value={qForm.correctOption}
-                              onChange={(e) =>
-                                setQForm((p) => ({
-                                  ...p,
-                                  correctOption: e.target.value,
-                                }))
-                              }
-                            >
-                              {["A", "B", "C", "D"].map((o) => (
-                                <option key={o} value={o}>
-                                  {o}
-                                </option>
+                            <div className="grid grid-cols-2 gap-2">
+                              {(["A", "B", "C", "D"] as const).map((opt) => (
+                                <input
+                                  key={opt}
+                                  className="border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  placeholder={`Option ${opt}`}
+                                  value={
+                                    qForm[
+                                      `option${opt}` as
+                                        | "optionA"
+                                        | "optionB"
+                                        | "optionC"
+                                        | "optionD"
+                                    ]
+                                  }
+                                  onChange={(e) =>
+                                    setQForm((p) => ({
+                                      ...p,
+                                      [`option${opt}`]: e.target.value,
+                                    }))
+                                  }
+                                />
                               ))}
-                            </select>
-                          </div>
-                          <div className="flex-1">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                              Marks
-                            </label>
-                            <input
-                              type="number"
-                              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                              value={qForm.marks}
+                            </div>
+                            <div className="flex gap-4">
+                              <div className="flex-1">
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  Correct Answer
+                                </label>
+                                <select
+                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  value={qForm.correctOption}
+                                  onChange={(e) =>
+                                    setQForm((p) => ({
+                                      ...p,
+                                      correctOption: e.target.value,
+                                    }))
+                                  }
+                                >
+                                  {["A", "B", "C", "D"].map((o) => (
+                                    <option key={o} value={o}>
+                                      {o}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  Marks
+                                </label>
+                                <input
+                                  type="number"
+                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  value={qForm.marks}
+                                  onChange={(e) =>
+                                    setQForm((p) => ({
+                                      ...p,
+                                      marks: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* DESCRIPTIVE QUESTION FORM */}
+                            <textarea
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                              rows={2}
+                              placeholder="Question text"
+                              value={descriptiveQForm.questionText}
                               onChange={(e) =>
-                                setQForm((p) => ({
+                                setDescriptiveQForm((p) => ({
                                   ...p,
-                                  marks: e.target.value,
+                                  questionText: e.target.value,
                                 }))
                               }
                             />
-                          </div>
-                        </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  Marks
+                                </label>
+                                <input
+                                  type="number"
+                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  value={descriptiveQForm.marks}
+                                  onChange={(e) =>
+                                    setDescriptiveQForm((p) => ({
+                                      ...p,
+                                      marks: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  Category (Optional)
+                                </label>
+                                <input
+                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  placeholder="e.g., History, Essay"
+                                  value={descriptiveQForm.category}
+                                  onChange={(e) =>
+                                    setDescriptiveQForm((p) => ({
+                                      ...p,
+                                      category: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+
                         <div className="flex gap-2">
                           <button
                             onClick={addQuestion}
-                            disabled={mcqSubmitting || !qForm.questionText}
+                            disabled={
+                              mcqSubmitting ||
+                              !(
+                                (selectedTest?.test_type === "mcq" &&
+                                  qForm.questionText) ||
+                                (selectedTest?.test_type !== "mcq" &&
+                                  descriptiveQForm.questionText)
+                              )
+                            }
                             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-semibold disabled:opacity-60"
                           >
                             {mcqSubmitting ? (
@@ -1680,8 +2475,8 @@ export default function FacultyDashboardPage() {
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-0.5">
-                                  {qCount} questions Â· {t.total_marks} marks Â·{" "}
-                                  {t.time_limit_minutes} min Â· {t.exam_type}
+                                  {qCount} questions | {t.total_marks} marks |{" "}
+                                  {t.time_limit_minutes} min | {t.exam_type}
                                 </p>
                               </div>
                               <div className="flex gap-2">
@@ -1704,6 +2499,343 @@ export default function FacultyDashboardPage() {
                       </div>
                     </div>
                   )
+                )}
+              </>
+            )}
+
+            {/* Evaluations - Descriptive Test Grading */}
+            {activeSection === "evaluations" && (
+              <>
+                <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-6 text-white">
+                  <h1 className="text-xl font-bold mb-1">
+                    Descriptive Test Evaluations
+                  </h1>
+                  <p className="text-amber-100 text-sm">
+                    Review student submissions and provide marks &amp; feedback
+                  </p>
+                </div>
+
+                {evaluationMsg && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-xl text-sm ${evaluationMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                  >
+                    {evaluationMsg.type === "ok" ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    {evaluationMsg.text}
+                  </div>
+                )}
+
+                {!selectedEvalTest ? (
+                  <div className="bg-white rounded-2xl shadow-sm p-5">
+                    {descriptiveTests.length === 0 ? (
+                      <div className="text-center py-12">
+                        <FileQuestion className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500">
+                          No descriptive tests available to evaluate
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="font-bold text-gray-900 mb-4">
+                          Select a Test
+                        </h2>
+                        <div className="space-y-3">
+                          {descriptiveTests.map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                setSelectedEvalTest(t);
+                                loadDescriptiveQuestions(t);
+                              }}
+                              className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-amber-300 hover:bg-amber-50 transition-colors"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">
+                                    {t.title}
+                                  </h3>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {t.batches?.batch_name} | {t.total_marks}{" "}
+                                    marks
+                                  </p>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : !selectedSubmission ? (
+                  <div className="bg-white rounded-2xl shadow-sm p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="font-bold text-gray-900">
+                          {selectedEvalTest.title}
+                        </h2>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {selectedEvalTest.batches?.batch_name}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedEvalTest(null);
+                          setStudentSubmissions([]);
+                          setDescriptiveQuestions([]);
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {studentSubmissions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 text-sm">
+                          No submissions yet
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {studentSubmissions.map((s) => {
+                          const question = descriptiveQuestions.find(
+                            (q) => q.id === s.question_id,
+                          );
+                          return (
+                            <button
+                              key={s.id}
+                              onClick={() => {
+                                setSelectedSubmission(s);
+                                setEvaluationForm({
+                                  marksObtained:
+                                    s.marks_obtained?.toString() || "",
+                                  facultyNotes: s.faculty_notes || "",
+                                });
+                              }}
+                              className={`w-full text-left p-4 border rounded-xl transition-colors ${
+                                s.marks_obtained !== null
+                                  ? "bg-green-50 border-green-200"
+                                  : "bg-yellow-50 border-yellow-200"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900 text-sm">
+                                    {s.student_name || "Unknown Student"}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    Q{question?.question_order}:{" "}
+                                    {question?.question_text}
+                                  </p>
+                                  {s.submitted_at && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Submitted:{" "}
+                                      {new Date(
+                                        s.submitted_at,
+                                      ).toLocaleString()}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-right ml-4">
+                                  {s.marks_obtained !== null ? (
+                                    <div>
+                                      <p className="text-lg font-bold text-green-600">
+                                        {s.marks_obtained}/{question?.marks}
+                                      </p>
+                                      <p className="text-xs text-green-600">
+                                        Evaluated
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-amber-600 font-medium">
+                                      Pending
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl shadow-sm p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="font-bold text-gray-900">
+                        Grade: {selectedSubmission.student_name || "Student"}{" "}
+                        &mdash; Q
+                        {
+                          descriptiveQuestions.find(
+                            (q) => q.id === selectedSubmission.question_id,
+                          )?.question_order
+                        }
+                      </h2>
+                      <button
+                        onClick={() => {
+                          setSelectedSubmission(null);
+                          setEvaluationForm({
+                            marksObtained: "",
+                            facultyNotes: "",
+                          });
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-xl p-4 mb-4">
+                      <p className="text-sm font-semibold text-gray-900 mb-2">
+                        Question
+                      </p>
+                      <p className="text-sm text-gray-700 mb-2">
+                        {
+                          descriptiveQuestions.find(
+                            (q) => q.id === selectedSubmission.question_id,
+                          )?.question_text
+                        }
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Max Marks:{" "}
+                        {
+                          descriptiveQuestions.find(
+                            (q) => q.id === selectedSubmission.question_id,
+                          )?.marks
+                        }
+                      </p>
+                    </div>
+
+                    {selectedSubmission.answer_file_url && (
+                      <div className="border border-blue-200 rounded-xl p-4 mb-4 bg-blue-50">
+                        <p className="text-sm font-semibold text-gray-900 mb-2">
+                          Student Submission
+                        </p>
+                        <a
+                          href={selectedSubmission.answer_file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-4 h-4" /> View Submission
+                          File
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Marks Obtained
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={
+                            descriptiveQuestions.find(
+                              (q) => q.id === selectedSubmission.question_id,
+                            )?.marks || 100
+                          }
+                          value={evaluationForm.marksObtained}
+                          onChange={(e) =>
+                            setEvaluationForm((p) => ({
+                              ...p,
+                              marksObtained: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                          placeholder="Enter marks"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Faculty Feedback
+                        </label>
+                        <textarea
+                          value={evaluationForm.facultyNotes}
+                          onChange={(e) =>
+                            setEvaluationForm((p) => ({
+                              ...p,
+                              facultyNotes: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none h-24 resize-none"
+                          placeholder="Provide feedback for the student..."
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            if (!evaluationForm.marksObtained) {
+                              setEvaluationMsg({
+                                type: "err",
+                                text: "Please enter marks",
+                              });
+                              return;
+                            }
+                            setEvaluationUpdating(true);
+                            setEvaluationMsg(null);
+                            try {
+                              const supabase = createClient();
+                              const { error } = await supabase
+                                .from("descriptive_student_answers")
+                                .update({
+                                  marks_obtained: parseInt(
+                                    evaluationForm.marksObtained,
+                                  ),
+                                  faculty_notes: evaluationForm.facultyNotes,
+                                  evaluated_at: new Date().toISOString(),
+                                })
+                                .eq("id", selectedSubmission.id);
+                              if (error) throw error;
+                              setEvaluationMsg({
+                                type: "ok",
+                                text: "Evaluation saved!",
+                              });
+                              setTimeout(() => {
+                                setSelectedSubmission(null);
+                                setEvaluationForm({
+                                  marksObtained: "",
+                                  facultyNotes: "",
+                                });
+                                setEvaluationMsg(null);
+                                if (selectedEvalTest)
+                                  loadSubmissions(selectedEvalTest.id);
+                              }, 1000);
+                            } catch (err: any) {
+                              setEvaluationMsg({
+                                type: "err",
+                                text:
+                                  err.message || "Failed to save evaluation",
+                              });
+                            } finally {
+                              setEvaluationUpdating(false);
+                            }
+                          }}
+                          disabled={evaluationUpdating}
+                          className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+                        >
+                          {evaluationUpdating ? "Saving..." : "Save Evaluation"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedSubmission(null);
+                            setEvaluationForm({
+                              marksObtained: "",
+                              facultyNotes: "",
+                            });
+                          }}
+                          className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-semibold rounded-xl transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </>
             )}
@@ -1737,10 +2869,24 @@ export default function FacultyDashboardPage() {
                   <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
-                        Schedule New Class
+                        {editingClassId
+                          ? "Edit Class Session"
+                          : "Schedule New Class"}
                       </h2>
                       <button
-                        onClick={() => setShowClassForm(false)}
+                        onClick={() => {
+                          setShowClassForm(false);
+                          setEditingClassId(null);
+                          setClassForm({
+                            batchId: "",
+                            title: "",
+                            sessionDate: "",
+                            startTime: "",
+                            endTime: "",
+                            meetingLink: "",
+                            isLive: false,
+                          });
+                        }}
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <X className="w-5 h-5" />
@@ -1886,7 +3032,7 @@ export default function FacultyDashboardPage() {
                       ) : (
                         <Plus className="w-4 h-4" />
                       )}
-                      Create Class
+                      {editingClassId ? "Update Class" : "Create Class"}
                     </button>
                   </div>
                 ) : (
@@ -1925,27 +3071,47 @@ export default function FacultyDashboardPage() {
                                 )}
                               </div>
                               <p className="text-xs text-gray-500">
-                                {fmtDate(s.session_date)} Â·{" "}
-                                {fmtTime(s.start_time)} Â· {batch?.batch_name}
+                                {fmtDate(s.session_date)} |{" "}
+                                {fmtTime(s.start_time)} | {batch?.batch_name}
                               </p>
                               {s.meeting_link && (
                                 <a
                                   href={s.meeting_link}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 flex items-center gap-1 mt-0.5 hover:underline"
+                                  title="Open meeting anytime - before, during, or after scheduled time"
+                                  className="text-xs text-blue-600 flex items-center gap-1 mt-2 hover:underline font-medium"
                                 >
-                                  <ExternalLink className="w-3 h-3" /> Meeting
-                                  Link
+                                  <ExternalLink className="w-3 h-3" /> Open
+                                  Meeting Link
                                 </a>
                               )}
                             </div>
-                            <button
-                              onClick={() => toggleLive(s)}
-                              className={`text-xs px-3 py-1.5 rounded-xl font-semibold flex-shrink-0 ${s.is_live ? "bg-gray-200 text-gray-700" : "bg-red-600 text-white"}`}
-                            >
-                              {s.is_live ? "End Live" : "Go Live"}
-                            </button>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <button
+                                onClick={() => toggleLive(s)}
+                                title={
+                                  s.is_live
+                                    ? "End live session"
+                                    : "Start live session (works anytime, before or after scheduled time)"
+                                }
+                                className={`text-xs px-3 py-1.5 rounded-xl font-semibold flex-shrink-0 ${s.is_live ? "bg-gray-200 text-gray-700" : "bg-red-600 text-white"}`}
+                              >
+                                {s.is_live ? "End Live" : "Go Live"}
+                              </button>
+                              <button
+                                onClick={() => startEditClass(s)}
+                                className="text-xs px-3 py-1.5 rounded-xl font-semibold bg-blue-100 text-blue-700"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => deleteClass(s)}
+                                className="text-xs px-3 py-1.5 rounded-xl font-semibold bg-red-100 text-red-700"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -2140,7 +3306,7 @@ export default function FacultyDashboardPage() {
                                 </p>
                               )}
                               <p className="text-xs text-gray-400">
-                                {batch?.batch_name ?? "All batches"} Â·{" "}
+                                {batch?.batch_name ?? "All batches"} |{" "}
                                 {fmtDate(lec.created_at)}
                               </p>
                               {lec.description && (
@@ -2226,7 +3392,7 @@ export default function FacultyDashboardPage() {
                               }))
                             }
                           >
-                            <option value="">â€” Select batch â€”</option>
+                            <option value="">- Select batch -</option>
                             {batches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
@@ -2248,7 +3414,7 @@ export default function FacultyDashboardPage() {
                               }))
                             }
                           >
-                            <option value="">â€” Entire batch â€”</option>
+                            <option value="">- Entire batch -</option>
                             {(taskForm.batchId
                               ? batchStudents.filter(
                                   (s) =>
@@ -2410,12 +3576,32 @@ export default function FacultyDashboardPage() {
             {activeSection === "students" && (
               <>
                 <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl p-6 text-white">
-                  <h1 className="text-xl font-bold mb-1">
-                    Student Progress Control
-                  </h1>
-                  <p className="text-teal-100 text-sm">
-                    Update and monitor course progress for all your students
-                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h1 className="text-xl font-bold mb-1">
+                        Student Progress Control
+                      </h1>
+                      <p className="text-teal-100 text-sm">
+                        Update and monitor course progress for all your students
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={exportProgressSectionWise}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/20 hover:bg-white/30"
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Export Section Wise
+                      </button>
+                      <button
+                        onClick={exportProgressConsolidated}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/20 hover:bg-white/30"
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Export Consolidated
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {progressMsg && (
