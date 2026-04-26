@@ -183,15 +183,17 @@ export default function LoginPortal() {
 
         {/* Footer note */}
         <p className="mt-10 text-center text-sm text-purple-300">
-          Having trouble?{" "}
+          New student? If you have not enrolled in a course or do not have login
+          credentials yet,{" "}
           <a
-            href="https://wa.me/919994990639"
+            href="/student-registration"
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noreferrer"
             className="font-semibold text-white underline underline-offset-2 hover:text-purple-200"
           >
-            Contact Support
+            register here
           </a>
+          .
         </p>
       </div>
     </div>

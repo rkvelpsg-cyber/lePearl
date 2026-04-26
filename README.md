@@ -33,6 +33,30 @@ npm run lint
 npm run build
 ```
 
+## Student registration email setup
+
+The student registration flow is available at `/student-registration` and submits through `/api/student-registration`.
+
+Configure one of these email options in your environment before using the form:
+
+```bash
+GMAIL_USER=your-gmail-address
+GMAIL_APP_PASSWORD=your-gmail-app-password
+REGISTRATION_EMAIL_FROM=optional-from-address
+```
+
+Or use a generic SMTP server:
+
+```bash
+SMTP_HOST=your-smtp-host
+SMTP_PORT=587
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+REGISTRATION_EMAIL_FROM=optional-from-address
+```
+
+Registration submissions are sent to `lepearledu@gmail.com`.
+
 ## Layout coverage
 
 The homepage follows the provided sample layout order:
