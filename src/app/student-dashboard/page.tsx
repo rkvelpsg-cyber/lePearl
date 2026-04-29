@@ -6,6 +6,11 @@ import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/client";
 import {
+  formatDateIST,
+  formatDateTimeIST,
+  localDateKeyIST,
+} from "@/lib/timezone";
+import {
   Bell,
   LogOut,
   BookOpen,
@@ -89,6 +94,7 @@ type McqTest = {
   time_limit_minutes: number;
   exam_type: string;
   test_type?: string; // 'mcq' or 'descriptive'
+  created_by: string;
   scheduled_at: string | null;
   is_published: boolean;
   courses: { title: string } | null;
@@ -161,12 +167,10 @@ function fmtCurrency(n: number) {
   return `\u20B9${fmt(n)}`;
 }
 function fmtDate(s: string | null) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDateIST(s);
+}
+function fmtDateTime(s: string | null) {
+  return formatDateTimeIST(s);
 }
 function fmtTime(t: string | null) {
   if (!t) return "";
@@ -175,10 +179,7 @@ function fmtTime(t: string | null) {
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? "PM" : "AM"}`;
 }
 function localDateKey(d: Date = new Date()) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return localDateKeyIST(d);
 }
 function isUpcomingSession(sessionDate: string, startTime: string | null) {
   const today = localDateKey();
@@ -287,8 +288,12 @@ export default function StudentDashboardPage() {
     "daily" | "weekly" | "monthly" | "yearly"
   >("weekly");
   const [availableTests, setAvailableTests] = useState<McqTest[]>([]);
+  const [upcomingTests, setUpcomingTests] = useState<McqTest[]>([]);
   const [testAttempted, setTestAttempted] = useState<Set<number>>(new Set());
   const [descriptiveTests, setDescriptiveTests] = useState<McqTest[]>([]);
+  const [facultyNameById, setFacultyNameById] = useState<
+    Record<string, string>
+  >({});
   const [descriptiveQuestions, setDescriptiveQuestions] = useState<
     DescriptiveQuestion[]
   >([]);
@@ -320,12 +325,7 @@ export default function StudentDashboardPage() {
   const [timerSecs, setTimerSecs] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [testSubmitting, setTestSubmitting] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    scored: number;
-    total: number;
-    correct: number;
-    totalQ: number;
-  } | null>(null);
+  const [testSubmitted, setTestSubmitted] = useState(false);
 
   /* fee/payment state */
   const [payAmount, setPayAmount] = useState("");
@@ -353,7 +353,7 @@ export default function StudentDashboardPage() {
       const [profileRes, spRes, enrollRes] = await Promise.all([
         supabase
           .from("profiles")
-          .select("full_name, phone")
+          .select("full_name, phone, role")
           .eq("user_id", uid)
           .single(),
         supabase
@@ -367,7 +367,18 @@ export default function StudentDashboardPage() {
           .eq("student_user_id", uid),
       ]);
 
-      if (profileRes.data) setProfile(profileRes.data as Profile);
+      if (profileRes.data) {
+        const role = (profileRes.data as { role?: string }).role;
+        if (role === "faculty") {
+          router.push("/faculty-dashboard");
+          return;
+        }
+        if (role === "admin") {
+          router.push("/admin-dashboard");
+          return;
+        }
+        setProfile(profileRes.data as Profile);
+      }
       if (spRes.data) setStudentProfile(spRes.data as StudentProfile);
 
       const enrollRows =
@@ -513,17 +524,55 @@ export default function StudentDashboardPage() {
         const { data: testsData } = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, courses(title), batches(batch_name)",
+            "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, courses(title), batches(batch_name)",
           )
           .in("batch_id", ids)
           .eq("is_published", true)
           .order("scheduled_at", { ascending: true });
         if (testsData) {
-          const tests = testsData as unknown as McqTest[];
-          const mcqTests = tests.filter((t) => t.test_type !== "descriptive");
-          const descTests = tests.filter((t) => t.test_type === "descriptive");
+          const now = new Date();
+          const allPublishedTests = testsData as unknown as McqTest[];
+          const availableNow = allPublishedTests.filter((test) => {
+            if (!test.scheduled_at) return true;
+            return new Date(test.scheduled_at) <= now;
+          });
+          const upcoming = allPublishedTests.filter(
+            (test) => !!test.scheduled_at && new Date(test.scheduled_at) > now,
+          );
+
+          const mcqTests = availableNow.filter(
+            (t) => t.test_type !== "descriptive",
+          );
+          const descTests = availableNow.filter(
+            (t) => t.test_type === "descriptive",
+          );
           setAvailableTests(mcqTests);
           setDescriptiveTests(descTests);
+          setUpcomingTests(upcoming);
+
+          const creatorIds = Array.from(
+            new Set(
+              allPublishedTests.map((t) => t.created_by).filter((id) => !!id),
+            ),
+          );
+          if (creatorIds.length > 0) {
+            const { data: creatorsData } = await supabase
+              .from("profiles")
+              .select("user_id, full_name")
+              .in("user_id", creatorIds);
+            if (creatorsData) {
+              const nameMap: Record<string, string> = {};
+              (
+                creatorsData as unknown as {
+                  user_id: string;
+                  full_name: string;
+                }[]
+              ).forEach((r) => {
+                nameMap[r.user_id] = r.full_name;
+              });
+              setFacultyNameById(nameMap);
+            }
+          }
 
           // Load student's descriptive answers
           if (user) {
@@ -628,7 +677,6 @@ export default function StudentDashboardPage() {
             : s,
         0,
       );
-      const totalMarks = activeTest.questions.reduce((s, q) => s + q.marks, 0);
       await supabase.from("mock_test_attempts").upsert(
         {
           mock_test_id: activeTest.test.id,
@@ -637,12 +685,7 @@ export default function StudentDashboardPage() {
         },
         { onConflict: "mock_test_id,student_user_id" },
       );
-      setTestResult({
-        scored,
-        total: totalMarks,
-        correct: answers.filter((a) => a.is_correct).length,
-        totalQ: activeTest.questions.length,
-      });
+      setTestSubmitted(true);
       setTestAttempted((prev) => new Set([...prev, activeTest.test.id]));
     } finally {
       setTestSubmitting(false);
@@ -650,7 +693,7 @@ export default function StudentDashboardPage() {
   }, [activeTest, testAnswers]);
 
   useEffect(() => {
-    if (!activeTest || testResult) {
+    if (!activeTest || testSubmitted) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -666,9 +709,15 @@ export default function StudentDashboardPage() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [activeTest, testResult, handleSubmitTest]);
+  }, [activeTest, testSubmitted, handleSubmitTest]);
 
   async function startTest(test: McqTest) {
+    if (test.scheduled_at && new Date(test.scheduled_at) > new Date()) {
+      alert(
+        `This test will be available from ${fmtDateTime(test.scheduled_at)}`,
+      );
+      return;
+    }
     const supabase = createClient();
     const { data: qData } = await supabase
       .from("mcq_questions")
@@ -683,7 +732,7 @@ export default function StudentDashboardPage() {
     }
     setActiveTest({ test, questions: qData as McqQuestion[] });
     setTestAnswers({});
-    setTestResult(null);
+    setTestSubmitted(false);
     setTimerSecs(test.time_limit_minutes * 60);
   }
 
@@ -697,7 +746,7 @@ export default function StudentDashboardPage() {
       if (now < scheduledTime) {
         setUploadMsg({
           type: "err",
-          text: `This test will be available from ${scheduledTime.toLocaleString()}`,
+          text: `This test will be available from ${fmtDateTime(test.scheduled_at)}`,
         });
         return;
       }
@@ -843,7 +892,7 @@ export default function StudentDashboardPage() {
                   {activeTest.test.total_marks} marks
                 </p>
               </div>
-              {testResult ? (
+              {testSubmitted ? (
                 <button
                   onClick={() => setActiveTest(null)}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-semibold text-sm"
@@ -875,22 +924,17 @@ export default function StudentDashboardPage() {
               )}
             </div>
 
-            {testResult ? (
+            {testSubmitted ? (
               <div className="p-8 text-center">
-                <div
-                  className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl font-bold ${pct(testResult.scored, testResult.total) >= 60 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                >
-                  {pct(testResult.scored, testResult.total)}%
+                <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 bg-green-100 text-green-700">
+                  <CheckCircle className="w-12 h-12" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {pct(testResult.scored, testResult.total) >= 60
-                    ? "Well done!"
-                    : "Keep practising!"}
+                  Test submitted successfully
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  You scored <strong>{testResult.scored}</strong> out of{" "}
-                  <strong>{testResult.total}</strong> marks (
-                  {testResult.correct}/{testResult.totalQ} correct)
+                  Your responses have been submitted. Marks will be reviewed and
+                  managed by faculty or admin.
                 </p>
                 <button
                   onClick={() => setActiveTest(null)}
@@ -1442,7 +1486,8 @@ export default function StudentDashboardPage() {
                       </div>
                     </div>
                   ) : availableTests.length === 0 &&
-                    descriptiveTests.length === 0 ? (
+                    descriptiveTests.length === 0 &&
+                    upcomingTests.length === 0 ? (
                     <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                       <FileQuestion className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500">
@@ -1450,66 +1495,127 @@ export default function StudentDashboardPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {availableTests.map((t) => {
-                        const attempted = testAttempted.has(t.id);
-                        return (
-                          <div
-                            key={t.id}
-                            className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100"
-                          >
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <span
-                                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${t.exam_type === "original" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}
-                                >
-                                  {t.exam_type === "original"
-                                    ? "Original Test"
-                                    : "Mock Test"}
-                                </span>
-                                <h3 className="font-bold text-gray-900 mt-2 text-sm">
-                                  {t.title}
-                                </h3>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {unwrapOne(t.courses)?.title ?? ""}
-                                </p>
-                              </div>
-                              {attempted && (
-                                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
-                              <span className="flex items-center gap-1">
-                                <BookMarked className="w-3.5 h-3.5" />
-                                {t.total_marks} marks
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Timer className="w-3.5 h-3.5" />
-                                {t.time_limit_minutes} min
-                              </span>
-                              {t.scheduled_at && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  {fmtDate(t.scheduled_at)}
-                                </span>
-                              )}
-                            </div>
-                            {attempted ? (
-                              <div className="w-full py-2 text-center text-sm font-semibold text-green-600 bg-green-50 rounded-xl">
-                                âœ“ Completed
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => startTest(t)}
-                                className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                    <>
+                      {availableTests.length > 0 && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {availableTests.map((t) => {
+                            const attempted = testAttempted.has(t.id);
+                            return (
+                              <div
+                                key={t.id}
+                                className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100"
                               >
-                                <ChevronRight className="w-4 h-4" /> Start Test
-                              </button>
-                            )}
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex-1">
+                                    <span
+                                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${t.exam_type === "original" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}
+                                    >
+                                      {t.exam_type === "original"
+                                        ? "Original Test"
+                                        : "Mock Test"}
+                                    </span>
+                                    <h3 className="font-bold text-gray-900 mt-2 text-sm">
+                                      {t.title}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {unwrapOne(t.courses)?.title ?? ""}
+                                    </p>
+                                  </div>
+                                  {attempted && (
+                                    <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+                                  <span className="flex items-center gap-1">
+                                    <BookMarked className="w-3.5 h-3.5" />
+                                    {t.total_marks} marks
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Timer className="w-3.5 h-3.5" />
+                                    {t.time_limit_minutes} min
+                                  </span>
+                                  {t.scheduled_at && (
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      {fmtDateTime(t.scheduled_at)}
+                                    </span>
+                                  )}
+                                </div>
+                                {attempted ? (
+                                  <div className="w-full py-2 text-center text-sm font-semibold text-green-600 bg-green-50 rounded-xl flex items-center justify-center gap-2">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Completed</span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => startTest(t)}
+                                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                  >
+                                    <ChevronRight className="w-4 h-4" /> Start
+                                    Test
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {upcomingTests.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 mt-4">
+                          <h2 className="font-bold text-gray-900 mb-3">
+                            Upcoming Tests
+                          </h2>
+                          <div className="space-y-3">
+                            {upcomingTests.map((t) => (
+                              <div
+                                key={t.id}
+                                className="border border-amber-200 bg-amber-50 rounded-xl p-4"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {t.title}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {unwrapOne(t.courses)?.title ?? ""}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Batch:{" "}
+                                      {unwrapOne(t.batches)?.batch_name ?? "-"}
+                                      {facultyNameById[t.created_by]
+                                        ? ` | Published by: ${facultyNameById[t.created_by]}`
+                                        : ""}
+                                    </p>
+                                  </div>
+                                  <span className="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                                    {t.test_type === "descriptive"
+                                      ? "Descriptive"
+                                      : "MCQ"}
+                                  </span>
+                                </div>
+                                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                                  <span className="flex items-center gap-1">
+                                    <BookMarked className="w-3.5 h-3.5" />
+                                    {t.total_marks} marks
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Timer className="w-3.5 h-3.5" />
+                                    {t.time_limit_minutes} min
+                                  </span>
+                                  {t.scheduled_at && (
+                                    <span className="flex items-center gap-1 font-semibold text-amber-700">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      Starts: {fmtDateTime(t.scheduled_at)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
@@ -1580,9 +1686,7 @@ export default function StudentDashboardPage() {
                         {upcomingSessions.map((s) => {
                           const batch = unwrapOne(s.batches);
                           const course = unwrapOne(batch?.courses);
-                          const isToday =
-                            s.session_date ===
-                            new Date().toISOString().split("T")[0];
+                          const isToday = s.session_date === localDateKey();
                           return (
                             <div
                               key={s.id}

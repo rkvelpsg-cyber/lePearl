@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/client";
+import { formatDateIST } from "@/lib/timezone";
 import {
   LogOut,
   LayoutDashboard,
@@ -126,12 +127,7 @@ function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 function fmtDate(s: string | null) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDateIST(s);
 }
 function fmtCurrency(n: number) {
   return `\u20B9${n.toLocaleString("en-IN")}`;

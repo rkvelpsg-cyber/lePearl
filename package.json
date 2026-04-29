@@ -6,9 +6,9 @@
     "node": "20.x"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cross-env TZ=Asia/Kolkata next dev",
+    "build": "cross-env TZ=Asia/Kolkata next build",
+    "start": "cross-env TZ=Asia/Kolkata next start",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -36,6 +36,7 @@
     "@types/react-dom": "^19.1.7",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "cross-env": "^7.0.3",
     "eslint": "^9.36.0",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4.1.13",

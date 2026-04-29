@@ -6,6 +6,12 @@ import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/client";
 import {
+  formatDateIST,
+  istDateTimeInputToUtcIso,
+  localDateKeyIST,
+  utcToIstDateTimeInput,
+} from "@/lib/timezone";
+import {
   Bell,
   LogOut,
   LayoutDashboard,
@@ -68,6 +74,8 @@ type BatchStudent = {
   student_user_id: string;
   full_name: string;
   batch_name: string;
+  course_id: number | null;
+  course_title: string;
 };
 type FacultyTask = {
   id: number;
@@ -86,6 +94,12 @@ type StudentProgress = {
   progress_percent: number;
   full_name: string;
   course_title: string;
+};
+type ExamScore = {
+  mock_test_id: number;
+  student_user_id: string;
+  mcq_score: number | null;
+  descriptive_score: number | null;
 };
 type McqTestFaculty = {
   id: number;
@@ -157,12 +171,7 @@ function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 function fmtDate(s: string | null) {
-  if (!s) return "-";
-  return new Date(s).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDateIST(s);
 }
 function fmtTime(t: string | null) {
   if (!t) return "";
@@ -170,11 +179,14 @@ function fmtTime(t: string | null) {
   const hr = parseInt(h);
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? "PM" : "AM"}`;
 }
+function toLocalDateTimeInput(value: string | null) {
+  return utcToIstDateTimeInput(value);
+}
+function toUtcIsoFromLocalInput(value: string) {
+  return istDateTimeInputToUtcIso(value);
+}
 function localDateKey(d: Date = new Date()) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return localDateKeyIST(d);
 }
 function isCompletedSession(sessionDate: string, startTime: string | null) {
   const today = localDateKey();
@@ -318,6 +330,20 @@ export default function FacultyDashboardPage() {
     text: string;
   } | null>(null);
 
+  /* exam scores */
+  const [examScores, setExamScores] = useState<ExamScore[]>([]);
+  const [examScoreSaving, setExamScoreSaving] = useState<string | null>(null);
+  const [examScoreMsg, setExamScoreMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [completedTestIdsByStudent, setCompletedTestIdsByStudent] = useState<
+    Record<string, number[]>
+  >({});
+  const [scoreInputs, setScoreInputs] = useState<
+    Record<string, { mcq: string; desc: string }>
+  >({});
+
   /* tasks */
   const [tasks, setTasks] = useState<FacultyTask[]>([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -337,6 +363,7 @@ export default function FacultyDashboardPage() {
   /* MCQ */
   const [mcqTests, setMcqTests] = useState<McqTestFaculty[]>([]);
   const [selectedTest, setSelectedTest] = useState<McqTestFaculty | null>(null);
+  const [editingTestId, setEditingTestId] = useState<number | null>(null);
   const [testQuestions, setTestQuestions] = useState<McqQuestion[]>([]);
   const [showMcqForm, setShowMcqForm] = useState(false);
   const [showQForm, setShowQForm] = useState(false);
@@ -470,7 +497,7 @@ export default function FacultyDashboardPage() {
       ] = await Promise.all([
         supabase
           .from("profiles")
-          .select("full_name, phone")
+          .select("full_name, phone, role")
           .eq("user_id", uid)
           .single(),
         supabase
@@ -489,7 +516,7 @@ export default function FacultyDashboardPage() {
         supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, time_limit_minutes, exam_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
           )
           .eq("created_by", uid)
           .order("created_at", { ascending: false }),
@@ -509,7 +536,18 @@ export default function FacultyDashboardPage() {
           .limit(30),
       ]);
 
-      if (profileRes.data) setProfile(profileRes.data as Profile);
+      if (profileRes.data) {
+        const role = (profileRes.data as { role?: string }).role;
+        if (role === "student") {
+          router.push("/student-dashboard");
+          return;
+        }
+        if (role === "admin") {
+          router.push("/admin-dashboard");
+          return;
+        }
+        setProfile(profileRes.data as Profile);
+      }
       if (tasksRes.data) {
         const taskRows = tasksRes.data as unknown as FacultyTask[];
         setTasks(taskRows);
@@ -568,9 +606,24 @@ export default function FacultyDashboardPage() {
 
         if (batchData.length > 0) {
           const batchIds = batchData.map((b) => b.id);
+
+          // Pull tests tied to faculty batches (not only tests created by this faculty)
+          const { data: batchTestsData } = await supabase
+            .from("mock_tests")
+            .select(
+              "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            )
+            .in("batch_id", batchIds)
+            .order("created_at", { ascending: false });
+          if (batchTestsData) {
+            setMcqTests(batchTestsData as unknown as McqTestFaculty[]);
+          }
+
           const { data: enrollData } = await supabase
             .from("enrollments")
-            .select("batch_id, student_user_id, batches(batch_name)")
+            .select(
+              "batch_id, student_user_id, batches(batch_name, courses(id, title))",
+            )
             .in("batch_id", batchIds);
           if (enrollData && enrollData.length > 0) {
             const studentIds = [
@@ -590,19 +643,76 @@ export default function FacultyDashboardPage() {
                 batch_id: number;
                 student_user_id: string;
                 batches:
-                  | { batch_name: string }
-                  | { batch_name: string }[]
+                  | {
+                      batch_name: string;
+                      courses:
+                        | { id: number; title: string }
+                        | { id: number; title: string }[]
+                        | null;
+                    }
+                  | {
+                      batch_name: string;
+                      courses:
+                        | { id: number; title: string }
+                        | { id: number; title: string }[]
+                        | null;
+                    }[]
                   | null;
               }[]
-            ).map((e) => ({
-              batch_id: e.batch_id,
-              student_user_id: e.student_user_id,
-              full_name: nameMap[e.student_user_id] ?? "Student",
-              batch_name:
-                (unwrapOne(e.batches) as { batch_name: string } | null)
-                  ?.batch_name ?? "",
-            }));
+            ).map((e) => {
+              const batchObj = unwrapOne(e.batches) as {
+                batch_name: string;
+                courses: { id: number; title: string } | null;
+              } | null;
+              const courseObj = unwrapOne(batchObj?.courses ?? null) as {
+                id: number;
+                title: string;
+              } | null;
+              return {
+                batch_id: e.batch_id,
+                student_user_id: e.student_user_id,
+                full_name: nameMap[e.student_user_id] ?? "Student",
+                batch_name: batchObj?.batch_name ?? "",
+                course_id: courseObj?.id ?? null,
+                course_title: courseObj?.title ?? "Course",
+              };
+            });
             setBatchStudents(students);
+
+            // Exams each student has actually completed (MCQ/descriptive)
+            const [mcqAttemptsRes, descAttemptsRes] = await Promise.all([
+              supabase
+                .from("mcq_student_answers")
+                .select("mock_test_id, student_user_id")
+                .in("student_user_id", studentIds),
+              supabase
+                .from("descriptive_student_answers")
+                .select("mock_test_id, student_user_id, submitted_at")
+                .in("student_user_id", studentIds)
+                .not("submitted_at", "is", null),
+            ]);
+
+            const completedMap: Record<string, number[]> = {};
+            const pushUnique = (studentId: string, testId: number) => {
+              if (!completedMap[studentId]) completedMap[studentId] = [];
+              if (!completedMap[studentId].includes(testId)) {
+                completedMap[studentId].push(testId);
+              }
+            };
+
+            (mcqAttemptsRes.data ?? []).forEach((row) => {
+              pushUnique(
+                row.student_user_id as string,
+                row.mock_test_id as number,
+              );
+            });
+            (descAttemptsRes.data ?? []).forEach((row) => {
+              pushUnique(
+                row.student_user_id as string,
+                row.mock_test_id as number,
+              );
+            });
+            setCompletedTestIdsByStudent(completedMap);
 
             const courseIds = batchData
               .map(
@@ -642,6 +752,66 @@ export default function FacultyDashboardPage() {
                 );
               }
             }
+
+            // Load existing exam scores for these students
+            const [{ data: scoresData }, { data: attemptScoresData }] =
+              await Promise.all([
+                supabase
+                  .from("student_mock_test_scores")
+                  .select(
+                    "mock_test_id, student_user_id, mcq_score, descriptive_score",
+                  )
+                  .in("student_user_id", studentIds),
+                supabase
+                  .from("mock_test_attempts")
+                  .select("mock_test_id, student_user_id, scored_marks")
+                  .in("student_user_id", studentIds),
+              ]);
+
+            const mergedScores = new Map<string, ExamScore>();
+
+            (attemptScoresData ?? []).forEach((row) => {
+              const key = `${row.mock_test_id}_${row.student_user_id}`;
+              mergedScores.set(key, {
+                mock_test_id: row.mock_test_id as number,
+                student_user_id: row.student_user_id as string,
+                mcq_score: Number(row.scored_marks ?? 0),
+                descriptive_score: null,
+              });
+            });
+
+            ((scoresData as ExamScore[] | null) ?? []).forEach((row) => {
+              const key = `${row.mock_test_id}_${row.student_user_id}`;
+              const existing = mergedScores.get(key);
+              mergedScores.set(key, {
+                mock_test_id: row.mock_test_id,
+                student_user_id: row.student_user_id,
+                mcq_score:
+                  row.mcq_score != null
+                    ? row.mcq_score
+                    : (existing?.mcq_score ?? null),
+                descriptive_score:
+                  row.descriptive_score != null
+                    ? row.descriptive_score
+                    : (existing?.descriptive_score ?? null),
+              });
+            });
+
+            const mergedScoresList = Array.from(mergedScores.values());
+            setExamScores(mergedScoresList);
+
+            const inputs: Record<string, { mcq: string; desc: string }> = {};
+            mergedScoresList.forEach((s) => {
+              const key = `${s.mock_test_id}_${s.student_user_id}`;
+              inputs[key] = {
+                mcq: s.mcq_score != null ? String(s.mcq_score) : "",
+                desc:
+                  s.descriptive_score != null
+                    ? String(s.descriptive_score)
+                    : "",
+              };
+            });
+            setScoreInputs(inputs);
           } else {
             setTotalStudents(0);
           }
@@ -713,6 +883,8 @@ export default function FacultyDashboardPage() {
             student_user_id: p.user_id,
             full_name: p.full_name,
             batch_name: batch.batch_name,
+            course_id: null,
+            course_title: "Course",
           }));
           setSessionStudents(mapped);
         } else {
@@ -874,6 +1046,34 @@ export default function FacultyDashboardPage() {
   }
 
   /* â”€â”€ MCQ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  function resetMcqForm() {
+    setEditingTestId(null);
+    setShowMcqForm(false);
+    setMcqForm({
+      batchId: "",
+      title: "",
+      testType: "mcq",
+      timeLimitMinutes: "60",
+      examType: "mock",
+      scheduledAt: "",
+      totalMarks: "100",
+    });
+  }
+
+  function startEditingTest(test: McqTestFaculty) {
+    setEditingTestId(test.id);
+    setShowMcqForm(true);
+    setMcqForm({
+      batchId: test.batch_id ? String(test.batch_id) : "",
+      title: test.title,
+      testType: test.test_type ?? "mcq",
+      timeLimitMinutes: String(test.time_limit_minutes ?? 60),
+      examType: test.exam_type ?? "mock",
+      scheduledAt: toLocalDateTimeInput(test.scheduled_at),
+      totalMarks: String(test.total_marks),
+    });
+  }
+
   async function createMcqTest() {
     const supabase = createClient();
     setMcqSubmitting(true);
@@ -883,45 +1083,79 @@ export default function FacultyDashboardPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const batch = batches.find((b) => b.id === parseInt(mcqForm.batchId));
+      const batchId = parseInt(mcqForm.batchId, 10);
+      const totalMarks = parseInt(mcqForm.totalMarks, 10);
+      const timeLimitMinutes = parseInt(mcqForm.timeLimitMinutes, 10);
+
+      if (!Number.isFinite(batchId)) {
+        setMcqMsg({ type: "err", text: "Please select a batch." });
+        return;
+      }
+      if (!Number.isFinite(totalMarks) || totalMarks <= 0) {
+        setMcqMsg({ type: "err", text: "Total marks must be greater than 0." });
+        return;
+      }
+      if (!Number.isFinite(timeLimitMinutes) || timeLimitMinutes <= 0) {
+        setMcqMsg({ type: "err", text: "Time limit must be greater than 0." });
+        return;
+      }
+
+      const batch = batches.find((b) => b.id === batchId);
       const courseId = unwrapOne(
         batch?.courses as
           | { id: number; title: string }
           | { id: number; title: string }[]
           | null,
       )?.id;
+      if (!courseId) {
+        setMcqMsg({
+          type: "err",
+          text: "Selected batch has no linked course. Please assign a course to this batch first.",
+        });
+        return;
+      }
+
       const fullPayload = {
-        title: mcqForm.title,
-        total_marks: parseInt(mcqForm.totalMarks),
-        time_limit_minutes: parseInt(mcqForm.timeLimitMinutes),
+        title: mcqForm.title.trim(),
+        total_marks: totalMarks,
+        time_limit_minutes: timeLimitMinutes,
         exam_type: mcqForm.examType,
         test_type: mcqForm.testType,
-        batch_id: parseInt(mcqForm.batchId) || null,
-        course_id: courseId ?? 1,
-        is_published: false,
-        scheduled_at: mcqForm.scheduledAt || null,
+        batch_id: batchId,
+        course_id: courseId,
+        is_published: editingTestId
+          ? (selectedTest?.is_published ?? false)
+          : false,
+        scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
         created_by: user.id,
       };
 
       const minimalPayload = {
-        title: mcqForm.title,
-        total_marks: parseInt(mcqForm.totalMarks),
-        test_type: mcqForm.testType,
-        course_id: courseId ?? 1,
-        scheduled_at: mcqForm.scheduledAt || null,
+        // Base schema compatibility payload (without newer columns)
+        title: mcqForm.title.trim(),
+        total_marks: totalMarks,
+        course_id: courseId,
+        scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
         created_by: user.id,
       };
 
       // Some DB instances still have the older mock_tests schema.
-      // Try full insert first; if columns are missing, retry with minimal payload.
+      // Try full write first; if columns are missing, retry with minimal payload.
       let insertData: unknown = null;
       let insertError: { code?: string; message?: string } | null = null;
 
-      const fullInsert = await supabase
-        .from("mock_tests")
-        .insert(fullPayload)
-        .select()
-        .single();
+      const fullInsert = editingTestId
+        ? await supabase
+            .from("mock_tests")
+            .update(fullPayload)
+            .eq("id", editingTestId)
+            .select()
+            .single()
+        : await supabase
+            .from("mock_tests")
+            .insert(fullPayload)
+            .select()
+            .single();
       insertData = fullInsert.data;
       insertError = fullInsert.error as {
         code?: string;
@@ -929,11 +1163,18 @@ export default function FacultyDashboardPage() {
       } | null;
 
       if (insertError?.code === "42703") {
-        const fallbackInsert = await supabase
-          .from("mock_tests")
-          .insert(minimalPayload)
-          .select()
-          .single();
+        const fallbackInsert = editingTestId
+          ? await supabase
+              .from("mock_tests")
+              .update(minimalPayload)
+              .eq("id", editingTestId)
+              .select()
+              .single()
+          : await supabase
+              .from("mock_tests")
+              .insert(minimalPayload)
+              .select()
+              .single();
         insertData = fallbackInsert.data;
         insertError = fallbackInsert.error as {
           code?: string;
@@ -943,17 +1184,13 @@ export default function FacultyDashboardPage() {
 
       if (insertError) throw insertError;
 
-      setMcqMsg({ type: "ok", text: "Test created! Add questions now." });
-      setShowMcqForm(false);
-      setMcqForm({
-        batchId: "",
-        title: "",
-        testType: "mcq",
-        timeLimitMinutes: "60",
-        examType: "mock",
-        scheduledAt: "",
-        totalMarks: "100",
+      setMcqMsg({
+        type: "ok",
+        text: editingTestId
+          ? "Test updated successfully."
+          : "Test created! Add questions now.",
       });
+      resetMcqForm();
       load();
       if (insertData) setSelectedTest(insertData as McqTestFaculty);
     } catch (err: unknown) {
@@ -1059,11 +1296,62 @@ export default function FacultyDashboardPage() {
 
   async function togglePublish(test: McqTestFaculty) {
     const supabase = createClient();
+    setMcqMsg(null);
+    const nextPublished = !test.is_published;
     const { error } = await supabase
       .from("mock_tests")
-      .update({ is_published: !test.is_published })
+      .update({ is_published: nextPublished })
       .eq("id", test.id);
-    if (!error) load();
+
+    if (error) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === "42703") {
+        setMcqMsg({
+          type: "err",
+          text: "Publish is unavailable because 'is_published' column is missing in your DB. Please run the migration 20260423_add_mcq_lectures_razorpay.sql.",
+        });
+        return;
+      }
+      setMcqMsg({
+        type: "err",
+        text: err.message || "Failed to update publish status.",
+      });
+      return;
+    }
+
+    setMcqMsg({
+      type: "ok",
+      text: nextPublished
+        ? "Test published to students."
+        : "Test unpublished successfully.",
+    });
+
+    if (selectedTest?.id === test.id) {
+      setSelectedTest({ ...selectedTest, is_published: nextPublished });
+    }
+    load();
+  }
+
+  async function deleteTest(test: McqTestFaculty) {
+    if (!confirm(`Delete test "${test.title}"?`)) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("mock_tests")
+      .delete()
+      .eq("id", test.id);
+    if (!error) {
+      if (selectedTest?.id === test.id) {
+        setSelectedTest(null);
+        setTestQuestions([]);
+      }
+      if (editingTestId === test.id) {
+        resetMcqForm();
+      }
+      setMcqMsg({ type: "ok", text: "Test deleted successfully." });
+      load();
+    } else {
+      setMcqMsg({ type: "err", text: "Failed to delete test." });
+    }
   }
 
   async function deleteQuestion(qId: number) {
@@ -1477,6 +1765,61 @@ export default function FacultyDashboardPage() {
     }
     setProgressUpdating(null);
     setTimeout(() => setProgressMsg(null), 2500);
+  }
+
+  async function saveExamScore(
+    mockTestId: number,
+    studentUserId: string,
+    mcqScore: number | null,
+    descriptiveScore: number | null,
+  ) {
+    const supabase = createClient();
+    const key = `${mockTestId}_${studentUserId}`;
+    setExamScoreSaving(key);
+    const { error } = await supabase.from("student_mock_test_scores").upsert(
+      {
+        mock_test_id: mockTestId,
+        student_user_id: studentUserId,
+        mcq_score: mcqScore,
+        descriptive_score: descriptiveScore,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "mock_test_id,student_user_id" },
+    );
+    if (!error) {
+      setExamScores((prev) => {
+        const existing = prev.find(
+          (s) =>
+            s.mock_test_id === mockTestId &&
+            s.student_user_id === studentUserId,
+        );
+        if (existing) {
+          return prev.map((s) =>
+            s.mock_test_id === mockTestId && s.student_user_id === studentUserId
+              ? {
+                  ...s,
+                  mcq_score: mcqScore,
+                  descriptive_score: descriptiveScore,
+                }
+              : s,
+          );
+        }
+        return [
+          ...prev,
+          {
+            mock_test_id: mockTestId,
+            student_user_id: studentUserId,
+            mcq_score: mcqScore,
+            descriptive_score: descriptiveScore,
+          },
+        ];
+      });
+      setExamScoreMsg({ type: "ok", text: "Scores saved!" });
+    } else {
+      setExamScoreMsg({ type: "err", text: "Failed to save scores." });
+    }
+    setExamScoreSaving(null);
+    setTimeout(() => setExamScoreMsg(null), 2500);
   }
 
   function exportProgressSectionWise() {
@@ -2029,10 +2372,12 @@ export default function FacultyDashboardPage() {
                   <div className="bg-white rounded-2xl shadow-sm p-5 border border-purple-100">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
-                        Create New Test
+                        {editingTestId
+                          ? "Edit Test Details"
+                          : "Create New Test"}
                       </h2>
                       <button
-                        onClick={() => setShowMcqForm(false)}
+                        onClick={resetMcqForm}
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <X className="w-5 h-5" />
@@ -2169,9 +2514,9 @@ export default function FacultyDashboardPage() {
                       {mcqSubmitting ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Plus className="w-4 h-4" />
+                        <Edit3 className="w-4 h-4" />
                       )}
-                      Create Test
+                      {editingTestId ? "Save Changes" : "Create Test"}
                     </button>
                   </div>
                 ) : (
@@ -2306,10 +2651,10 @@ export default function FacultyDashboardPage() {
                         ) : (
                           <>
                             {/* DESCRIPTIVE QUESTION FORM */}
-                            <textarea
-                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                              rows={2}
-                              placeholder="Question text"
+                            <input
+                              type="text"
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                              placeholder="Enter a single-sentence question"
                               value={descriptiveQForm.questionText}
                               onChange={(e) =>
                                 setDescriptiveQForm((p) => ({
@@ -2413,25 +2758,27 @@ export default function FacultyDashboardPage() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          <div className="grid grid-cols-2 gap-1 mt-2">
-                            {(["A", "B", "C", "D"] as const).map((opt) => (
-                              <p
-                                key={opt}
-                                className={`text-xs px-2 py-1 rounded-lg ${q.correct_option === opt ? "bg-green-100 text-green-700 font-semibold" : "text-gray-500"}`}
-                              >
-                                {opt}.{" "}
-                                {
-                                  q[
-                                    `option_${opt.toLowerCase()}` as
-                                      | "option_a"
-                                      | "option_b"
-                                      | "option_c"
-                                      | "option_d"
-                                  ]
-                                }
-                              </p>
-                            ))}
-                          </div>
+                          {selectedTest?.test_type === "mcq" && (
+                            <div className="grid grid-cols-2 gap-1 mt-2">
+                              {(["A", "B", "C", "D"] as const).map((opt) => (
+                                <p
+                                  key={opt}
+                                  className={`text-xs px-2 py-1 rounded-lg ${q.correct_option === opt ? "bg-green-100 text-green-700 font-semibold" : "text-gray-500"}`}
+                                >
+                                  {opt}.{" "}
+                                  {
+                                    q[
+                                      `option_${opt.toLowerCase()}` as
+                                        | "option_a"
+                                        | "option_b"
+                                        | "option_c"
+                                        | "option_d"
+                                    ]
+                                  }
+                                </p>
+                              ))}
+                            </div>
+                          )}
                           <p className="text-xs text-gray-400 mt-1">
                             {q.marks} mark{q.marks > 1 ? "s" : ""}
                           </p>
@@ -2446,6 +2793,20 @@ export default function FacultyDashboardPage() {
                         ? "Unpublish Test"
                         : "Publish to Students"}
                     </button>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => startEditingTest(selectedTest)}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200"
+                      >
+                        Edit Test Details
+                      </button>
+                      <button
+                        onClick={() => deleteTest(selectedTest)}
+                        className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-100 text-red-700 hover:bg-red-200"
+                      >
+                        Delete Test
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   /* test list */
@@ -2484,13 +2845,25 @@ export default function FacultyDashboardPage() {
                                   onClick={() => loadQuestions(t)}
                                   className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-xl text-xs font-semibold hover:bg-purple-200"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5" /> Edit
+                                  <Edit3 className="w-3.5 h-3.5" /> Questions
+                                </button>
+                                <button
+                                  onClick={() => startEditingTest(t)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-xl text-xs font-semibold hover:bg-blue-200"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" /> Details
                                 </button>
                                 <button
                                   onClick={() => togglePublish(t)}
                                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold ${t.is_published ? "bg-gray-200 text-gray-600" : "bg-green-100 text-green-700"}`}
                                 >
                                   {t.is_published ? "Unpublish" : "Publish"}
+                                </button>
+                                <button
+                                  onClick={() => deleteTest(t)}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200"
+                                >
+                                  Delete
                                 </button>
                               </div>
                             </div>
@@ -3617,6 +3990,19 @@ export default function FacultyDashboardPage() {
                   </div>
                 )}
 
+                {examScoreMsg && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-xl text-sm ${examScoreMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                  >
+                    {examScoreMsg.type === "ok" ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    {examScoreMsg.text}
+                  </div>
+                )}
+
                 {batchStudents.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
@@ -3627,13 +4013,20 @@ export default function FacultyDashboardPage() {
                 ) : (
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <h2 className="font-bold text-gray-900 mb-4">
-                      Student Progress
+                      Student Progress & Exam Scores
                     </h2>
                     <div className="space-y-4">
                       {batchStudents.map((student) => {
                         const progRows = studentProgress.filter(
                           (p) => p.student_user_id === student.student_user_id,
                         );
+                        const completedTestIds =
+                          completedTestIdsByStudent[student.student_user_id] ??
+                          [];
+                        const studentTests = mcqTests.filter((t) =>
+                          completedTestIds.includes(t.id),
+                        );
+
                         return (
                           <div
                             key={student.student_user_id}
@@ -3652,7 +4045,107 @@ export default function FacultyDashboardPage() {
                                 </p>
                               </div>
                             </div>
-                            {progRows.length === 0 ? (
+
+                            {progRows.length === 0 &&
+                            student.course_id != null ? (
+                              // No record yet — show a 0% slider so faculty can set initial progress
+                              (() => {
+                                const key = `${student.student_user_id}_${student.course_id}`;
+                                const localPct =
+                                  studentProgress.find(
+                                    (sp) =>
+                                      sp.student_user_id ===
+                                        student.student_user_id &&
+                                      sp.course_id === student.course_id,
+                                  )?.progress_percent ?? 0;
+                                return (
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide">
+                                          Course Completion Progress
+                                        </p>
+                                        <p className="text-xs font-semibold text-gray-700">
+                                          {student.course_title}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-emerald-600">
+                                          {localPct}%
+                                        </span>
+                                        {progressUpdating === key && (
+                                          <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="range"
+                                        min={0}
+                                        max={100}
+                                        value={localPct}
+                                        onChange={(e) =>
+                                          setStudentProgress((prev) => {
+                                            const exists = prev.find(
+                                              (sp) =>
+                                                sp.student_user_id ===
+                                                  student.student_user_id &&
+                                                sp.course_id ===
+                                                  student.course_id,
+                                            );
+                                            if (exists) {
+                                              return prev.map((sp) =>
+                                                sp.student_user_id ===
+                                                  student.student_user_id &&
+                                                sp.course_id ===
+                                                  student.course_id
+                                                  ? {
+                                                      ...sp,
+                                                      progress_percent:
+                                                        parseInt(
+                                                          e.target.value,
+                                                          10,
+                                                        ),
+                                                    }
+                                                  : sp,
+                                              );
+                                            }
+                                            return [
+                                              ...prev,
+                                              {
+                                                student_user_id:
+                                                  student.student_user_id,
+                                                course_id: student.course_id!,
+                                                progress_percent: parseInt(
+                                                  e.target.value,
+                                                  10,
+                                                ),
+                                                full_name: student.full_name,
+                                                course_title:
+                                                  student.course_title,
+                                              },
+                                            ];
+                                          })
+                                        }
+                                        onMouseUp={(e) =>
+                                          updateProgress(
+                                            student.student_user_id,
+                                            student.course_id!,
+                                            parseInt(
+                                              (e.target as HTMLInputElement)
+                                                .value,
+                                              10,
+                                            ),
+                                          )
+                                        }
+                                        className="flex-1 accent-emerald-600"
+                                      />
+                                      <TrendingUp className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                                    </div>
+                                  </div>
+                                );
+                              })()
+                            ) : progRows.length === 0 ? (
                               <p className="text-xs text-gray-400">
                                 No progress records yet.
                               </p>
@@ -3663,9 +4156,14 @@ export default function FacultyDashboardPage() {
                                   return (
                                     <div key={key}>
                                       <div className="flex items-center justify-between mb-1">
-                                        <p className="text-xs font-semibold text-gray-700">
-                                          {p.course_title}
-                                        </p>
+                                        <div>
+                                          <p className="text-xs text-gray-400 uppercase tracking-wide">
+                                            Course Completion Progress
+                                          </p>
+                                          <p className="text-xs font-semibold text-gray-700">
+                                            {p.course_title}
+                                          </p>
+                                        </div>
                                         <div className="flex items-center gap-2">
                                           <span className="text-xs font-bold text-emerald-600">
                                             {p.progress_percent}%
@@ -3692,6 +4190,7 @@ export default function FacultyDashboardPage() {
                                                       progress_percent:
                                                         parseInt(
                                                           e.target.value,
+                                                          10,
                                                         ),
                                                     }
                                                   : sp,
@@ -3705,6 +4204,7 @@ export default function FacultyDashboardPage() {
                                               parseInt(
                                                 (e.target as HTMLInputElement)
                                                   .value,
+                                                10,
                                               ),
                                             )
                                           }
@@ -3715,6 +4215,125 @@ export default function FacultyDashboardPage() {
                                     </div>
                                   );
                                 })}
+                              </div>
+                            )}
+
+                            {studentTests.length > 0 && (
+                              <div className="mt-4 border-t border-gray-200 pt-3">
+                                <p className="text-xs font-bold text-gray-700 mb-2">
+                                  Exam Scores
+                                </p>
+                                <div className="space-y-2">
+                                  {studentTests.map((test) => {
+                                    const scoreKey = `${test.id}_${student.student_user_id}`;
+                                    const input = scoreInputs[scoreKey] ?? {
+                                      mcq: "",
+                                      desc: "",
+                                    };
+                                    const isSaving =
+                                      examScoreSaving === scoreKey;
+
+                                    return (
+                                      <div
+                                        key={scoreKey}
+                                        className="bg-white border border-gray-200 rounded-lg p-3"
+                                      >
+                                        <div className="flex items-center justify-between mb-2">
+                                          <p className="text-xs font-semibold text-gray-800 truncate max-w-[60%]">
+                                            {test.title}
+                                          </p>
+                                          <span
+                                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                              test.test_type === "descriptive"
+                                                ? "bg-purple-100 text-purple-700"
+                                                : "bg-blue-100 text-blue-700"
+                                            }`}
+                                          >
+                                            {test.test_type === "descriptive"
+                                              ? "Descriptive"
+                                              : "MCQ"}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          {test.test_type !== "descriptive" && (
+                                            <div className="flex-1">
+                                              <label className="text-[10px] text-gray-500 block mb-0.5">
+                                                MCQ Score
+                                              </label>
+                                              <input
+                                                type="number"
+                                                min={0}
+                                                max={test.total_marks}
+                                                placeholder={`/ ${test.total_marks}`}
+                                                value={input.mcq}
+                                                onChange={(e) =>
+                                                  setScoreInputs((prev) => ({
+                                                    ...prev,
+                                                    [scoreKey]: {
+                                                      ...input,
+                                                      mcq: e.target.value,
+                                                    },
+                                                  }))
+                                                }
+                                                className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                              />
+                                            </div>
+                                          )}
+
+                                          {test.test_type !== "mcq" && (
+                                            <div className="flex-1">
+                                              <label className="text-[10px] text-gray-500 block mb-0.5">
+                                                Descriptive Score
+                                              </label>
+                                              <input
+                                                type="number"
+                                                min={0}
+                                                max={test.total_marks}
+                                                placeholder={`/ ${test.total_marks}`}
+                                                value={input.desc}
+                                                onChange={(e) =>
+                                                  setScoreInputs((prev) => ({
+                                                    ...prev,
+                                                    [scoreKey]: {
+                                                      ...input,
+                                                      desc: e.target.value,
+                                                    },
+                                                  }))
+                                                }
+                                                className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                              />
+                                            </div>
+                                          )}
+
+                                          <button
+                                            onClick={() =>
+                                              saveExamScore(
+                                                test.id,
+                                                student.student_user_id,
+                                                input.mcq !== ""
+                                                  ? parseFloat(input.mcq)
+                                                  : null,
+                                                input.desc !== ""
+                                                  ? parseFloat(input.desc)
+                                                  : null,
+                                              )
+                                            }
+                                            disabled={isSaving}
+                                            className="mt-4 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-1 disabled:opacity-50"
+                                          >
+                                            {isSaving ? (
+                                              <Loader2 className="w-3 h-3 animate-spin" />
+                                            ) : (
+                                              <CheckCircle className="w-3 h-3" />
+                                            )}
+                                            Save
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
                           </div>
