@@ -1,9 +1,7 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { Suspense, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { createClient, type AuthScope } from "@/lib/supabase/client";
@@ -16,12 +14,15 @@ function loginPathByRole(role: string) {
 
 function ResetPasswordInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const roleParam = searchParams.get("role");
-  const role: AuthScope =
-    roleParam === "faculty" || roleParam === "admin" || roleParam === "student"
-      ? roleParam
-      : "student";
+  const [role, setRole] = useState<AuthScope>("student");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roleParam = params.get("role");
+    if (roleParam === "faculty" || roleParam === "admin" || roleParam === "student") {
+      setRole(roleParam);
+    }
+  }, []);
 
   const supabase = useMemo(() => createClient(role), [role]);
 
