@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { signInWithEmail } from "@/lib/supabase/auth";
-import { AlertCircle, LogIn, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { signInWithEmail, signOutIfRoleMismatch } from "@/lib/supabase/auth";
+import { AlertCircle, LogIn, Loader2, X } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -22,6 +30,7 @@ export default function LoginPage() {
       const { user, role, sessionError } = await signInWithEmail(
         email,
         password,
+        "student",
       );
 
       if (sessionError) {
@@ -38,23 +47,55 @@ export default function LoginPage() {
         return;
       }
 
-      // Role-based redirect
-      switch (role) {
-        case "student":
-          router.push("/student-dashboard");
-          break;
-        case "faculty":
-          router.push("/faculty-dashboard");
-          break;
-        case "admin":
-          router.push("/admin-dashboard");
-          break;
-        default:
-          router.push("/");
+      const mismatch = await signOutIfRoleMismatch(role, "student");
+      if (mismatch) {
+        setError(
+          "This account does not have student access. Please use the correct credentials.",
+        );
+        setLoading(false);
+        return;
       }
+
+      router.push("/student-dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
+    }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    const emailValue = forgotEmail.trim();
+    if (!emailValue) {
+      setForgotMsg({ type: "err", text: "Please enter your email address." });
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotMsg(null);
+    try {
+      const supabase = createClient("student");
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        emailValue,
+        {
+          redirectTo: `${window.location.origin}/reset-password?role=student`,
+        },
+      );
+
+      if (resetError) throw resetError;
+
+      setForgotMsg({
+        type: "ok",
+        text: "Password reset link sent to your registered email.",
+      });
+    } catch (err) {
+      setForgotMsg({
+        type: "err",
+        text:
+          err instanceof Error ? err.message : "Failed to send reset email.",
+      });
+    } finally {
+      setForgotLoading(false);
     }
   }
 
@@ -114,7 +155,7 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 required
-                placeholder="priya.sharma@lepearl.education"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -142,11 +183,18 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Demo Credentials Hint */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-900">
-              <p className="font-semibold mb-1">Demo Credentials:</p>
-              <p>Email: priya.sharma@lepearl.education</p>
-              <p>Password: LpPriya#2026!</p>
+            <div className="text-right -mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotOpen(true);
+                  setForgotEmail(email);
+                  setForgotMsg(null);
+                }}
+                className="text-sm font-semibold text-purple-600 hover:text-purple-700"
+              >
+                Forgot Password?
+              </button>
             </div>
 
             {/* Sign In Button */}
@@ -193,6 +241,60 @@ export default function LoginPage() {
           </a>
         </p>
       </div>
+
+      {forgotOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setForgotOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
+                Forgot Password
+              </h2>
+              <button
+                type="button"
+                onClick={() => setForgotOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your registered email to receive a password reset link.
+            </p>
+
+            {forgotMsg && (
+              <div
+                className={`mb-4 p-3 rounded-lg text-sm ${forgotMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+              >
+                {forgotMsg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <input
+                type="email"
+                required
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="Enter your registered email"
+                disabled={forgotLoading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none disabled:bg-gray-100"
+              />
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold py-3 rounded-lg transition-all duration-200"
+              >
+                {forgotLoading ? "Sending..." : "Send Reset Link"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

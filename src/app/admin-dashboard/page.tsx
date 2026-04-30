@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { formatDateIST } from "@/lib/timezone";
 import {
   LogOut,
@@ -29,7 +29,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-/* â”€â”€ types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── types ──────────────────────────────────────────────── */
 type AdminSection =
   | "overview"
   | "students"
@@ -212,11 +212,12 @@ function Badge({
   );
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════════════════
    ADMIN DASHBOARD
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════════════════ */
 export default function AdminDashboardPage() {
   const router = useRouter();
+  const createClient = () => createSupabaseClient("admin");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -291,10 +292,8 @@ export default function AdminDashboardPage() {
         classesRes,
       ] = await Promise.all([
         supabase
-          .from("student_profiles")
-          .select(
-            "user_id, enrollment_no, created_at, profiles(full_name, phone), auth_users:user_id(email)",
-          )
+          .from("enrollments")
+          .select("student_user_id, batch_id, created_at")
           .order("created_at", { ascending: false }),
         supabase
           .from("profiles")
@@ -343,22 +342,144 @@ export default function AdminDashboardPage() {
       ]);
 
       /* students */
+      if (studentsRes.error) {
+        console.error("Failed to load enrolled students:", studentsRes.error);
+      }
       if (studentsRes.data) {
-        const rows: StudentRow[] = (
-          studentsRes.data as unknown as {
-            user_id: string;
-            enrollment_no: string | null;
-            created_at: string;
-            profiles: { full_name: string; phone: string | null } | null;
-          }[]
-        ).map((s) => ({
-          user_id: s.user_id,
-          enrollment_no: s.enrollment_no,
-          full_name: unwrapOne(s.profiles)?.full_name ?? "Unknown",
-          phone: unwrapOne(s.profiles)?.phone ?? null,
-          email: null,
-          created_at: s.created_at,
-        }));
+        const enrollRows = studentsRes.data as unknown as {
+          student_user_id: string;
+          batch_id: number;
+          created_at: string;
+        }[];
+
+        const studentIds = [
+          ...new Set(enrollRows.map((r) => r.student_user_id)),
+        ];
+        const batchIds = [...new Set(enrollRows.map((r) => r.batch_id))];
+
+        const [
+          { data: profileNamesData, error: profileNamesError },
+          { data: batchesLookupData, error: batchesLookupError },
+          { data: studentProfilesData },
+        ] = await Promise.all([
+          studentIds.length > 0
+            ? supabase
+                .from("profiles")
+                .select("user_id, full_name, phone")
+                .in("user_id", studentIds)
+            : Promise.resolve({ data: [], error: null }),
+          batchIds.length > 0
+            ? supabase
+                .from("batches")
+                .select("id, batch_name, courses(title)")
+                .in("id", batchIds)
+            : Promise.resolve({ data: [], error: null }),
+          studentIds.length > 0
+            ? supabase
+                .from("student_profiles")
+                .select("user_id, enrollment_no")
+                .in("user_id", studentIds)
+            : Promise.resolve({ data: [], error: null }),
+        ]);
+
+        if (profileNamesError) {
+          console.warn("Failed to load profile names:", profileNamesError);
+        }
+        if (batchesLookupError) {
+          console.warn("Failed to load batch lookup:", batchesLookupError);
+        }
+
+        const namesById = new Map<
+          string,
+          { full_name: string; phone: string | null }
+        >();
+        (
+          profileNamesData as unknown as
+            | {
+                user_id: string;
+                full_name: string;
+                phone: string | null;
+              }[]
+            | null
+        )?.forEach((p) => {
+          namesById.set(p.user_id, {
+            full_name: p.full_name,
+            phone: p.phone,
+          });
+        });
+
+        const enrollmentNoById = new Map<string, string>();
+        (
+          studentProfilesData as unknown as
+            | { user_id: string; enrollment_no: string | null }[]
+            | null
+        )?.forEach((sp) => {
+          if (sp.enrollment_no)
+            enrollmentNoById.set(sp.user_id, sp.enrollment_no);
+        });
+
+        const batchById = new Map<
+          number,
+          { batch_name: string; course_title: string }
+        >();
+        (
+          batchesLookupData as unknown as
+            | {
+                id: number;
+                batch_name: string;
+                courses: { title: string } | { title: string }[] | null;
+              }[]
+            | null
+        )?.forEach((b) => {
+          batchById.set(b.id, {
+            batch_name: b.batch_name,
+            course_title: unwrapOne(b.courses)?.title ?? "Unassigned Course",
+          });
+        });
+
+        const mapByStudent = new Map<string, StudentRow>();
+        enrollRows.forEach((row) => {
+          const studentId = row.student_user_id;
+
+          const batchInfo = batchById.get(row.batch_id) ?? {
+            batch_name: "Unknown Batch",
+            course_title: "Unassigned Course",
+          };
+
+          const existing = mapByStudent.get(studentId);
+          const enrollmentInfo = {
+            batch_name: batchInfo.batch_name,
+            course_title: batchInfo.course_title,
+          };
+
+          if (!existing) {
+            const profileName = namesById.get(studentId);
+            mapByStudent.set(studentId, {
+              user_id: studentId,
+              enrollment_no: enrollmentNoById.get(studentId) ?? null,
+              full_name: profileName?.full_name ?? "Unknown",
+              phone: profileName?.phone ?? null,
+              email: null,
+              created_at: row.created_at,
+              enrollments: [enrollmentInfo],
+            });
+            return;
+          }
+
+          const alreadyAdded = (existing.enrollments || []).some(
+            (e) =>
+              e.batch_name === enrollmentInfo.batch_name &&
+              e.course_title === enrollmentInfo.course_title,
+          );
+          if (!alreadyAdded) {
+            existing.enrollments = [
+              ...(existing.enrollments || []),
+              enrollmentInfo,
+            ];
+          }
+        });
+
+        const rows = Array.from(mapByStudent.values());
         setStudents(rows);
         setTotalStudents(rows.length);
         setAllStudentsSimple(
@@ -572,7 +693,7 @@ export default function AdminDashboardPage() {
   }, [load]);
 
   async function handleLogout() {
-    await signOut();
+    await signOut("admin");
     router.push("/login-portal");
   }
 
@@ -775,7 +896,7 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            {/* â•â• OVERVIEW â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ OVERVIEW ══════════════════════════════════ */}
             {activeSection === "overview" && (
               <>
                 <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-6 text-white">
@@ -978,7 +1099,7 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* â•â• STUDENTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ STUDENTS ══════════════════════════════════ */}
             {activeSection === "students" && (
               <>
                 <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white">
@@ -1006,13 +1127,13 @@ export default function AdminDashboardPage() {
                       <div>
                         <p className="text-xs text-gray-500">Enrollment No.</p>
                         <p className="font-semibold text-gray-900">
-                          {selectedStudent.enrollment_no ?? "â€”"}
+                          {selectedStudent.enrollment_no ?? "-"}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Phone</p>
                         <p className="font-semibold text-gray-900">
-                          {selectedStudent.phone ?? "â€”"}
+                          {selectedStudent.phone ?? "-"}
                         </p>
                       </div>
                       <div>
@@ -1072,10 +1193,10 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-gray-600">
-                                {s.enrollment_no ?? "â€”"}
+                                {s.enrollment_no ?? "-"}
                               </td>
                               <td className="px-4 py-3 text-gray-600">
-                                {s.phone ?? "â€”"}
+                                {s.phone ?? "-"}
                               </td>
                               <td className="px-4 py-3 text-gray-500">
                                 {fmtDate(s.created_at)}
@@ -1104,7 +1225,7 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* â•â• FACULTY â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ FACULTY ═══════════════════════════════════ */}
             {activeSection === "faculty" && (
               <>
                 <div className="bg-gradient-to-r from-purple-600 to-violet-600 rounded-2xl p-6 text-white">
@@ -1149,7 +1270,7 @@ export default function AdminDashboardPage() {
                               </div>
                             </td>
                             <td className="px-4 py-3 text-gray-600">
-                              {f.phone ?? "â€”"}
+                              {f.phone ?? "-"}
                             </td>
                             <td className="px-4 py-3 text-gray-500">
                               {fmtDate(f.created_at)}
@@ -1192,7 +1313,7 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* â•â• ATTENDANCE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ ATTENDANCE ════════════════════════════════ */}
             {activeSection === "attendance" && (
               <>
                 <div className="bg-gradient-to-r from-teal-600 to-green-600 rounded-2xl p-6 text-white">
@@ -1287,7 +1408,7 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* â•â• PAYMENTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ PAYMENTS ══════════════════════════════════ */}
             {activeSection === "payments" && (
               <>
                 <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
@@ -1527,7 +1648,7 @@ export default function AdminDashboardPage() {
                               />
                             </td>
                             <td className="px-4 py-3 text-gray-400 text-xs">
-                              {p.description ?? "â€”"}
+                              {p.description ?? "-"}
                             </td>
                           </tr>
                         ))}
@@ -1543,13 +1664,13 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* â•â• COURSES & BATCHES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ COURSES & BATCHES ═════════════════════════ */}
             {activeSection === "courses" && (
               <>
                 <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-6 text-white">
                   <h1 className="text-xl font-bold mb-1">Courses & Batches</h1>
                   <p className="text-indigo-100 text-sm">
-                    {courses.length} courses Â· {batches.length} batches
+                    {courses.length} courses · {batches.length} batches
                   </p>
                 </div>
                 <div className="bg-white rounded-2xl shadow-sm p-5">
@@ -1603,7 +1724,7 @@ export default function AdminDashboardPage() {
                             Students
                           </th>
                           <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Start â†’ End
+                            Start → End
                           </th>
                         </tr>
                       </thead>
@@ -1626,7 +1747,7 @@ export default function AdminDashboardPage() {
                               />
                             </td>
                             <td className="px-4 py-3 text-gray-400 text-xs">
-                              {fmtDate(b.start_date)} â†’ {fmtDate(b.end_date)}
+                              {fmtDate(b.start_date)} → {fmtDate(b.end_date)}
                             </td>
                           </tr>
                         ))}
@@ -1637,7 +1758,7 @@ export default function AdminDashboardPage() {
               </>
             )}
 
-            {/* â•â• MCQ TESTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+            {/* ══ MCQ TESTS ═════════════════════════════════ */}
             {activeSection === "mcq" && (
               <>
                 <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-6 text-white">

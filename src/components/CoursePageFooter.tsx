@@ -282,9 +282,16 @@ export function CoursePageFooter() {
             <ul className="space-y-2 sm:space-y-3">
               <li className="flex items-start gap-2 sm:gap-3 min-w-0">
                 <MapPin className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-xs sm:text-sm text-gray-200 break-words">
-                  India
-                </span>
+                <div className="text-xs sm:text-sm text-gray-200 break-words">
+                  <span className="font-semibold block">
+                    Dr. Prem Shankar Pandey
+                  </span>
+                  <span className="block">LePearl Education</span>
+                  <span className="block">
+                    Gauri Shankar Palace, Ram Janki Mandir Road, Gausganj, Ara
+                    Bihar &ndash; 802301
+                  </span>
+                </div>
               </li>
               <li className="flex items-start gap-2 sm:gap-3 min-w-0">
                 <Phone className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
@@ -294,15 +301,23 @@ export function CoursePageFooter() {
               </li>
               <li className="flex items-start gap-2 sm:gap-3 min-w-0">
                 <Mail className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-xs sm:text-sm text-gray-200 truncate">
-                  info@lepearl.com
-                </span>
+                <a
+                  href="mailto:info@lepearleducation.com"
+                  className="text-xs sm:text-sm text-gray-200 truncate hover:text-white transition-colors"
+                >
+                  info@lepearleducation.com
+                </a>
               </li>
               <li className="flex items-start gap-2 sm:gap-3 min-w-0">
                 <Globe className="mt-0.5 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-gray-200" />
-                <span className="text-xs sm:text-sm text-gray-200 truncate">
-                  lepearleducation.com
-                </span>
+                <a
+                  href="https://www.lepearleducation.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs sm:text-sm text-gray-200 truncate hover:text-white transition-colors"
+                >
+                  www.lepearleducation.com
+                </a>
               </li>
             </ul>
 

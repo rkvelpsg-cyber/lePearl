@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import {
   formatDateIST,
   istDateTimeInputToUtcIso,
@@ -313,6 +313,7 @@ function NavBtn({
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function FacultyDashboardPage() {
   const router = useRouter();
+  const createClient = () => createSupabaseClient("faculty");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -538,12 +539,8 @@ export default function FacultyDashboardPage() {
 
       if (profileRes.data) {
         const role = (profileRes.data as { role?: string }).role;
-        if (role === "student") {
-          router.push("/student-dashboard");
-          return;
-        }
-        if (role === "admin") {
-          router.push("/admin-dashboard");
+        if (role !== "faculty") {
+          router.push("/login-portal");
           return;
         }
         setProfile(profileRes.data as Profile);
@@ -846,7 +843,7 @@ export default function FacultyDashboardPage() {
   ).length;
 
   async function handleLogout() {
-    await signOut();
+    await signOut("faculty");
     router.push("/login-portal");
   }
 
@@ -1286,9 +1283,12 @@ export default function FacultyDashboardPage() {
       }
       setShowQForm(false);
       loadQuestions(selectedTest);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setMcqMsg({ type: "err", text: "Failed to add question." });
+      setMcqMsg({
+        type: "err",
+        text: err?.message || "Failed to add question.",
+      });
     } finally {
       setMcqSubmitting(false);
     }
@@ -1402,16 +1402,36 @@ export default function FacultyDashboardPage() {
   async function loadSubmissions(testId: number) {
     const supabase = createClient();
     try {
+      // Fetch submissions without the student_profiles join first
       const { data, error } = await supabase
         .from("descriptive_student_answers")
-        .select("*, student_profiles(full_name)")
+        .select("*")
         .eq("mock_test_id", testId);
 
       if (error) throw error;
 
+      // Try to fetch student names separately (works after faculty RLS migration is applied)
+      let nameMap: Record<string, string> = {};
+      if (data && data.length > 0) {
+        const studentIds = [
+          ...new Set(data.map((s: any) => s.student_user_id)),
+        ];
+        const { data: profiles } = await supabase
+          .from("student_profiles")
+          .select("user_id, full_name")
+          .in("user_id", studentIds);
+        if (profiles) {
+          profiles.forEach((p: any) => {
+            nameMap[p.user_id] = p.full_name;
+          });
+        }
+      }
+
       const submissions = (data || []).map((s: any) => ({
         ...s,
-        student_name: s.student_profiles?.full_name || "Unknown Student",
+        student_name:
+          nameMap[s.student_user_id] ||
+          `Student (${s.student_user_id?.slice(0, 8)}...)`,
       }));
 
       setStudentSubmissions(submissions);
@@ -1655,8 +1675,13 @@ export default function FacultyDashboardPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      const batchId = parseInt(lectureForm.batchId, 10);
+      if (!Number.isFinite(batchId)) {
+        setLectureMsg({ type: "err", text: "Please select a valid batch." });
+        return;
+      }
       const { error } = await supabase.from("recorded_lectures").insert({
-        batch_id: lectureForm.batchId ? parseInt(lectureForm.batchId) : null,
+        batch_id: batchId,
         faculty_user_id: user.id,
         title: lectureForm.title,
         subject: lectureForm.subject || null,

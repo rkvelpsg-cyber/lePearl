@@ -1,7 +1,7 @@
-import { createClient } from "./client";
+import { createClient, type AuthScope } from "./client";
 
-export async function getUserRole() {
-  const supabase = createClient();
+export async function getUserRole(scope: AuthScope = "default") {
+  const supabase = createClient(scope);
 
   try {
     const {
@@ -23,8 +23,12 @@ export async function getUserRole() {
   }
 }
 
-export async function signInWithEmail(email: string, password: string) {
-  const supabase = createClient();
+export async function signInWithEmail(
+  email: string,
+  password: string,
+  scope: AuthScope = "default",
+) {
+  const supabase = createClient(scope);
 
   try {
     const normalizedEmail = email.trim().toLowerCase();
@@ -72,8 +76,8 @@ export async function signInWithEmail(email: string, password: string) {
   }
 }
 
-export async function signOut() {
-  const supabase = createClient();
+export async function signOut(scope: AuthScope = "default") {
+  const supabase = createClient(scope);
   const { error } = await supabase.auth.signOut();
   return error;
 }
@@ -83,7 +87,7 @@ export async function signOutIfRoleMismatch(
   expectedRole: "student" | "faculty" | "admin",
 ) {
   if (!actualRole || actualRole !== expectedRole) {
-    await signOut();
+    await signOut(expectedRole);
     return true;
   }
 

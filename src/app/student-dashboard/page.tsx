@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/client";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import {
   formatDateIST,
   formatDateTimeIST,
@@ -268,6 +268,7 @@ function NavBtn({
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 export default function StudentDashboardPage() {
   const router = useRouter();
+  const createClient = () => createSupabaseClient("student");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -302,9 +303,7 @@ export default function StudentDashboardPage() {
   >([]);
   const [selectedDescriptiveTest, setSelectedDescriptiveTest] =
     useState<McqTest | null>(null);
-  const [uploadingQuestion, setUploadingQuestion] = useState<number | null>(
-    null,
-  );
+  const [uploadingFullSheet, setUploadingFullSheet] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -335,6 +334,8 @@ export default function StudentDashboardPage() {
     type: "ok" | "err";
     text: string;
   } | null>(null);
+
+  const useUpiQrPayment = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
 
   /* â”€â”€ load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
@@ -369,12 +370,8 @@ export default function StudentDashboardPage() {
 
       if (profileRes.data) {
         const role = (profileRes.data as { role?: string }).role;
-        if (role === "faculty") {
-          router.push("/faculty-dashboard");
-          return;
-        }
-        if (role === "admin") {
-          router.push("/admin-dashboard");
+        if (role !== "student") {
+          router.push("/login-portal");
           return;
         }
         setProfile(profileRes.data as Profile);
@@ -498,6 +495,9 @@ export default function StudentDashboardPage() {
         setAttendanceRecords(attendRes.data as unknown as AttendanceRecord[]);
       if (lecturesRes.data)
         setLectures(lecturesRes.data as unknown as RecordedLecture[]);
+      if (lecturesRes.error) {
+        console.error("Failed to load recorded lectures:", lecturesRes.error);
+      }
       if (tasksRes.data)
         setFacultyTasks(tasksRes.data as unknown as StudentTask[]);
 
@@ -519,16 +519,23 @@ export default function StudentDashboardPage() {
         setTestAttempted(new Set(mockRes.data.map((a) => a.mock_test_id)));
       }
 
-      /* MCQ tests for student's batches */
+      /* Published tests visible to this student via RLS */
       if (ids.length > 0) {
-        const { data: testsData } = await supabase
+        const { data: testsData, error: testsError } = await supabase
           .from("mock_tests")
           .select(
             "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, courses(title), batches(batch_name)",
           )
-          .in("batch_id", ids)
           .eq("is_published", true)
           .order("scheduled_at", { ascending: true });
+        console.log(
+          "[student-tests] batch ids:",
+          ids,
+          "| data:",
+          testsData,
+          "| error:",
+          testsError,
+        );
         if (testsData) {
           const now = new Date();
           const allPublishedTests = testsData as unknown as McqTest[];
@@ -604,7 +611,7 @@ export default function StudentDashboardPage() {
   }, [load]);
 
   async function handleLogout() {
-    await signOut();
+    await signOut("student");
     router.push("/login-portal");
   }
 
@@ -739,6 +746,7 @@ export default function StudentDashboardPage() {
   async function loadDescriptiveQuestions(test: McqTest) {
     const supabase = createClient();
     const now = new Date();
+    setUploadMsg(null);
 
     // Check if test has started (if scheduled_at is set)
     if (test.scheduled_at) {
@@ -752,84 +760,269 @@ export default function StudentDashboardPage() {
       }
     }
 
-    const { data: qData } = await supabase
+    const { data: qData, error: qError } = await supabase
       .from("descriptive_questions")
       .select("*")
       .eq("mock_test_id", test.id)
       .order("question_order", { ascending: true });
 
-    if (qData) {
-      setDescriptiveQuestions(qData as unknown as DescriptiveQuestion[]);
-      setSelectedDescriptiveTest(test);
+    if (qError) {
+      setUploadMsg({
+        type: "err",
+        text: qError.message || "Failed to load descriptive questions.",
+      });
+      return;
+    }
+
+    setDescriptiveQuestions((qData || []) as unknown as DescriptiveQuestion[]);
+    setSelectedDescriptiveTest(test);
+
+    if (!qData || qData.length === 0) {
+      setUploadMsg({
+        type: "err",
+        text: "No descriptive questions have been added for this test yet.",
+      });
     }
   }
 
-  async function handleFileUpload(questionId: number, file: File | null) {
+  async function handleFullSheetUpload(file: File | null) {
     if (!file || !selectedDescriptiveTest) return;
+
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      setUploadMsg({
+        type: "err",
+        text: "Please upload only a PDF file for the full answer sheet.",
+      });
+      return;
+    }
+
+    if (descriptiveQuestions.length === 0) {
+      setUploadMsg({
+        type: "err",
+        text: "No descriptive questions found for this test.",
+      });
+      return;
+    }
 
     const supabase = createClient();
     const { data: user } = await supabase.auth.getUser();
+    const { data: sessionData } = await supabase.auth.getSession();
     if (!user.user) return;
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      setUploadMsg({
+        type: "err",
+        text: "Session expired. Please sign in again.",
+      });
+      return;
+    }
 
-    setUploadingQuestion(questionId);
+    setUploadingFullSheet(true);
     setUploadMsg(null);
 
     try {
-      // Upload file to Supabase Storage
-      const fileName = `descriptive/${selectedDescriptiveTest.id}/${user.user.id}/${questionId}/${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("test-submissions")
-        .upload(fileName, file, { upsert: true });
+      const payload = new FormData();
+      payload.append("file", file);
+      payload.append("mockTestId", String(selectedDescriptiveTest.id));
+      payload.append("scope", "full");
 
-      if (uploadError) throw uploadError;
+      const uploadResponse = await fetch("/api/descriptive-upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: payload,
+      });
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("test-submissions")
-        .getPublicUrl(fileName);
+      const uploadJson = (await uploadResponse.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
 
-      // Update or insert descriptive answer record
+      if (!uploadResponse.ok || !uploadJson.publicUrl) {
+        throw new Error(uploadJson.error || "Upload failed");
+      }
+
+      const submittedAt = new Date().toISOString();
+      const rows = descriptiveQuestions.map((q) => ({
+        mock_test_id: selectedDescriptiveTest.id,
+        student_user_id: user.user.id,
+        question_id: q.id,
+        answer_file_url: uploadJson.publicUrl,
+        submitted_at: submittedAt,
+      }));
+
       const { error: answerError } = await supabase
         .from("descriptive_student_answers")
-        .upsert({
-          mock_test_id: selectedDescriptiveTest.id,
-          student_user_id: user.user.id,
-          question_id: questionId,
-          answer_file_url: urlData.publicUrl,
-          submitted_at: new Date().toISOString(),
-        });
+        .upsert(rows);
 
       if (answerError) throw answerError;
 
-      setUploadMsg({ type: "ok", text: "Answer uploaded successfully!" });
-
-      // Reload answers
       const { data: updatedAnswers } = await supabase
         .from("descriptive_student_answers")
         .select("*")
         .eq("student_user_id", user.user.id)
         .eq("mock_test_id", selectedDescriptiveTest.id);
 
-      if (updatedAnswers)
+      if (updatedAnswers) {
         setDescriptiveAnswers(updatedAnswers as unknown as DescriptiveAnswer[]);
+      }
+
+      setUploadMsg({
+        type: "ok",
+        text: "Full answer sheet uploaded successfully for all questions.",
+      });
     } catch (err) {
       console.error(err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to upload full answer sheet.";
       setUploadMsg({
         type: "err",
-        text: "Failed to upload answer. Please try again.",
+        text: message,
       });
     } finally {
-      setUploadingQuestion(null);
+      setUploadingFullSheet(false);
     }
   }
 
   /* â”€â”€ Razorpay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   async function handlePay() {
-    setPaying(false);
-    setPayMsg({
-      type: "err",
-      text: "Online payment is temporarily disabled. Please contact support.",
-    });
+    const amt = parseFloat(payAmount);
+    if (!amt || isNaN(amt) || amt <= 0) {
+      setPayMsg({ type: "err", text: "Please enter a valid amount." });
+      return;
+    }
+
+    setPaying(true);
+    setPayMsg(null);
+
+    try {
+      const supabase = createClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        setPayMsg({
+          type: "err",
+          text: "Session expired. Please log in again.",
+        });
+        setPaying(false);
+        return;
+      }
+
+      /* 1. Create Razorpay order on server */
+      const orderRes = await fetch("/api/payment/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount: amt, description: payDesc }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        setPayMsg({
+          type: "err",
+          text: orderData.error || "Failed to create order.",
+        });
+        setPaying(false);
+        return;
+      }
+
+      /* 2. Load Razorpay checkout.js */
+      await new Promise<void>((resolve, reject) => {
+        if ((window as unknown as Record<string, unknown>).Razorpay) {
+          resolve();
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+        document.body.appendChild(script);
+      });
+
+      /* 3. Open Razorpay checkout modal */
+      await new Promise<void>((resolve, reject) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const RazorpayCheckout = (window as any).Razorpay;
+        const options = {
+          key: orderData.key_id,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "LePearl Education",
+          description: payDesc,
+          order_id: orderData.order_id,
+          prefill: {
+            name: profile?.full_name ?? "",
+            contact: profile?.phone ?? "",
+          },
+          theme: { color: "#7c3aed" },
+          handler: async (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id: string;
+            razorpay_signature: string;
+          }) => {
+            try {
+              /* 4. Verify signature + save to DB */
+              const verifyRes = await fetch("/api/payment/verify", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  amount: orderData.amount,
+                  description: payDesc,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (!verifyRes.ok) {
+                reject(
+                  new Error(verifyData.error || "Payment verification failed."),
+                );
+                return;
+              }
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          },
+          modal: {
+            ondismiss: () => reject(new Error("DISMISSED")),
+          },
+        };
+        new RazorpayCheckout(options).open();
+      });
+
+      /* 5. Success – reload payment history */
+      setPayMsg({
+        type: "ok",
+        text: "Payment successful! Your transaction has been recorded.",
+      });
+      setPayAmount("");
+      const { data: newPayments } = await createClient()
+        .from("payments")
+        .select(
+          "id, amount, payment_date, payment_mode, status, razorpay_payment_id, description",
+        )
+        .order("payment_date", { ascending: false });
+      if (newPayments) setPayments(newPayments as unknown as Payment[]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Payment failed";
+      if (msg !== "DISMISSED") {
+        setPayMsg({ type: "err", text: msg });
+      } else {
+        setPayMsg(null);
+      }
+    } finally {
+      setPaying(false);
+    }
   }
 
   /* â”€â”€ computed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1391,6 +1584,21 @@ export default function StudentDashboardPage() {
                       </div>
 
                       <div className="space-y-4">
+                        {uploadMsg && (
+                          <div
+                            className={`p-3 rounded-lg text-sm ${uploadMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                          >
+                            {uploadMsg.text}
+                          </div>
+                        )}
+
+                        {descriptiveQuestions.length === 0 && (
+                          <div className="border border-dashed border-gray-300 rounded-xl p-4 text-sm text-gray-600">
+                            No descriptive questions are available in this test
+                            right now.
+                          </div>
+                        )}
+
                         {descriptiveQuestions.map((q) => {
                           const answer = descriptiveAnswers.find(
                             (a) => a.question_id === q.id,
@@ -1454,35 +1662,43 @@ export default function StudentDashboardPage() {
                                   )}
                                 </div>
                               ) : (
-                                <div className="mt-3">
-                                  <label className="text-xs font-semibold text-gray-600 mb-2 block">
-                                    Upload Answer (Scan/Image)
-                                  </label>
-                                  <input
-                                    type="file"
-                                    accept="image/*,.pdf"
-                                    onChange={(e) => {
-                                      if (e.target.files?.[0]) {
-                                        handleFileUpload(
-                                          q.id,
-                                          e.target.files[0],
-                                        );
-                                      }
-                                    }}
-                                    disabled={uploadingQuestion === q.id}
-                                    className="text-xs"
-                                  />
-                                  {uploadingQuestion === q.id && (
-                                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                      Uploading...
-                                    </div>
-                                  )}
+                                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                  <p className="text-xs text-gray-600">
+                                    Upload your combined answer PDF using the
+                                    "Upload Full Answer Sheet" section below.
+                                  </p>
                                 </div>
                               )}
                             </div>
                           );
                         })}
+
+                        <div className="mt-2 border border-gray-200 rounded-xl p-4 bg-gray-50">
+                          <p className="text-sm font-semibold text-gray-900">
+                            Upload Full Answer Sheet (PDF)
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1 mb-3">
+                            Upload one combined PDF at the end; it will be
+                            submitted for all descriptive questions.
+                          </p>
+                          <input
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            disabled={uploadingFullSheet}
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleFullSheetUpload(e.target.files[0]);
+                              }
+                            }}
+                            className="text-xs"
+                          />
+                          {uploadingFullSheet && (
+                            <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Uploading full answer sheet...
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : availableTests.length === 0 &&
@@ -1558,6 +1774,104 @@ export default function StudentDashboardPage() {
                               </div>
                             );
                           })}
+                        </div>
+                      )}
+
+                      {descriptiveTests.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 mt-4">
+                          <h2 className="font-bold text-gray-900 mb-3">
+                            Descriptive Tests
+                          </h2>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {descriptiveTests.map((t) => {
+                              const testAnswers = descriptiveAnswers.filter(
+                                (a) => a.mock_test_id === t.id,
+                              );
+                              const evaluatedAnswers = testAnswers.filter(
+                                (a) => a.marks_obtained !== null,
+                              );
+                              const isEvaluated =
+                                testAnswers.length > 0 &&
+                                evaluatedAnswers.length === testAnswers.length;
+                              const isSubmitted =
+                                testAnswers.length > 0 && !isEvaluated;
+                              const totalObtained = evaluatedAnswers.reduce(
+                                (sum, a) => sum + (a.marks_obtained ?? 0),
+                                0,
+                              );
+                              return (
+                                <div
+                                  key={t.id}
+                                  className={`rounded-xl border p-4 ${isEvaluated ? "border-green-200 bg-green-50" : isSubmitted ? "border-amber-200 bg-amber-50" : "border-blue-100 bg-blue-50"}`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-200 text-blue-800">
+                                        Descriptive
+                                      </span>
+                                      <h3 className="font-bold text-gray-900 mt-2 text-sm">
+                                        {t.title}
+                                      </h3>
+                                      <p className="text-xs text-gray-600 mt-1">
+                                        {unwrapOne(t.courses)?.title ?? ""}
+                                      </p>
+                                    </div>
+                                    {isEvaluated && (
+                                      <div className="text-right shrink-0">
+                                        <p className="text-lg font-bold text-green-600">
+                                          {totalObtained}/{t.total_marks}
+                                        </p>
+                                        <p className="text-xs text-green-600">
+                                          Score
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-4 text-xs text-gray-600 mt-3 mb-4">
+                                    <span className="flex items-center gap-1">
+                                      <BookMarked className="w-3.5 h-3.5" />
+                                      {t.total_marks} marks
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Timer className="w-3.5 h-3.5" />
+                                      {t.time_limit_minutes} min
+                                    </span>
+                                  </div>
+                                  {isEvaluated ? (
+                                    <div className="w-full py-2 bg-green-100 text-green-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                                      <CheckCircle className="w-4 h-4" />{" "}
+                                      Completed
+                                    </div>
+                                  ) : isSubmitted ? (
+                                    <div className="flex gap-2">
+                                      <div className="flex-1 py-2 bg-amber-100 text-amber-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                                        <Timer className="w-4 h-4" /> Pending
+                                        Review
+                                      </div>
+                                      <button
+                                        onClick={() =>
+                                          loadDescriptiveQuestions(t)
+                                        }
+                                        className="px-3 py-2 border border-blue-300 text-blue-600 text-sm font-semibold rounded-xl hover:bg-blue-50 transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        loadDescriptiveQuestions(t)
+                                      }
+                                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    >
+                                      <ChevronRight className="w-4 h-4" /> Open
+                                      Test
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
 
@@ -1718,7 +2032,7 @@ export default function StudentDashboardPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Join meeting anytime - works before, during, and after scheduled time"
-                                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 whitespace-nowrap"
+                                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 !text-white text-xs font-semibold rounded-xl hover:bg-blue-700 whitespace-nowrap"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" /> Join
                                 </a>
@@ -1767,7 +2081,7 @@ export default function StudentDashboardPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="Access meeting recording or details anytime"
-                                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 whitespace-nowrap"
+                                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 !text-white text-xs font-semibold rounded-xl hover:bg-gray-800 whitespace-nowrap"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" /> Open
                                 </a>
@@ -1841,7 +2155,7 @@ export default function StudentDashboardPage() {
                               href={lec.drive_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 !text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
                             >
                               <ExternalLink className="w-4 h-4" /> Open in
                               Google Drive
@@ -1862,7 +2176,9 @@ export default function StudentDashboardPage() {
                       Fees &amp; Payments
                     </h1>
                     <p className="text-amber-100 text-sm">
-                      Pay securely via Razorpay | All transactions are encrypted
+                      {useUpiQrPayment
+                        ? "Temporary UPI QR payment mode is active while Razorpay issue is being resolved"
+                        : "Pay securely via Razorpay | All transactions are encrypted"}
                     </p>
                   </div>
                   {feePlan && (
@@ -1898,60 +2214,84 @@ export default function StudentDashboardPage() {
                     <h2 className="font-bold text-gray-900 mb-4">
                       Make a Payment
                     </h2>
-                    <div className="space-y-4 max-w-sm">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                          Amount (INR)
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={payAmount}
-                          onChange={(e) => setPayAmount(e.target.value)}
-                          placeholder={
-                            feePlan
-                              ? String(feePlan.next_due_amount)
-                              : "Enter amount"
-                          }
-                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                          Description
-                        </label>
-                        <input
-                          type="text"
-                          value={payDesc}
-                          onChange={(e) => setPayDesc(e.target.value)}
-                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
-                        />
-                      </div>
-                      {payMsg && (
-                        <div
-                          className={`flex items-start gap-2 p-3 rounded-xl text-sm ${payMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
-                        >
-                          {payMsg.type === "ok" ? (
-                            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                          )}
-                          {payMsg.text}
+                    {useUpiQrPayment ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-gray-600">
+                          Please scan the UPI QR code below, complete the
+                          payment, and keep the transaction screenshot/UTR for
+                          confirmation.
+                        </p>
+                        <div className="max-w-sm rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                          <Image
+                            src="/QR_Code_Payment.jpeg"
+                            alt="UPI payment QR code"
+                            width={640}
+                            height={640}
+                            className="h-auto w-full rounded-xl border border-amber-200 bg-white"
+                            priority
+                          />
                         </div>
-                      )}
-                      <button
-                        onClick={handlePay}
-                        disabled={paying}
-                        className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
-                      >
-                        {paying ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <CreditCard className="w-4 h-4" />
+                        <p className="text-xs text-gray-500">
+                          Razorpay checkout will be enabled again once the
+                          gateway issue is resolved.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-w-sm">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Amount (INR)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={payAmount}
+                            onChange={(e) => setPayAmount(e.target.value)}
+                            placeholder={
+                              feePlan
+                                ? String(feePlan.next_due_amount)
+                                : "Enter amount"
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Description
+                          </label>
+                          <input
+                            type="text"
+                            value={payDesc}
+                            onChange={(e) => setPayDesc(e.target.value)}
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                          />
+                        </div>
+                        {payMsg && (
+                          <div
+                            className={`flex items-start gap-2 p-3 rounded-xl text-sm ${payMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                          >
+                            {payMsg.type === "ok" ? (
+                              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            )}
+                            {payMsg.text}
+                          </div>
                         )}
-                        Pay Securely via Razorpay
-                      </button>
-                    </div>
+                        <button
+                          onClick={handlePay}
+                          disabled={paying}
+                          className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
+                        >
+                          {paying ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <CreditCard className="w-4 h-4" />
+                          )}
+                          Pay Securely via Razorpay
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <h2 className="font-bold text-gray-900 mb-4">
