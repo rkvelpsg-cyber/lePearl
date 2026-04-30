@@ -19,7 +19,11 @@ function ResetPasswordInner() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get("role");
-    if (roleParam === "faculty" || roleParam === "admin" || roleParam === "student") {
+    if (
+      roleParam === "faculty" ||
+      roleParam === "admin" ||
+      roleParam === "student"
+    ) {
       setRole(roleParam);
     }
   }, []);
