@@ -17,53 +17,65 @@ import { CoursesBooksSection } from "@/components/CoursesBooksSection";
 
 // Lazy-load below-the-fold sections so the initial page paint is faster
 const FounderContent = dynamic(() =>
-  import("@/components/FounderContent").then((m) => ({ default: m.FounderContent }))
+  import("@/components/FounderContent").then((m) => ({
+    default: m.FounderContent,
+  })),
 );
 const FacultyCarousel = dynamic(() =>
-  import("@/components/FacultyCarousel").then((m) => ({ default: m.FacultyCarousel }))
+  import("@/components/FacultyCarousel").then((m) => ({
+    default: m.FacultyCarousel,
+  })),
 );
 const FounderBooks = dynamic(() =>
-  import("@/components/FounderBooks").then((m) => ({ default: m.FounderBooks }))
+  import("@/components/FounderBooks").then((m) => ({
+    default: m.FounderBooks,
+  })),
 );
 const LiveClassesPortalSection = dynamic(() =>
   import("@/components/LiveClassesPortalSection").then((m) => ({
     default: m.LiveClassesPortalSection,
-  }))
+  })),
 );
 const NeedHelpSection = dynamic(() =>
   import("@/components/LiveClassesPortalSection").then((m) => ({
     default: m.NeedHelpSection,
-  }))
+  })),
 );
 const PreviousPapersSection = dynamic(() =>
   import("@/components/PreviousPapersSection").then((m) => ({
     default: m.PreviousPapersSection,
-  }))
+  })),
 );
 const MissionSection = dynamic(() =>
-  import("@/components/MissionSection").then((m) => ({ default: m.MissionSection }))
+  import("@/components/MissionSection").then((m) => ({
+    default: m.MissionSection,
+  })),
 );
 const WhyChooseSection = dynamic(() =>
-  import("@/components/WhyChooseSection").then((m) => ({ default: m.WhyChooseSection }))
+  import("@/components/WhyChooseSection").then((m) => ({
+    default: m.WhyChooseSection,
+  })),
 );
 const MockTestsSection = dynamic(() =>
-  import("@/components/MockTestsSection").then((m) => ({ default: m.MockTestsSection }))
+  import("@/components/MockTestsSection").then((m) => ({
+    default: m.MockTestsSection,
+  })),
 );
 const FAQSection = dynamic(() =>
-  import("@/components/FAQSection").then((m) => ({ default: m.FAQSection }))
+  import("@/components/FAQSection").then((m) => ({ default: m.FAQSection })),
 );
 const SiteFooter = dynamic(() =>
-  import("@/components/SiteFooter").then((m) => ({ default: m.SiteFooter }))
+  import("@/components/SiteFooter").then((m) => ({ default: m.SiteFooter })),
 );
 const WeeklyScheduleSection = dynamic(() =>
   import("@/components/WeeklyScheduleSection").then((m) => ({
     default: m.WeeklyScheduleSection,
-  }))
+  })),
 );
 const StudentReviewsSection = dynamic(() =>
   import("@/components/StudentReviewsSection").then((m) => ({
     default: m.StudentReviewsSection,
-  }))
+  })),
 );
 
 export default async function Home() {
