@@ -1329,8 +1329,7 @@ export default function StudentDashboardPage() {
                 <>
                   <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 text-white">
                     <h1 className="text-2xl font-bold mb-0.5">
-                      Welcome back,{" "}
-                      {profile?.full_name?.split(" ")[0] ?? "Student"}!
+                      Welcome, {profile?.full_name ?? "Student"}!
                     </h1>
                     <p className="text-purple-200 text-sm">
                       Here&apos;s your learning journey at a glance

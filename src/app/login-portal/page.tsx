@@ -181,20 +181,21 @@ export default function LoginPortal() {
           })}
         </div>
 
-        {/* Footer note */}
-        <p className="mt-10 text-center text-sm text-purple-300">
-          New student? If you have not enrolled in a course or do not have login
-          credentials yet,{" "}
+        {/* Footer note and registration CTA */}
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 text-sm text-purple-300 sm:flex-row sm:gap-4">
+          <p className="text-center sm:text-left">
+            New student? If you have not enrolled in a course or do not have
+            login credentials yet.
+          </p>
           <a
             href="/student-registration"
             target="_blank"
             rel="noreferrer"
-            className="font-semibold text-white underline underline-offset-2 hover:text-purple-200"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-600 via-teal-600 to-slate-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/35 transition-all duration-200 hover:from-blue-500 hover:via-teal-500 hover:to-slate-600 hover:shadow-slate-900/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-purple-950"
           >
-            register here
+            Register Here
           </a>
-          .
-        </p>
+        </div>
       </div>
     </div>
   );

@@ -2068,7 +2068,7 @@ export default function FacultyDashboardPage() {
               <>
                 <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 text-white">
                   <h1 className="text-2xl font-bold mb-0.5">
-                    Welcome, {profile?.full_name?.split(" ")[0] ?? "Faculty"}!
+                    Welcome, {profile?.full_name ?? "Faculty"}!
                   </h1>
                   <p className="text-emerald-200 text-sm">
                     Manage your batches, students, and content from here

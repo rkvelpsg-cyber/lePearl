@@ -9,7 +9,7 @@ import { AlertCircle, LogIn, Loader2, X } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,14 +21,30 @@ export default function LoginPage() {
     text: string;
   } | null>(null);
 
+  async function resolveStudentEmail(value: string) {
+    const res = await fetch("/api/auth/student-login-lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loginId: value }),
+    });
+
+    const payload = (await res.json()) as { email?: string; error?: string };
+    if (!res.ok || !payload.email) {
+      throw new Error(payload.error || "Invalid username or email.");
+    }
+
+    return payload.email;
+  }
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      const resolvedEmail = await resolveStudentEmail(loginId);
       const { user, role, sessionError } = await signInWithEmail(
-        email,
+        resolvedEmail,
         password,
         "student",
       );
@@ -56,6 +72,27 @@ export default function LoginPage() {
         return;
       }
 
+      const supabase = createClient("student");
+      const { data: profileFlag, error: profileFlagError } = await supabase
+        .from("student_profiles")
+        .select("must_reset_password")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileFlagError) {
+        console.warn(
+          "Unable to load first-login flag:",
+          profileFlagError.message,
+        );
+      }
+
+      if (!profileFlagError && profileFlag?.must_reset_password) {
+        router.push(
+          "/reset-password?role=student&firstLogin=1&next=/student-dashboard",
+        );
+        return;
+      }
+
       router.push("/student-dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -67,16 +104,20 @@ export default function LoginPage() {
     e.preventDefault();
     const emailValue = forgotEmail.trim();
     if (!emailValue) {
-      setForgotMsg({ type: "err", text: "Please enter your email address." });
+      setForgotMsg({
+        type: "err",
+        text: "Please enter your username or email.",
+      });
       return;
     }
 
     setForgotLoading(true);
     setForgotMsg(null);
     try {
+      const resolvedEmail = await resolveStudentEmail(emailValue);
       const supabase = createClient("student");
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        emailValue,
+        resolvedEmail,
         {
           redirectTo: `${window.location.origin}/reset-password?role=student`,
         },
@@ -143,21 +184,21 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSignIn} className="space-y-5">
-            {/* Email Input */}
+            {/* Username / Email Input */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="login-id"
                 className="block text-sm font-semibold text-gray-700 mb-2"
               >
-                Email Address
+                Username or Email
               </label>
               <input
-                id="email"
-                type="email"
+                id="login-id"
+                type="text"
                 required
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter username or email"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 disabled={loading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none transition-colors disabled:bg-gray-100"
               />
@@ -188,7 +229,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setForgotOpen(true);
-                  setForgotEmail(email);
+                  setForgotEmail(loginId);
                   setForgotMsg(null);
                 }}
                 className="text-sm font-semibold text-purple-600 hover:text-purple-700"
@@ -215,6 +256,21 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+
+            <div className="pt-1 text-center">
+              <p className="mb-3 text-sm text-gray-600">
+                New student? Do not have login credentials yet?
+              </p>
+              <a
+                href="/student-registration"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#ffffff" }}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-600 via-teal-600 to-slate-700 px-6 py-3 text-sm font-bold !text-white visited:!text-white hover:!text-white focus:!text-white shadow-lg shadow-slate-900/35 transition-all duration-200 hover:from-blue-500 hover:via-teal-500 hover:to-slate-600 hover:shadow-slate-900/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+              >
+                Register Here
+              </a>
+            </div>
           </form>
 
           {/* Back Link */}
@@ -263,7 +319,8 @@ export default function LoginPage() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              Enter your registered email to receive a password reset link.
+              Enter your username or registered email to receive a password
+              reset link.
             </p>
 
             {forgotMsg && (
@@ -276,11 +333,11 @@ export default function LoginPage() {
 
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <input
-                type="email"
+                type="text"
                 required
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="Enter your registered email"
+                placeholder="Enter username or registered email"
                 disabled={forgotLoading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none disabled:bg-gray-100"
               />

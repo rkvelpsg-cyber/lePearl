@@ -6,12 +6,14 @@ import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { formatDateIST } from "@/lib/timezone";
+import { studentRegistrationCourses } from "@/lib/studentRegistration";
 import {
   LogOut,
   LayoutDashboard,
   Users,
   BookOpen,
   Calendar,
+  CalendarDays,
   CreditCard,
   BarChart2,
   Bell,
@@ -27,6 +29,9 @@ import {
   Eye,
   Video,
   ExternalLink,
+  Download,
+  ChevronDown,
+  Trash2,
 } from "lucide-react";
 
 /* ── types ──────────────────────────────────────────────── */
@@ -44,36 +49,69 @@ type StudentRow = {
   user_id: string;
   full_name: string;
   phone: string | null;
+  registration_no: string | null;
   email: string | null;
+  username: string | null;
   enrollment_no: string | null;
   created_at: string;
-  enrollments?: { batch_name: string; course_title: string }[];
+  enrollments?: {
+    batch_name: string;
+    course_title: string;
+    faculty_name: string;
+  }[];
 };
 type FacultyRow = {
   user_id: string;
   full_name: string;
   phone: string | null;
   email: string | null;
+  username: string | null;
   created_at: string;
   batchCount: number;
 };
 type AttendanceRow = {
   id: number;
-  status: string;
+  session_id: number;
+  student_user_id: string;
+  status: "present" | "absent" | "late";
   marked_at: string;
   student_name: string;
+  registration_no: string;
+  course_name: string;
   session_title: string;
   session_date: string;
   batch_name: string;
 };
 type PaymentRow = {
   id: number;
+  student_user_id: string;
   amount: number;
   status: string;
   payment_date: string | null;
   description: string | null;
   student_name: string;
   course_title: string;
+};
+type StudentFeeDetailRow = {
+  student_user_id: string;
+  student_name: string;
+  registration_no: string | null;
+  course_name: string | null;
+  total_fee: number;
+  total_paid: number;
+  pending_amount: number;
+  next_due_amount: number;
+  next_due_date: string | null;
+};
+type FacultyAttendanceRow = {
+  id: number;
+  faculty_user_id: string;
+  faculty_name: string;
+  phone: string | null;
+  attendance_date: string;
+  status: "present" | "absent" | "leave";
+  notes: string | null;
+  marked_at: string;
 };
 type CourseRow = {
   id: number;
@@ -121,6 +159,34 @@ type RegistrationRow = {
   created_at: string;
   status: string;
 };
+
+type StudentEditForm = {
+  registrationNo: string;
+  phone: string;
+  courseName: string;
+  studentName: string;
+  facultyName: string;
+  studentEmail: string;
+  username: string;
+  password: string;
+};
+
+type FacultyManageForm = {
+  facultyUserId: string;
+  facultyName: string;
+  phone: string;
+  facultyEmail: string;
+  username: string;
+  defaultPassword: string;
+};
+
+const adminFacultyOptions = [
+  "Ms Sadhana",
+  "Ms Neelu Patel",
+  "Dr Babli Mallick",
+  "Dr Harendra K Tripathi",
+  "Dr. Prem Shankar Pandey",
+] as const;
 
 function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
@@ -237,11 +303,40 @@ export default function AdminDashboardPage() {
   const [faculty, setFaculty] = useState<FacultyRow[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRow[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
+  const [studentFeeDetails, setStudentFeeDetails] = useState<
+    StudentFeeDetailRow[]
+  >([]);
+  const [overallFeeSummary, setOverallFeeSummary] = useState({
+    totalFee: 0,
+    totalPaid: 0,
+    totalPending: 0,
+  });
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [mcqTests, setMcqTests] = useState<McqRow[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
   const [liveClasses, setLiveClasses] = useState<LiveClassRow[]>([]);
+  const [credentialSubmitting, setCredentialSubmitting] = useState(false);
+  const [credentialMsg, setCredentialMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [credentialForm, setCredentialForm] = useState({
+    registrationId: "",
+    courseName: "",
+    registrationNumber: "",
+    studentName: "",
+    facultyName: "",
+    studentEmail: "",
+    studentPhone: "",
+    username: "",
+    defaultPassword: "LePearl@123",
+  });
+
+  /* registrations filters */
+  const [regDateFrom, setRegDateFrom] = useState("");
+  const [regDateTo, setRegDateTo] = useState("");
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
 
   /* payment form */
   const [showPayForm, setShowPayForm] = useState(false);
@@ -264,10 +359,80 @@ export default function AdminDashboardPage() {
     { id: number; title: string }[]
   >([]);
 
+  /* faculty manage + attendance */
+  const [facultyManageMode, setFacultyManageMode] = useState<
+    "create" | "update"
+  >("create");
+  const [facultyManageForm, setFacultyManageForm] = useState<FacultyManageForm>(
+    {
+      facultyUserId: "",
+      facultyName: "",
+      phone: "",
+      facultyEmail: "",
+      username: "",
+      defaultPassword: "Faculty@123",
+    },
+  );
+  const [facultyManageMsg, setFacultyManageMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [facultyManageLoading, setFacultyManageLoading] = useState(false);
+
+  const [facultyAttendanceRows, setFacultyAttendanceRows] = useState<
+    FacultyAttendanceRow[]
+  >([]);
+  const [attendanceRange, setAttendanceRange] = useState<
+    "daily" | "weekly" | "monthly" | "yearly" | "custom"
+  >("daily");
+  const [attendanceView, setAttendanceView] = useState<
+    "all" | "student" | "faculty"
+  >("all");
+  const [attendanceFrom, setAttendanceFrom] = useState("");
+  const [attendanceTo, setAttendanceTo] = useState("");
+  const [attendanceEditForm, setAttendanceEditForm] = useState({
+    facultyUserId: "",
+    attendanceDate: new Date().toISOString().slice(0, 10),
+    status: "present" as "present" | "absent" | "leave",
+    notes: "",
+  });
+  const [studentAttendanceEditForm, setStudentAttendanceEditForm] = useState({
+    studentUserId: "",
+    sessionId: "",
+    status: "present" as "present" | "absent" | "late",
+  });
+  const [studentAttendanceMsg, setStudentAttendanceMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [studentAttendanceLoading, setStudentAttendanceLoading] =
+    useState(false);
+  const [facultyAttendanceMsg, setFacultyAttendanceMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [facultyAttendanceLoading, setFacultyAttendanceLoading] =
+    useState(false);
+
   /* selected student detail */
   const [selectedStudent, setSelectedStudent] = useState<StudentRow | null>(
     null,
   );
+  const [studentEditForm, setStudentEditForm] = useState<StudentEditForm>({
+    registrationNo: "",
+    phone: "",
+    courseName: "",
+    studentName: "",
+    facultyName: "",
+    studentEmail: "",
+    username: "",
+    password: "",
+  });
+  const [studentActionMsg, setStudentActionMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [studentActionLoading, setStudentActionLoading] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -284,7 +449,9 @@ export default function AdminDashboardPage() {
         studentsRes,
         facultyRes,
         attendanceRes,
+        facultyAttendanceRes,
         paymentsRes,
+        feePlansRes,
         coursesRes,
         batchesRes,
         registrationsRes,
@@ -297,22 +464,36 @@ export default function AdminDashboardPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("profiles")
-          .select("user_id, full_name, phone, created_at")
+          .select(
+            "user_id, full_name, phone, email, username, registration_no, created_at",
+          )
           .eq("role", "faculty"),
         supabase
           .from("student_attendance")
           .select(
-            "id, status, marked_at, class_sessions(title, session_date, batches(batch_name)), student_profiles(profiles(full_name))",
+            "id, session_id, student_user_id, status, marked_at, class_sessions(id, title, session_date, batches(batch_name, courses(title))), student_profiles(registration_no, profiles(full_name))",
           )
           .order("marked_at", { ascending: false })
           .limit(100),
         supabase
+          .from("faculty_attendance")
+          .select(
+            "id, faculty_user_id, attendance_date, status, notes, marked_at",
+          )
+          .order("attendance_date", { ascending: false })
+          .limit(500),
+        supabase
           .from("payments")
           .select(
-            "id, amount, status, payment_date, description, student_profiles(profiles(full_name)), courses(title)",
+            "id, student_user_id, amount, status, payment_date, description, student_profiles(profiles(full_name)), courses(title)",
           )
           .order("payment_date", { ascending: false })
           .limit(100),
+        supabase
+          .from("student_fee_plans")
+          .select(
+            "student_user_id, total_fee, next_due_amount, next_due_date, student_profiles(registration_no, target_exam, profiles(full_name))",
+          ),
         supabase
           .from("courses")
           .select("id, title, description, duration_weeks, batches(count)"),
@@ -365,19 +546,21 @@ export default function AdminDashboardPage() {
           studentIds.length > 0
             ? supabase
                 .from("profiles")
-                .select("user_id, full_name, phone")
+                .select(
+                  "user_id, full_name, phone, email, username, registration_no",
+                )
                 .in("user_id", studentIds)
             : Promise.resolve({ data: [], error: null }),
           batchIds.length > 0
             ? supabase
                 .from("batches")
-                .select("id, batch_name, courses(title)")
+                .select("id, batch_name, courses(title), profiles(full_name)")
                 .in("id", batchIds)
             : Promise.resolve({ data: [], error: null }),
           studentIds.length > 0
             ? supabase
                 .from("student_profiles")
-                .select("user_id, enrollment_no")
+                .select("user_id, registration_no, enrollment_no")
                 .in("user_id", studentIds)
             : Promise.resolve({ data: [], error: null }),
         ]);
@@ -391,7 +574,13 @@ export default function AdminDashboardPage() {
 
         const namesById = new Map<
           string,
-          { full_name: string; phone: string | null }
+          {
+            full_name: string;
+            phone: string | null;
+            email: string | null;
+            username: string | null;
+            registration_no: string | null;
+          }
         >();
         (
           profileNamesData as unknown as
@@ -399,28 +588,38 @@ export default function AdminDashboardPage() {
                 user_id: string;
                 full_name: string;
                 phone: string | null;
+                email: string | null;
+                username: string | null;
+                registration_no: string | null;
               }[]
             | null
         )?.forEach((p) => {
           namesById.set(p.user_id, {
             full_name: p.full_name,
             phone: p.phone,
+            email: p.email,
+            username: p.username,
+            registration_no: p.registration_no,
           });
         });
 
-        const enrollmentNoById = new Map<string, string>();
+        const registrationNoById = new Map<string, string>();
         (
           studentProfilesData as unknown as
-            | { user_id: string; enrollment_no: string | null }[]
+            | {
+                user_id: string;
+                registration_no: string | null;
+                enrollment_no: string | null;
+              }[]
             | null
         )?.forEach((sp) => {
-          if (sp.enrollment_no)
-            enrollmentNoById.set(sp.user_id, sp.enrollment_no);
+          if (sp.registration_no)
+            registrationNoById.set(sp.user_id, sp.registration_no);
         });
 
         const batchById = new Map<
           number,
-          { batch_name: string; course_title: string }
+          { batch_name: string; course_title: string; faculty_name: string }
         >();
         (
           batchesLookupData as unknown as
@@ -428,12 +627,15 @@ export default function AdminDashboardPage() {
                 id: number;
                 batch_name: string;
                 courses: { title: string } | { title: string }[] | null;
+                profiles: { full_name: string } | null;
               }[]
             | null
         )?.forEach((b) => {
           batchById.set(b.id, {
             batch_name: b.batch_name,
             course_title: unwrapOne(b.courses)?.title ?? "Unassigned Course",
+            faculty_name:
+              unwrapOne(b.profiles)?.full_name ?? "Unassigned Faculty",
           });
         });
 
@@ -444,22 +646,29 @@ export default function AdminDashboardPage() {
           const batchInfo = batchById.get(row.batch_id) ?? {
             batch_name: "Unknown Batch",
             course_title: "Unassigned Course",
+            faculty_name: "Unassigned Faculty",
           };
 
           const existing = mapByStudent.get(studentId);
           const enrollmentInfo = {
             batch_name: batchInfo.batch_name,
             course_title: batchInfo.course_title,
+            faculty_name: batchInfo.faculty_name,
           };
 
           if (!existing) {
             const profileName = namesById.get(studentId);
             mapByStudent.set(studentId, {
               user_id: studentId,
-              enrollment_no: enrollmentNoById.get(studentId) ?? null,
+              email: profileName?.email ?? null,
+              username: profileName?.username ?? null,
+              registration_no:
+                profileName?.registration_no ||
+                registrationNoById.get(studentId) ||
+                null,
+              enrollment_no: null,
               full_name: profileName?.full_name ?? "Unknown",
               phone: profileName?.phone ?? null,
-              email: null,
               created_at: row.created_at,
               enrollments: [enrollmentInfo],
             });
@@ -493,6 +702,8 @@ export default function AdminDashboardPage() {
           user_id: string;
           full_name: string;
           phone: string | null;
+          email: string | null;
+          username: string | null;
           created_at: string;
         }[];
         const batchCounts: Record<string, number> = {};
@@ -506,7 +717,7 @@ export default function AdminDashboardPage() {
             // Note: faculty_user_id not in this select, will use batches query
           });
         }
-        setFaculty(fRows.map((f) => ({ ...f, email: null, batchCount: 0 })));
+        setFaculty(fRows.map((f) => ({ ...f, batchCount: 0 })));
         setTotalFaculty(fRows.length);
       }
 
@@ -515,39 +726,124 @@ export default function AdminDashboardPage() {
         const rows: AttendanceRow[] = (
           attendanceRes.data as unknown as {
             id: number;
-            status: string;
+            session_id: number;
+            student_user_id: string;
+            status: "present" | "absent" | "late";
             marked_at: string;
             class_sessions: {
+              id: number;
               title: string;
               session_date: string;
-              batches: { batch_name: string } | null;
-            } | null;
-            student_profiles: { profiles: { full_name: string } | null } | null;
-          }[]
-        ).map((a) => ({
-          id: a.id,
-          status: a.status,
-          marked_at: a.marked_at,
-          student_name:
-            unwrapOne(a.student_profiles)?.profiles?.full_name ?? "Student",
-          session_title: unwrapOne(a.class_sessions)?.title ?? "-",
-          session_date: unwrapOne(a.class_sessions)?.session_date ?? "",
-          batch_name:
-            (
-              unwrapOne(a.class_sessions)?.batches as {
+              batches: {
                 batch_name: string;
-              } | null
-            )?.batch_name ?? "-",
-        }));
+                courses: { title: string } | null;
+              } | null;
+            } | null;
+            student_profiles: {
+              registration_no: string | null;
+              profiles: { full_name: string } | null;
+            } | null;
+          }[]
+        ).map((a) => {
+          const classSession = unwrapOne(a.class_sessions);
+          const batch =
+            unwrapOne(
+              classSession?.batches as {
+                batch_name: string;
+                courses: { title: string } | null;
+              } | null,
+            ) ?? null;
+
+          return {
+            id: a.id,
+            session_id: a.session_id,
+            student_user_id: a.student_user_id,
+            status: a.status,
+            marked_at: a.marked_at,
+            student_name:
+              unwrapOne(a.student_profiles)?.profiles?.full_name ?? "Student",
+            registration_no:
+              unwrapOne(a.student_profiles)?.registration_no ?? "-",
+            course_name: batch?.courses?.title ?? "-",
+            session_title: classSession?.title ?? "-",
+            session_date: classSession?.session_date ?? "",
+            batch_name: batch?.batch_name ?? "-",
+          };
+        });
         setAttendance(rows);
       }
 
+      if (facultyAttendanceRes.error) {
+        console.warn(
+          "Failed to load faculty attendance:",
+          facultyAttendanceRes.error,
+        );
+      }
+      if (facultyAttendanceRes.data) {
+        const rows = facultyAttendanceRes.data as unknown as {
+          id: number;
+          faculty_user_id: string;
+          attendance_date: string;
+          status: "present" | "absent" | "leave";
+          notes: string | null;
+          marked_at: string;
+        }[];
+
+        const facultyIds = [...new Set(rows.map((row) => row.faculty_user_id))];
+        const { data: facultyProfilesData } =
+          facultyIds.length > 0
+            ? await supabase
+                .from("profiles")
+                .select("user_id, full_name, phone")
+                .in("user_id", facultyIds)
+            : { data: [] };
+
+        const facultyProfileById = new Map<
+          string,
+          { full_name: string | null; phone: string | null }
+        >();
+        (
+          facultyProfilesData as
+            | {
+                user_id: string;
+                full_name: string | null;
+                phone: string | null;
+              }[]
+            | null
+        )?.forEach((profile) => {
+          facultyProfileById.set(profile.user_id, {
+            full_name: profile.full_name,
+            phone: profile.phone,
+          });
+        });
+
+        setFacultyAttendanceRows(
+          rows.map((row) => {
+            const profile = facultyProfileById.get(row.faculty_user_id);
+            return {
+              id: row.id,
+              faculty_user_id: row.faculty_user_id,
+              faculty_name: profile?.full_name || "Faculty",
+              phone: profile?.phone || null,
+              attendance_date: row.attendance_date,
+              status: row.status,
+              notes: row.notes,
+              marked_at: row.marked_at,
+            } as FacultyAttendanceRow;
+          }),
+        );
+      } else {
+        setFacultyAttendanceRows([]);
+      }
+
       /* payments */
+      let paidByStudentId = new Map<string, number>();
       if (paymentsRes.data) {
         let rev = 0;
         const rows: PaymentRow[] = (
           paymentsRes.data as unknown as {
             id: number;
+            student_user_id: string;
             amount: number;
             status: string;
             payment_date: string | null;
@@ -556,10 +852,17 @@ export default function AdminDashboardPage() {
             courses: { title: string } | null;
           }[]
         ).map((p) => {
-          if (p.status === "paid" || p.status === "completed")
+          const normalizedStatus = (p.status || "").toLowerCase();
+          if (normalizedStatus === "paid" || normalizedStatus === "completed") {
             rev += p.amount ?? 0;
+            paidByStudentId.set(
+              p.student_user_id,
+              (paidByStudentId.get(p.student_user_id) ?? 0) + (p.amount ?? 0),
+            );
+          }
           return {
             id: p.id,
+            student_user_id: p.student_user_id,
             amount: p.amount,
             status: p.status,
             payment_date: p.payment_date,
@@ -571,6 +874,65 @@ export default function AdminDashboardPage() {
         });
         setPayments(rows);
         setTotalRevenue(rev);
+      }
+
+      if (feePlansRes.error) {
+        console.error("Failed to load student fee plans:", feePlansRes.error);
+      }
+      if (feePlansRes.data) {
+        const feeRows = feePlansRes.data as unknown as {
+          student_user_id: string;
+          total_fee: number;
+          next_due_amount: number;
+          next_due_date: string | null;
+          student_profiles:
+            | {
+                registration_no: string | null;
+                target_exam: string | null;
+                profiles: { full_name: string } | null;
+              }
+            | {
+                registration_no: string | null;
+                target_exam: string | null;
+                profiles: { full_name: string } | null;
+              }[]
+            | null;
+        }[];
+
+        const detailRows: StudentFeeDetailRow[] = feeRows.map((row) => {
+          const profileData = unwrapOne(row.student_profiles);
+          const totalPaid = paidByStudentId.get(row.student_user_id) ?? 0;
+          const totalFee = Number(row.total_fee ?? 0);
+          const pendingAmount = Math.max(totalFee - totalPaid, 0);
+
+          return {
+            student_user_id: row.student_user_id,
+            student_name: profileData?.profiles?.full_name ?? "Student",
+            registration_no: profileData?.registration_no ?? null,
+            course_name: profileData?.target_exam ?? null,
+            total_fee: totalFee,
+            total_paid: totalPaid,
+            pending_amount: pendingAmount,
+            next_due_amount: Number(row.next_due_amount ?? 0),
+            next_due_date: row.next_due_date,
+          };
+        });
+
+        const totals = detailRows.reduce(
+          (acc, row) => {
+            acc.totalFee += row.total_fee;
+            acc.totalPaid += row.total_paid;
+            acc.totalPending += row.pending_amount;
+            return acc;
+          },
+          { totalFee: 0, totalPaid: 0, totalPending: 0 },
+        );
+
+        setStudentFeeDetails(detailRows);
+        setOverallFeeSummary(totals);
+      } else {
+        setStudentFeeDetails([]);
+        setOverallFeeSummary({ totalFee: 0, totalPaid: 0, totalPending: 0 });
       }
 
       /* courses */
@@ -692,9 +1054,396 @@ export default function AdminDashboardPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!selectedStudent) {
+      setStudentEditForm({
+        registrationNo: "",
+        phone: "",
+        courseName: "",
+        studentName: "",
+        facultyName: "",
+        studentEmail: "",
+        username: "",
+        password: "",
+      });
+      setStudentActionMsg(null);
+      return;
+    }
+
+    const currentEnrollment = selectedStudent.enrollments?.[0] ?? null;
+
+    setStudentEditForm({
+      registrationNo: selectedStudent.registration_no ?? "",
+      phone: selectedStudent.phone ?? "",
+      courseName: currentEnrollment?.course_title ?? "",
+      studentName: selectedStudent.full_name ?? "",
+      facultyName: currentEnrollment?.faculty_name ?? "",
+      studentEmail: selectedStudent.email ?? "",
+      username: selectedStudent.username ?? "",
+      password: "",
+    });
+    setStudentActionMsg(null);
+  }, [selectedStudent]);
+
+  useEffect(() => {
+    if (facultyManageMode === "create") {
+      setFacultyManageForm({
+        facultyUserId: "",
+        facultyName: "",
+        phone: "",
+        facultyEmail: "",
+        username: "",
+        defaultPassword: "Faculty@123",
+      });
+      return;
+    }
+
+    const selectedFaculty = faculty.find(
+      (f) => f.user_id === facultyManageForm.facultyUserId,
+    );
+    if (!selectedFaculty) return;
+
+    setFacultyManageForm((prev) => ({
+      ...prev,
+      facultyName: selectedFaculty.full_name,
+      phone: selectedFaculty.phone ?? "",
+      facultyEmail: selectedFaculty.email ?? "",
+      username: selectedFaculty.username ?? "",
+      defaultPassword: "",
+    }));
+  }, [facultyManageMode, faculty, facultyManageForm.facultyUserId]);
+
+  useEffect(() => {
+    if (attendanceRange !== "custom") {
+      setAttendanceFrom("");
+      setAttendanceTo("");
+    }
+  }, [attendanceRange]);
+
+  function getRangeDates() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+    if (attendanceRange === "daily") {
+      const day = fmt(today);
+      return { from: day, to: day };
+    }
+    if (attendanceRange === "weekly") {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 6);
+      return { from: fmt(from), to: fmt(today) };
+    }
+    if (attendanceRange === "monthly") {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { from: fmt(from), to: fmt(today) };
+    }
+    if (attendanceRange === "yearly") {
+      const from = new Date(today.getFullYear(), 0, 1);
+      return { from: fmt(from), to: fmt(today) };
+    }
+
+    return { from: attendanceFrom || null, to: attendanceTo || null };
+  }
+
+  const filteredFacultyAttendance = facultyAttendanceRows.filter((row) => {
+    const matchSearch =
+      !search ||
+      row.faculty_name.toLowerCase().includes(search.toLowerCase()) ||
+      (row.phone ?? "").toLowerCase().includes(search.toLowerCase());
+    if (!matchSearch) return false;
+
+    const { from, to } = getRangeDates();
+    if (from && row.attendance_date < from) return false;
+    if (to && row.attendance_date > to) return false;
+    return true;
+  });
+
+  function exportFacultyAttendanceCsv(rows: FacultyAttendanceRow[]) {
+    const headers = ["Faculty", "Phone", "Date", "Status", "Notes"];
+    const csvRows = [
+      headers.join(","),
+      ...rows.map((r) =>
+        [
+          `"${r.faculty_name.replace(/"/g, '""')}"`,
+          `"${(r.phone || "").replace(/"/g, '""')}"`,
+          `"${r.attendance_date}"`,
+          `"${r.status}"`,
+          `"${(r.notes || "").replace(/"/g, '""')}"`,
+        ].join(","),
+      ),
+    ];
+
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `faculty-attendance-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function saveFacultyProfileAndCredentials() {
+    setFacultyManageLoading(true);
+    setFacultyManageMsg(null);
+    try {
+      const accessToken = await getAdminAccessToken();
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      if (facultyManageMode === "update" && !facultyManageForm.facultyUserId) {
+        throw new Error("Please select an existing faculty to update.");
+      }
+
+      const res = await fetch("/api/admin/faculty/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action: facultyManageMode,
+          facultyUserId:
+            facultyManageMode === "update"
+              ? facultyManageForm.facultyUserId
+              : undefined,
+          facultyName: facultyManageForm.facultyName,
+          phone: facultyManageForm.phone,
+          facultyEmail: facultyManageForm.facultyEmail,
+          username: facultyManageForm.username,
+          defaultPassword: facultyManageForm.defaultPassword,
+        }),
+      });
+
+      const payload = (await res.json()) as {
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok) {
+        throw new Error(payload.error || "Failed to manage faculty.");
+      }
+
+      setFacultyManageMsg({
+        type: "ok",
+        text: payload.message || "Faculty details saved successfully.",
+      });
+
+      if (facultyManageMode === "create") {
+        setFacultyManageForm({
+          facultyUserId: "",
+          facultyName: "",
+          phone: "",
+          facultyEmail: "",
+          username: "",
+          defaultPassword: "Faculty@123",
+        });
+      } else {
+        setFacultyManageForm((prev) => ({ ...prev, defaultPassword: "" }));
+      }
+
+      await load();
+    } catch (err) {
+      setFacultyManageMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to manage faculty.",
+      });
+    } finally {
+      setFacultyManageLoading(false);
+    }
+  }
+
+  async function removeFacultyFromForm() {
+    if (!facultyManageForm.facultyUserId) {
+      setFacultyManageMsg({
+        type: "err",
+        text: "Please select an existing faculty to remove.",
+      });
+      return;
+    }
+
+    const selectedFaculty =
+      faculty.find((entry) => entry.user_id === facultyManageForm.facultyUserId)
+        ?.full_name ||
+      facultyManageForm.facultyName ||
+      "this faculty";
+
+    const ok = window.confirm(
+      `Remove ${selectedFaculty}? This will delete the faculty login and related faculty records.`,
+    );
+    if (!ok) return;
+
+    setFacultyManageLoading(true);
+    setFacultyManageMsg(null);
+
+    try {
+      const accessToken = await getAdminAccessToken();
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const res = await fetch("/api/admin/faculty/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action: "delete",
+          facultyUserId: facultyManageForm.facultyUserId,
+        }),
+      });
+
+      const payload = (await res.json()) as {
+        error?: string;
+        message?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(payload.error || "Failed to remove faculty.");
+      }
+
+      setFacultyManageMsg({
+        type: "ok",
+        text: payload.message || "Faculty removed successfully.",
+      });
+      setFacultyManageMode("create");
+      setFacultyManageForm({
+        facultyUserId: "",
+        facultyName: "",
+        phone: "",
+        facultyEmail: "",
+        username: "",
+        defaultPassword: "Faculty@123",
+      });
+      await load();
+    } catch (err) {
+      setFacultyManageMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to remove faculty.",
+      });
+    } finally {
+      setFacultyManageLoading(false);
+    }
+  }
+
+  async function saveStudentAttendance() {
+    setStudentAttendanceLoading(true);
+    setStudentAttendanceMsg(null);
+    try {
+      if (!studentAttendanceEditForm.studentUserId) {
+        throw new Error("Please select a student.");
+      }
+      if (!studentAttendanceEditForm.sessionId) {
+        throw new Error("Please select a class session.");
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const { error: upsertError } = await supabase
+        .from("student_attendance")
+        .upsert(
+          {
+            student_user_id: studentAttendanceEditForm.studentUserId,
+            session_id: Number(studentAttendanceEditForm.sessionId),
+            status: studentAttendanceEditForm.status,
+            marked_by: user.id,
+          },
+          { onConflict: "session_id,student_user_id" },
+        );
+
+      if (upsertError) throw upsertError;
+
+      setStudentAttendanceMsg({
+        type: "ok",
+        text: "Student attendance saved successfully.",
+      });
+
+      await load();
+    } catch (err) {
+      setStudentAttendanceMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to save attendance.",
+      });
+    } finally {
+      setStudentAttendanceLoading(false);
+    }
+  }
+
+  async function saveFacultyAttendance() {
+    setFacultyAttendanceLoading(true);
+    setFacultyAttendanceMsg(null);
+    try {
+      if (!attendanceEditForm.facultyUserId) {
+        throw new Error("Please select faculty.");
+      }
+      if (!attendanceEditForm.attendanceDate) {
+        throw new Error("Please select attendance date.");
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const { error: upsertError } = await supabase
+        .from("faculty_attendance")
+        .upsert(
+          {
+            faculty_user_id: attendanceEditForm.facultyUserId,
+            attendance_date: attendanceEditForm.attendanceDate,
+            status: attendanceEditForm.status,
+            notes: attendanceEditForm.notes.trim() || null,
+            marked_by: user.id,
+          },
+          { onConflict: "faculty_user_id,attendance_date" },
+        );
+
+      if (upsertError) throw upsertError;
+
+      setFacultyAttendanceMsg({
+        type: "ok",
+        text: "Faculty attendance saved successfully.",
+      });
+
+      await load();
+    } catch (err) {
+      setFacultyAttendanceMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to save attendance.",
+      });
+    } finally {
+      setFacultyAttendanceLoading(false);
+    }
+  }
+
   async function handleLogout() {
     await signOut("admin");
     router.push("/login-portal");
+  }
+
+  async function getAdminAccessToken() {
+    const supabase = createClient();
+
+    const { data: refreshed } = await supabase.auth.refreshSession();
+    const refreshedToken = refreshed.session?.access_token || null;
+    if (refreshedToken) return refreshedToken;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session?.access_token || null;
   }
 
   async function recordPayment() {
@@ -728,6 +1477,359 @@ export default function AdminDashboardPage() {
     }
   }
 
+  async function saveSelectedStudent() {
+    if (!selectedStudent) return;
+
+    setStudentActionLoading(true);
+    setStudentActionMsg(null);
+    try {
+      const accessToken = await getAdminAccessToken();
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const res = await fetch("/api/admin/students/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action: "update",
+          studentUserId: selectedStudent.user_id,
+          registrationNo: studentEditForm.registrationNo,
+          phone: studentEditForm.phone,
+          courseName: studentEditForm.courseName,
+          studentName: studentEditForm.studentName,
+          facultyName: studentEditForm.facultyName,
+          studentEmail: studentEditForm.studentEmail,
+          username: studentEditForm.username,
+          password: studentEditForm.password,
+        }),
+      });
+
+      const payload = (await res.json()) as {
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok)
+        throw new Error(payload.error || "Failed to update student.");
+
+      setStudentActionMsg({
+        type: "ok",
+        text: payload.message || "Student updated successfully.",
+      });
+      await load();
+      setSelectedStudent((prev) =>
+        prev
+          ? {
+              ...prev,
+              registration_no: studentEditForm.registrationNo.trim() || null,
+              phone: studentEditForm.phone.trim() || null,
+              full_name: studentEditForm.studentName.trim() || prev.full_name,
+              email: studentEditForm.studentEmail.trim() || null,
+              username: studentEditForm.username.trim() || null,
+              enrollments: [
+                {
+                  batch_name:
+                    studentEditForm.courseName.trim() || "Updated Batch",
+                  course_title:
+                    studentEditForm.courseName.trim() || "Updated Course",
+                  faculty_name:
+                    studentEditForm.facultyName.trim() || "Updated Faculty",
+                },
+              ],
+            }
+          : prev,
+      );
+    } catch (err) {
+      setStudentActionMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to update student.",
+      });
+    } finally {
+      setStudentActionLoading(false);
+    }
+  }
+
+  async function deleteSelectedStudent() {
+    if (!selectedStudent) return;
+
+    const ok = window.confirm(
+      `Delete ${selectedStudent.full_name}? This will permanently remove the student login and related records.`,
+    );
+    if (!ok) return;
+
+    setStudentActionLoading(true);
+    setStudentActionMsg(null);
+    try {
+      const accessToken = await getAdminAccessToken();
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const res = await fetch("/api/admin/students/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          action: "delete",
+          studentUserId: selectedStudent.user_id,
+        }),
+      });
+
+      const payload = (await res.json()) as {
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok)
+        throw new Error(payload.error || "Failed to delete student.");
+
+      setStudentActionMsg({
+        type: "ok",
+        text: payload.message || "Student deleted.",
+      });
+      setSelectedStudent(null);
+      await load();
+    } catch (err) {
+      setStudentActionMsg({
+        type: "err",
+        text: err instanceof Error ? err.message : "Failed to delete student.",
+      });
+    } finally {
+      setStudentActionLoading(false);
+    }
+  }
+
+  async function createStudentCredentials() {
+    setCredentialSubmitting(true);
+    setCredentialMsg(null);
+    try {
+      const supabase = createClient();
+      // Ensure the local admin session is valid before reading token.
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error(
+          "Session expired. Please sign in again from Admin Login.",
+        );
+      }
+
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+
+      let accessToken = currentSession?.access_token || null;
+
+      if (!accessToken) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        accessToken = refreshed.session?.access_token || null;
+      }
+
+      if (!accessToken) {
+        throw new Error(
+          "Session expired. Please sign in again from Admin Login.",
+        );
+      }
+
+      let res = await fetch("/api/admin/student-credentials", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          accessToken,
+          registrationId: credentialForm.registrationId || undefined,
+          courseName: credentialForm.courseName,
+          registrationNumber: credentialForm.registrationNumber,
+          studentName: credentialForm.studentName,
+          facultyName: credentialForm.facultyName,
+          studentEmail: credentialForm.studentEmail,
+          studentPhone: credentialForm.studentPhone,
+          username: credentialForm.username,
+          defaultPassword: credentialForm.defaultPassword,
+        }),
+      });
+
+      // One transparent retry for stale/expired token cases.
+      if (res.status === 401) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        const retryToken = refreshed.session?.access_token;
+
+        if (retryToken) {
+          res = await fetch("/api/admin/student-credentials", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${retryToken}`,
+            },
+            body: JSON.stringify({
+              accessToken: retryToken,
+              registrationId: credentialForm.registrationId || undefined,
+              courseName: credentialForm.courseName,
+              registrationNumber: credentialForm.registrationNumber,
+              studentName: credentialForm.studentName,
+              facultyName: credentialForm.facultyName,
+              studentEmail: credentialForm.studentEmail,
+              studentPhone: credentialForm.studentPhone,
+              username: credentialForm.username,
+              defaultPassword: credentialForm.defaultPassword,
+            }),
+          });
+        }
+      }
+
+      let payload: { error?: string; message?: string } = {};
+      try {
+        payload = (await res.json()) as { error?: string; message?: string };
+      } catch {
+        payload = {};
+      }
+
+      if (!res.ok) {
+        const fallback =
+          payload.error ||
+          payload.message ||
+          `Request failed with status ${res.status}.`;
+
+        if (
+          fallback.toLowerCase().includes("invalid or expired session token")
+        ) {
+          throw new Error(
+            "Session token is invalid or expired. Please click Sign Out, sign in again from Admin Login, and retry.",
+          );
+        }
+
+        throw new Error(fallback || "Failed to create student credentials.");
+      }
+
+      setCredentialMsg({
+        type: "ok",
+        text:
+          payload.message ||
+          "Student credentials created. Student can sign in and reset password after first login.",
+      });
+
+      setCredentialForm({
+        registrationId: "",
+        courseName: "",
+        registrationNumber: "",
+        studentName: "",
+        facultyName: "",
+        studentEmail: "",
+        studentPhone: "",
+        username: "",
+        defaultPassword: "LePearl@123",
+      });
+
+      await load();
+    } catch (err) {
+      setCredentialMsg({
+        type: "err",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Failed to create student credentials.",
+      });
+    } finally {
+      setCredentialSubmitting(false);
+    }
+  }
+
+  /* ── update registration status ── */
+  async function updateRegistrationStatus(id: string, newStatus: string) {
+    setStatusUpdatingId(id);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("student_registrations")
+        .update({ status: newStatus })
+        .eq("id", id);
+      setRegistrations((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
+      );
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  }
+
+  /* ── export registrations to CSV (Excel-compatible) ── */
+  function exportRegistrationsToExcel(rows: RegistrationRow[]) {
+    const headers = [
+      "Name",
+      "Qualification",
+      "Course",
+      "Phone",
+      "Email",
+      "Submitted",
+      "Status",
+    ];
+    const csvRows = [
+      headers.join(","),
+      ...rows.map((r) =>
+        [
+          `"${r.full_name.replace(/"/g, '""')}"`,
+          `"${(r.qualification || "").replace(/"/g, '""')}"`,
+          `"${r.course.replace(/"/g, '""')}"`,
+          `"${r.phone}"`,
+          `"${r.email}"`,
+          `"${fmtDate(r.created_at)}"`,
+          `"${r.status || "pending"}"`,
+        ].join(","),
+      ),
+    ];
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `student-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportStudentAttendanceCsv(rows: AttendanceRow[]) {
+    const headers = [
+      "Student",
+      "Registration No",
+      "Course",
+      "Session",
+      "Date",
+      "Status",
+      "Last Updated",
+    ];
+    const csvRows = [
+      headers.join(","),
+      ...rows.map((r) =>
+        [
+          `"${r.student_name.replace(/"/g, '""')}"`,
+          `"${(r.registration_no || "-").replace(/"/g, '""')}"`,
+          `"${(r.course_name || "-").replace(/"/g, '""')}"`,
+          `"${r.session_title.replace(/"/g, '""')}"`,
+          `"${r.session_date}"`,
+          `"${r.status}"`,
+          `"${fmtDate(r.marked_at)}"`,
+        ].join(","),
+      ),
+    ];
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `student-attendance-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const filteredStudents = students.filter(
     (s) =>
       !search ||
@@ -743,12 +1845,34 @@ export default function AdminDashboardPage() {
       p.student_name.toLowerCase().includes(search.toLowerCase()) ||
       p.course_title.toLowerCase().includes(search.toLowerCase()),
   );
-  const filteredAttendance = attendance.filter(
-    (a) =>
+  const filteredStudentFeeDetails = studentFeeDetails.filter(
+    (row) =>
       !search ||
-      a.student_name.toLowerCase().includes(search.toLowerCase()) ||
-      a.session_title.toLowerCase().includes(search.toLowerCase()),
+      row.student_name.toLowerCase().includes(search.toLowerCase()) ||
+      (row.registration_no ?? "")
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      (row.course_name ?? "").toLowerCase().includes(search.toLowerCase()),
   );
+  const filteredStudentAttendance = attendance.filter((row) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      !search ||
+      row.student_name.toLowerCase().includes(q) ||
+      row.registration_no.toLowerCase().includes(q) ||
+      row.course_name.toLowerCase().includes(q) ||
+      row.session_title.toLowerCase().includes(q);
+    if (!matchSearch) return false;
+
+    const { from, to } = getRangeDates();
+    if (from && row.session_date < from) return false;
+    if (to && row.session_date > to) return false;
+    return true;
+  });
+  const showStudentAttendance =
+    activeSection === "attendance" && attendanceView !== "faculty";
+  const showFacultyAttendance =
+    activeSection === "attendance" && attendanceView !== "student";
 
   if (loading)
     return (
@@ -1125,15 +2249,43 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-xs text-gray-500">Enrollment No.</p>
+                        <p className="text-xs text-gray-500">
+                          Registration Number
+                        </p>
                         <p className="font-semibold text-gray-900">
-                          {selectedStudent.enrollment_no ?? "-"}
+                          {selectedStudent.registration_no ?? "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">Phone</p>
+                        <p className="text-xs text-gray-500">Mobile Number</p>
                         <p className="font-semibold text-gray-900">
                           {selectedStudent.phone ?? "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Course Name</p>
+                        <p className="font-semibold text-gray-900">
+                          {selectedStudent.enrollments?.[0]?.course_title ??
+                            "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Faculty</p>
+                        <p className="font-semibold text-gray-900">
+                          {selectedStudent.enrollments?.[0]?.faculty_name ??
+                            "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Student Email</p>
+                        <p className="font-semibold text-gray-900 break-all">
+                          {selectedStudent.email ?? "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">User Name</p>
+                        <p className="font-semibold text-gray-900 break-all">
+                          {selectedStudent.username ?? "-"}
                         </p>
                       </div>
                       <div>
@@ -1147,6 +2299,199 @@ export default function AdminDashboardPage() {
                         <p className="font-mono text-xs text-gray-500 break-all">
                           {selectedStudent.user_id}
                         </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-gray-100 pt-5">
+                      <h3 className="font-semibold text-gray-900 mb-3">
+                        Manage Student
+                      </h3>
+
+                      {studentActionMsg && (
+                        <div
+                          className={`mb-3 rounded-xl p-3 text-sm ${studentActionMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                        >
+                          {studentActionMsg.text}
+                        </div>
+                      )}
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Registration Number
+                          </label>
+                          <input
+                            value={studentEditForm.registrationNo}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                registrationNo: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Mobile Number
+                          </label>
+                          <input
+                            value={studentEditForm.phone}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                phone: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Student Name
+                          </label>
+                          <input
+                            value={studentEditForm.studentName}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                studentName: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Course Name
+                          </label>
+                          <select
+                            value={studentEditForm.courseName}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                courseName: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
+                          >
+                            <option value="">Select course</option>
+                            {studentRegistrationCourses.map((courseName) => (
+                              <option key={courseName} value={courseName}>
+                                {courseName}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Faculty
+                          </label>
+                          <select
+                            value={studentEditForm.facultyName}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                facultyName: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
+                          >
+                            <option value="">Select faculty</option>
+                            {faculty.map((facultyItem) => (
+                              <option
+                                key={facultyItem.user_id}
+                                value={facultyItem.full_name}
+                              >
+                                {facultyItem.full_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Student Email ID
+                          </label>
+                          <input
+                            value={studentEditForm.studentEmail}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                studentEmail: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            User Name
+                          </label>
+                          <input
+                            value={studentEditForm.username}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                username: e.target.value.toLowerCase(),
+                              }))
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            New Password
+                          </label>
+                          <input
+                            type="password"
+                            value={studentEditForm.password}
+                            onChange={(e) =>
+                              setStudentEditForm((prev) => ({
+                                ...prev,
+                                password: e.target.value,
+                              }))
+                            }
+                            placeholder="Leave blank to keep the current password"
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            If you set a new username or password, the student
+                            will be forced to change the password on first
+                            login.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-3 items-center">
+                        <button
+                          onClick={saveSelectedStudent}
+                          disabled={studentActionLoading}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
+                        >
+                          {studentActionLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : null}
+                          Save Changes
+                        </button>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                          onClick={deleteSelectedStudent}
+                          disabled={studentActionLoading}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
+                        >
+                          {studentActionLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : null}
+                          Delete Student
+                        </button>
+                        <button
+                          onClick={() => setSelectedStudent(null)}
+                          className="text-sm text-gray-500 hover:text-gray-700 underline"
+                        >
+                          Close details
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1163,10 +2508,10 @@ export default function AdminDashboardPage() {
                               Name
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                              Enrollment No.
+                              Registration Number
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                              Phone
+                              Mobile Number
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                               Joined
@@ -1193,7 +2538,7 @@ export default function AdminDashboardPage() {
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-gray-600">
-                                {s.enrollment_no ?? "-"}
+                                {s.registration_no ?? "-"}
                               </td>
                               <td className="px-4 py-3 text-gray-600">
                                 {s.phone ?? "-"}
@@ -1236,6 +2581,205 @@ export default function AdminDashboardPage() {
                     All faculty members and their batch assignments
                   </p>
                 </div>
+
+                <div className="bg-white rounded-2xl shadow-sm p-5 border border-purple-100">
+                  <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+                    <h2 className="font-bold text-gray-900">
+                      Manage Faculty Details & Credentials
+                    </h2>
+                    <div className="inline-flex rounded-xl border border-gray-200 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          setFacultyManageMode("create");
+                          setFacultyManageMsg(null);
+                        }}
+                        className={`px-3 py-1.5 text-xs font-semibold ${facultyManageMode === "create" ? "bg-purple-600 text-white" : "bg-white text-gray-600"}`}
+                      >
+                        Add New Faculty
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFacultyManageMode("update");
+                          setFacultyManageMsg(null);
+                        }}
+                        className={`px-3 py-1.5 text-xs font-semibold ${facultyManageMode === "update" ? "bg-purple-600 text-white" : "bg-white text-gray-600"}`}
+                      >
+                        Update Existing
+                      </button>
+                    </div>
+                  </div>
+
+                  {facultyManageMsg && (
+                    <div
+                      className={`mb-4 rounded-xl p-3 text-sm ${facultyManageMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                    >
+                      {facultyManageMsg.text}
+                    </div>
+                  )}
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {facultyManageMode === "update" && (
+                      <div className="md:col-span-2">
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Select Faculty
+                        </label>
+                        <select
+                          value={facultyManageForm.facultyUserId}
+                          onChange={(e) =>
+                            setFacultyManageForm((prev) => ({
+                              ...prev,
+                              facultyUserId: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
+                        >
+                          <option value="">Select faculty to update</option>
+                          {faculty.map((f) => (
+                            <option key={f.user_id} value={f.user_id}>
+                              {f.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        Faculty Name
+                      </label>
+                      <input
+                        value={facultyManageForm.facultyName}
+                        onChange={(e) =>
+                          setFacultyManageForm((prev) => ({
+                            ...prev,
+                            facultyName: e.target.value,
+                          }))
+                        }
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                        placeholder="Faculty full name"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        Phone Number
+                      </label>
+                      <input
+                        value={facultyManageForm.phone}
+                        onChange={(e) =>
+                          setFacultyManageForm((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                        placeholder="+91-98xxxxxxxx"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        Faculty Email ID
+                      </label>
+                      <input
+                        type="email"
+                        value={facultyManageForm.facultyEmail}
+                        onChange={(e) =>
+                          setFacultyManageForm((prev) => ({
+                            ...prev,
+                            facultyEmail: e.target.value,
+                          }))
+                        }
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                        placeholder="faculty@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        Username
+                      </label>
+                      <input
+                        value={facultyManageForm.username}
+                        onChange={(e) =>
+                          setFacultyManageForm((prev) => ({
+                            ...prev,
+                            username: e.target.value.toLowerCase(),
+                          }))
+                        }
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                        placeholder="username"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        {facultyManageMode === "create"
+                          ? "Default Password"
+                          : "New Default Password (optional)"}
+                      </label>
+                      <input
+                        type="text"
+                        value={facultyManageForm.defaultPassword}
+                        onChange={(e) =>
+                          setFacultyManageForm((prev) => ({
+                            ...prev,
+                            defaultPassword: e.target.value,
+                          }))
+                        }
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                        placeholder={
+                          facultyManageMode === "create"
+                            ? "Faculty@123"
+                            : "Leave blank to keep current password"
+                        }
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Faculty must reset password on first login when a
+                        default/new password is set.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      onClick={saveFacultyProfileAndCredentials}
+                      disabled={
+                        facultyManageLoading ||
+                        !facultyManageForm.facultyName ||
+                        !facultyManageForm.facultyEmail ||
+                        !facultyManageForm.username ||
+                        (facultyManageMode === "create" &&
+                          !facultyManageForm.defaultPassword)
+                      }
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 disabled:opacity-60"
+                    >
+                      {facultyManageLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                      {facultyManageMode === "create"
+                        ? "Create Faculty Credentials"
+                        : "Save Faculty Changes"}
+                    </button>
+
+                    {facultyManageMode === "update" && (
+                      <button
+                        onClick={removeFacultyFromForm}
+                        disabled={
+                          facultyManageLoading ||
+                          !facultyManageForm.facultyUserId
+                        }
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
+                      >
+                        {facultyManageLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                        Remove Faculty
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -1251,7 +2795,16 @@ export default function AdminDashboardPage() {
                             Phone
                           </th>
                           <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Email
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Username
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                             Joined
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Action
                           </th>
                         </tr>
                       </thead>
@@ -1272,8 +2825,104 @@ export default function AdminDashboardPage() {
                             <td className="px-4 py-3 text-gray-600">
                               {f.phone ?? "-"}
                             </td>
+                            <td className="px-4 py-3 text-gray-600 text-xs">
+                              {f.email ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {f.username ?? "-"}
+                            </td>
                             <td className="px-4 py-3 text-gray-500">
                               {fmtDate(f.created_at)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => {
+                                    setFacultyManageMode("update");
+                                    setFacultyManageMsg(null);
+                                    setFacultyManageForm({
+                                      facultyUserId: f.user_id,
+                                      facultyName: f.full_name,
+                                      phone: f.phone ?? "",
+                                      facultyEmail: f.email ?? "",
+                                      username: f.username ?? "",
+                                      defaultPassword: "",
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 text-xs font-semibold"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const ok = window.confirm(
+                                      `Remove ${f.full_name}? This will delete the faculty login and related faculty records.`,
+                                    );
+                                    if (!ok) return;
+
+                                    try {
+                                      const accessToken =
+                                        await getAdminAccessToken();
+                                      if (!accessToken) {
+                                        throw new Error(
+                                          "Session expired. Please sign in again.",
+                                        );
+                                      }
+
+                                      setFacultyManageLoading(true);
+                                      setFacultyManageMsg(null);
+
+                                      const res = await fetch(
+                                        "/api/admin/faculty/manage",
+                                        {
+                                          method: "POST",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                            Authorization: `Bearer ${accessToken}`,
+                                          },
+                                          body: JSON.stringify({
+                                            action: "delete",
+                                            facultyUserId: f.user_id,
+                                          }),
+                                        },
+                                      );
+
+                                      const payload = (await res.json()) as {
+                                        error?: string;
+                                        message?: string;
+                                      };
+
+                                      if (!res.ok) {
+                                        throw new Error(
+                                          payload.error ||
+                                            "Failed to remove faculty.",
+                                        );
+                                      }
+
+                                      setFacultyManageMsg({
+                                        type: "ok",
+                                        text:
+                                          payload.message ||
+                                          "Faculty removed successfully.",
+                                      });
+                                      await load();
+                                    } catch (err) {
+                                      setFacultyManageMsg({
+                                        type: "err",
+                                        text:
+                                          err instanceof Error
+                                            ? err.message
+                                            : "Failed to remove faculty.",
+                                      });
+                                    } finally {
+                                      setFacultyManageLoading(false);
+                                    }
+                                  }}
+                                  className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 text-xs font-semibold"
+                                >
+                                  Remove
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1317,94 +2966,538 @@ export default function AdminDashboardPage() {
             {activeSection === "attendance" && (
               <>
                 <div className="bg-gradient-to-r from-teal-600 to-green-600 rounded-2xl p-6 text-white">
-                  <h1 className="text-xl font-bold mb-1">Attendance Records</h1>
+                  <h1 className="text-xl font-bold mb-1">
+                    Attendance Management
+                  </h1>
                   <p className="text-teal-100 text-sm">
-                    All attendance records across all sessions (
-                    {attendance.length} total)
+                    Student ({filteredStudentAttendance.length}) and Faculty (
+                    {filteredFacultyAttendance.length}) attendance synced with
+                    dashboards
                   </p>
                 </div>
-                {/* stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  {(["present", "late", "absent"] as const).map((st) => {
-                    const count = attendance.filter(
-                      (a) => a.status === st,
-                    ).length;
-                    const colors = {
-                      present: "bg-green-100 text-green-700",
-                      late: "bg-amber-100 text-amber-700",
-                      absent: "bg-red-100 text-red-700",
-                    };
-                    return (
-                      <div
-                        key={st}
-                        className={`rounded-2xl p-4 ${colors[st]} text-center`}
-                      >
-                        <p className="text-2xl font-bold">{count}</p>
-                        <p className="text-xs font-semibold capitalize">{st}</p>
-                      </div>
-                    );
-                  })}
+
+                <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+                  <div className="inline-flex rounded-xl border border-gray-200 overflow-hidden">
+                    <button
+                      onClick={() => setAttendanceView("all")}
+                      className={`px-4 py-2 text-xs font-semibold ${attendanceView === "all" ? "bg-teal-600 text-white" : "bg-white text-gray-600"}`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setAttendanceView("student")}
+                      className={`px-4 py-2 text-xs font-semibold ${attendanceView === "student" ? "bg-teal-600 text-white" : "bg-white text-gray-600"}`}
+                    >
+                      Student Only
+                    </button>
+                    <button
+                      onClick={() => setAttendanceView("faculty")}
+                      className={`px-4 py-2 text-xs font-semibold ${attendanceView === "faculty" ? "bg-teal-600 text-white" : "bg-white text-gray-600"}`}
+                    >
+                      Faculty Only
+                    </button>
+                  </div>
                 </div>
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Student
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Session
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Batch
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Date
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {filteredAttendance.slice(0, 50).map((a) => (
-                          <tr key={a.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium text-gray-900">
-                              {a.student_name}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {a.session_title}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {a.batch_name}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {fmtDate(a.session_date)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge
-                                text={a.status}
-                                color={
-                                  a.status === "present"
-                                    ? "green"
-                                    : a.status === "late"
-                                      ? "yellow"
-                                      : "red"
-                                }
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {filteredAttendance.length === 0 && (
-                      <p className="text-center py-8 text-sm text-gray-400">
-                        No attendance records.
-                      </p>
+
+                {showStudentAttendance && studentAttendanceMsg && (
+                  <div
+                    className={`rounded-xl p-3 text-sm ${studentAttendanceMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                  >
+                    {studentAttendanceMsg.text}
+                  </div>
+                )}
+
+                {showFacultyAttendance && facultyAttendanceMsg && (
+                  <div
+                    className={`rounded-xl p-3 text-sm ${facultyAttendanceMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                  >
+                    {facultyAttendanceMsg.text}
+                  </div>
+                )}
+
+                {showStudentAttendance && (
+                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-indigo-100">
+                    <h2 className="font-bold text-gray-900 mb-3">
+                      Mark/Update Student Attendance (Session-wise)
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Student
+                        </label>
+                        <select
+                          value={studentAttendanceEditForm.studentUserId}
+                          onChange={(e) =>
+                            setStudentAttendanceEditForm((prev) => ({
+                              ...prev,
+                              studentUserId: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                        >
+                          <option value="">Select student</option>
+                          {students.map((s) => (
+                            <option key={s.user_id} value={s.user_id}>
+                              {s.full_name} ({s.registration_no || "-"})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Class Session
+                        </label>
+                        <select
+                          value={studentAttendanceEditForm.sessionId}
+                          onChange={(e) =>
+                            setStudentAttendanceEditForm((prev) => ({
+                              ...prev,
+                              sessionId: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                        >
+                          <option value="">Select session</option>
+                          {liveClasses.map((session) => (
+                            <option key={session.id} value={String(session.id)}>
+                              {fmtDate(session.session_date)} • {session.title}{" "}
+                              ({session.batch_name})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Status
+                        </label>
+                        <select
+                          value={studentAttendanceEditForm.status}
+                          onChange={(e) =>
+                            setStudentAttendanceEditForm((prev) => ({
+                              ...prev,
+                              status: e.target.value as
+                                | "present"
+                                | "absent"
+                                | "late",
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                        >
+                          <option value="present">Present</option>
+                          <option value="absent">Absent</option>
+                          <option value="late">Late</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <button
+                        onClick={saveStudentAttendance}
+                        disabled={studentAttendanceLoading}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
+                      >
+                        {studentAttendanceLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4" />
+                        )}
+                        Save Student Attendance
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {showFacultyAttendance && (
+                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-teal-100">
+                    <h2 className="font-bold text-gray-900 mb-3">
+                      Mark Faculty Attendance (Daily)
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Faculty
+                        </label>
+                        <select
+                          value={attendanceEditForm.facultyUserId}
+                          onChange={(e) =>
+                            setAttendanceEditForm((prev) => ({
+                              ...prev,
+                              facultyUserId: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                        >
+                          <option value="">Select faculty</option>
+                          {faculty.map((f) => (
+                            <option key={f.user_id} value={f.user_id}>
+                              {f.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          value={attendanceEditForm.attendanceDate}
+                          onChange={(e) =>
+                            setAttendanceEditForm((prev) => ({
+                              ...prev,
+                              attendanceDate: e.target.value,
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Status
+                        </label>
+                        <select
+                          value={attendanceEditForm.status}
+                          onChange={(e) =>
+                            setAttendanceEditForm((prev) => ({
+                              ...prev,
+                              status: e.target.value as
+                                | "present"
+                                | "absent"
+                                | "leave",
+                            }))
+                          }
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                        >
+                          <option value="present">Present</option>
+                          <option value="absent">Absent</option>
+                          <option value="leave">Leave</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Notes
+                        </label>
+                        <input
+                          value={attendanceEditForm.notes}
+                          onChange={(e) =>
+                            setAttendanceEditForm((prev) => ({
+                              ...prev,
+                              notes: e.target.value,
+                            }))
+                          }
+                          placeholder="Optional remarks"
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <button
+                        onClick={saveFacultyAttendance}
+                        disabled={facultyAttendanceLoading}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-60"
+                      >
+                        {facultyAttendanceLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4" />
+                        )}
+                        Save Attendance
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
+                  <div className="flex flex-wrap items-end gap-3 justify-between">
+                    <div className="flex flex-wrap items-end gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          View Range
+                        </label>
+                        <select
+                          value={attendanceRange}
+                          onChange={(e) =>
+                            setAttendanceRange(
+                              e.target.value as
+                                | "daily"
+                                | "weekly"
+                                | "monthly"
+                                | "yearly"
+                                | "custom",
+                            )
+                          }
+                          className="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white"
+                        >
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                          <option value="yearly">Yearly</option>
+                          <option value="custom">Custom Range</option>
+                        </select>
+                      </div>
+
+                      {attendanceRange === "custom" && (
+                        <>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                              From
+                            </label>
+                            <input
+                              type="date"
+                              value={attendanceFrom}
+                              onChange={(e) =>
+                                setAttendanceFrom(e.target.value)
+                              }
+                              className="border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                              To
+                            </label>
+                            <input
+                              type="date"
+                              value={attendanceTo}
+                              onChange={(e) => setAttendanceTo(e.target.value)}
+                              className="border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {showStudentAttendance && (
+                      <button
+                        onClick={() =>
+                          exportStudentAttendanceCsv(filteredStudentAttendance)
+                        }
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export Student Excel
+                      </button>
+                    )}
+                    {showFacultyAttendance && (
+                      <button
+                        onClick={() =>
+                          exportFacultyAttendanceCsv(filteredFacultyAttendance)
+                        }
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export Faculty Excel
+                      </button>
                     )}
                   </div>
                 </div>
+
+                {showStudentAttendance && (
+                  <div className="grid grid-cols-3 gap-4">
+                    {(["present", "absent", "late"] as const).map((st) => {
+                      const count = filteredStudentAttendance.filter(
+                        (a) => a.status === st,
+                      ).length;
+                      const colors = {
+                        present: "bg-green-100 text-green-700",
+                        late: "bg-amber-100 text-amber-700",
+                        absent: "bg-red-100 text-red-700",
+                      };
+                      return (
+                        <div
+                          key={st}
+                          className={`rounded-2xl p-4 ${colors[st]} text-center`}
+                        >
+                          <p className="text-2xl font-bold">{count}</p>
+                          <p className="text-xs font-semibold capitalize">
+                            {st}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {showStudentAttendance && (
+                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Student
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Registration No
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Course
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Session
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Date
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Status
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Last Updated
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {filteredStudentAttendance
+                            .slice(0, 300)
+                            .map((row) => (
+                              <tr key={row.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                  {row.student_name}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {row.registration_no || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {row.course_name || "-"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {row.session_title}
+                                </td>
+                                <td className="px-4 py-3 text-gray-500">
+                                  {fmtDate(row.session_date)}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    text={row.status}
+                                    color={
+                                      row.status === "present"
+                                        ? "green"
+                                        : row.status === "late"
+                                          ? "yellow"
+                                          : "red"
+                                    }
+                                  />
+                                </td>
+                                <td className="px-4 py-3 text-gray-500 text-xs">
+                                  {fmtDate(row.marked_at)}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <button
+                                    onClick={() =>
+                                      setStudentAttendanceEditForm({
+                                        studentUserId: row.student_user_id,
+                                        sessionId: String(row.session_id),
+                                        status: row.status,
+                                      })
+                                    }
+                                    className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
+                                  >
+                                    Edit
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {filteredStudentAttendance.length === 0 && (
+                        <p className="text-center py-8 text-sm text-gray-400">
+                          No student attendance records for selected range.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* stats */}
+                {showFacultyAttendance && (
+                  <div className="grid grid-cols-3 gap-4">
+                    {(["present", "absent", "leave"] as const).map((st) => {
+                      const count = filteredFacultyAttendance.filter(
+                        (a) => a.status === st,
+                      ).length;
+                      const colors = {
+                        present: "bg-green-100 text-green-700",
+                        leave: "bg-blue-100 text-blue-700",
+                        absent: "bg-red-100 text-red-700",
+                      };
+                      return (
+                        <div
+                          key={st}
+                          className={`rounded-2xl p-4 ${colors[st]} text-center`}
+                        >
+                          <p className="text-2xl font-bold">{count}</p>
+                          <p className="text-xs font-semibold capitalize">
+                            {st}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {showFacultyAttendance && (
+                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Faculty
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Phone
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Date
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Status
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Notes
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {filteredFacultyAttendance.slice(0, 200).map((a) => (
+                            <tr key={a.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-900">
+                                {a.faculty_name}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {a.phone ?? "-"}
+                              </td>
+                              <td className="px-4 py-3 text-gray-500">
+                                {fmtDate(a.attendance_date)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={a.status}
+                                  color={
+                                    a.status === "present"
+                                      ? "green"
+                                      : a.status === "leave"
+                                        ? "blue"
+                                        : "red"
+                                  }
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">
+                                {a.notes ?? "-"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {filteredFacultyAttendance.length === 0 && (
+                        <p className="text-center py-8 text-sm text-gray-400">
+                          No faculty attendance records for selected range.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -1592,6 +3685,110 @@ export default function AdminDashboardPage() {
                       </div>
                     );
                   })}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 text-center">
+                    <p className="text-xs font-semibold text-blue-700">
+                      Overall Fees (All Students)
+                    </p>
+                    <p className="text-lg font-bold text-blue-900 mt-1">
+                      {fmtCurrency(overallFeeSummary.totalFee)}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 rounded-2xl p-4 border border-green-100 text-center">
+                    <p className="text-xs font-semibold text-green-700">
+                      Overall Paid
+                    </p>
+                    <p className="text-lg font-bold text-green-900 mt-1">
+                      {fmtCurrency(overallFeeSummary.totalPaid)}
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 text-center">
+                    <p className="text-xs font-semibold text-amber-700">
+                      Overall Pending
+                    </p>
+                    <p className="text-lg font-bold text-amber-900 mt-1">
+                      {fmtCurrency(overallFeeSummary.totalPending)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h2 className="font-bold text-gray-900">
+                      Student Fee Details
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Individual paid amount, pending amount, and due date.
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Student
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Registration
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Course
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Total Fee
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Paid
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Pending
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Due Date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {filteredStudentFeeDetails.map((row) => (
+                          <tr
+                            key={row.student_user_id}
+                            className="hover:bg-gray-50"
+                          >
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                              {row.student_name}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {row.registration_no ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {row.course_name ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-blue-700">
+                              {fmtCurrency(row.total_fee)}
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-green-700">
+                              {fmtCurrency(row.total_paid)}
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-amber-700">
+                              {fmtCurrency(row.pending_amount)}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {row.next_due_date
+                                ? fmtDate(row.next_due_date)
+                                : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {filteredStudentFeeDetails.length === 0 && (
+                      <p className="text-center py-8 text-sm text-gray-400">
+                        No student fee plan records.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -1834,98 +4031,469 @@ export default function AdminDashboardPage() {
 
             {activeSection === "registrations" && (
               <>
+                {/* header */}
                 <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white">
                   <h1 className="text-xl font-bold mb-1">
                     New Student Registrations
                   </h1>
                   <p className="text-blue-100 text-sm">
-                    {registrations.length} new enrollment requests submitted
+                    {registrations.length} enrollment requests submitted · click
+                    a row to prefill the credentials form
                   </p>
                 </div>
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Name
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Qualification
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Course
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Phone
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Email
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Submitted
-                          </th>
-                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {registrations
-                          .filter((r) =>
-                            search
-                              ? r.full_name
-                                  .toLowerCase()
-                                  .includes(search.toLowerCase()) ||
-                                r.email
-                                  .toLowerCase()
-                                  .includes(search.toLowerCase()) ||
-                                r.phone.includes(search) ||
-                                r.course
-                                  .toLowerCase()
-                                  .includes(search.toLowerCase())
-                              : true,
-                          )
-                          .map((r) => (
-                            <tr key={r.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-900">
-                                {r.full_name}
-                              </td>
-                              <td className="px-4 py-3 text-gray-600">
-                                {r.qualification}
-                              </td>
-                              <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
-                                {r.course}
-                              </td>
-                              <td className="px-4 py-3 text-gray-600">
-                                {r.phone}
-                              </td>
-                              <td className="px-4 py-3 text-gray-600 text-xs">
-                                <a
-                                  href={`mailto:${r.email}`}
-                                  className="text-blue-600 hover:underline"
+
+                {/* two-column split */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+                  {/* ── LEFT: registration requests table ── */}
+                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                          <h2 className="font-bold text-gray-900">
+                            Student Registration Requests
+                          </h2>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Select a row to prefill the credentials form on the
+                            right.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const filtered = registrations.filter((r) => {
+                              const match = search
+                                ? r.full_name
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase()) ||
+                                  r.email
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase()) ||
+                                  r.phone.includes(search) ||
+                                  r.course
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase())
+                                : true;
+                              const d = r.created_at.slice(0, 10);
+                              const fromOk = regDateFrom
+                                ? d >= regDateFrom
+                                : true;
+                              const toOk = regDateTo ? d <= regDateTo : true;
+                              return match && fromOk && toOk;
+                            });
+                            exportRegistrationsToExcel(filtered);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 shrink-0"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Export to Excel
+                        </button>
+                      </div>
+
+                      {/* date range filter */}
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <CalendarDays className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="text-xs text-gray-500 shrink-0">
+                          Filter by date:
+                        </span>
+                        <input
+                          type="date"
+                          value={regDateFrom}
+                          onChange={(e) => setRegDateFrom(e.target.value)}
+                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700"
+                        />
+                        <span className="text-xs text-gray-400">to</span>
+                        <input
+                          type="date"
+                          value={regDateTo}
+                          onChange={(e) => setRegDateTo(e.target.value)}
+                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700"
+                        />
+                        {(regDateFrom || regDateTo) && (
+                          <button
+                            onClick={() => {
+                              setRegDateFrom("");
+                              setRegDateTo("");
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700 underline"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Name
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Course
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Phone
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Email
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Submitted
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Status
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {registrations
+                            .filter((r) => {
+                              const textMatch = search
+                                ? r.full_name
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase()) ||
+                                  r.email
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase()) ||
+                                  r.phone.includes(search) ||
+                                  r.course
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase())
+                                : true;
+                              const d = r.created_at.slice(0, 10);
+                              const fromOk = regDateFrom
+                                ? d >= regDateFrom
+                                : true;
+                              const toOk = regDateTo ? d <= regDateTo : true;
+                              return textMatch && fromOk && toOk;
+                            })
+                            .map((r) => (
+                              <tr
+                                key={r.id}
+                                onClick={() => {
+                                  setCredentialForm((p) => ({
+                                    ...p,
+                                    registrationId: r.id,
+                                    studentName: r.full_name,
+                                    studentEmail: r.email,
+                                    courseName: r.course,
+                                    username: r.email
+                                      .split("@")[0]
+                                      .toLowerCase()
+                                      .replace(/[^a-z0-9._-]/g, ""),
+                                  }));
+                                  setCredentialMsg(null);
+                                }}
+                                className={`cursor-pointer transition-colors ${
+                                  credentialForm.registrationId === r.id
+                                    ? "bg-blue-50 border-l-4 border-l-blue-500"
+                                    : "hover:bg-gray-50"
+                                }`}
+                              >
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                  {r.full_name}
+                                  {r.qualification && (
+                                    <span className="ml-1 text-xs text-gray-400">
+                                      ({r.qualification})
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate">
+                                  {r.course}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600 text-xs">
+                                  {r.phone}
+                                </td>
+                                <td className="px-4 py-3 text-xs">
+                                  <a
+                                    href={`mailto:${r.email}`}
+                                    className="text-blue-600 hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {r.email}
+                                  </a>
+                                </td>
+                                <td className="px-4 py-3 text-gray-500 text-xs">
+                                  {fmtDate(r.created_at)}
+                                </td>
+                                <td
+                                  className="px-4 py-3"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  {r.email}
-                                </a>
-                              </td>
-                              <td className="px-4 py-3 text-gray-600 text-xs">
-                                {fmtDate(r.created_at)}
-                              </td>
-                              <td className="px-4 py-3">
-                                <Badge
-                                  text={r.status || "pending"}
-                                  color="yellow"
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                    {registrations.length === 0 && (
-                      <p className="text-center py-8 text-sm text-gray-400">
-                        No student registrations yet.
-                      </p>
+                                  <div className="relative inline-flex items-center gap-1">
+                                    {statusUpdatingId === r.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                                    ) : (
+                                      <>
+                                        <select
+                                          value={
+                                            r.status === "credentials_created"
+                                              ? "completed"
+                                              : r.status || "pending"
+                                          }
+                                          onChange={(e) =>
+                                            updateRegistrationStatus(
+                                              r.id,
+                                              e.target.value,
+                                            )
+                                          }
+                                          className={`appearance-none pr-5 pl-2 py-0.5 rounded-full text-xs font-semibold border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                                            r.status === "completed" ||
+                                            r.status === "credentials_created"
+                                              ? "bg-green-100 text-green-700 focus:ring-green-400"
+                                              : "bg-amber-100 text-amber-700 focus:ring-amber-400"
+                                          }`}
+                                        >
+                                          <option value="pending">
+                                            Pending
+                                          </option>
+                                          <option value="completed">
+                                            Completed
+                                          </option>
+                                        </select>
+                                        <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none text-current opacity-60" />
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {registrations.length === 0 && (
+                        <p className="text-center py-8 text-sm text-gray-400">
+                          No student registrations yet.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── RIGHT: create credentials form ── */}
+                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100 xl:sticky xl:top-24">
+                    <h2 className="font-bold text-gray-900 text-base mb-0.5">
+                      Create Student Credentials
+                    </h2>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Create login credentials, assign course and faculty, and
+                      auto-enroll the student.
+                      {credentialForm.registrationId && (
+                        <span className="ml-1 text-blue-600 font-medium">
+                          (prefilled from selected registration)
+                        </span>
+                      )}
+                    </p>
+
+                    {credentialMsg && (
+                      <div
+                        className={`mb-4 rounded-xl p-3 text-sm ${credentialMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                      >
+                        {credentialMsg.text}
+                      </div>
                     )}
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Course Name
+                        </label>
+                        <select
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          value={credentialForm.courseName}
+                          onChange={(e) =>
+                            setCredentialForm((p) => ({
+                              ...p,
+                              courseName: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Select course</option>
+                          {studentRegistrationCourses.map((course) => (
+                            <option key={course} value={course}>
+                              {course}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Registration Number
+                          </label>
+                          <input
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            value={credentialForm.registrationNumber}
+                            onChange={(e) =>
+                              setCredentialForm((p) => ({
+                                ...p,
+                                registrationNumber: e.target.value,
+                              }))
+                            }
+                            placeholder="LP-REG-2026-001"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Student Name
+                          </label>
+                          <input
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            value={credentialForm.studentName}
+                            onChange={(e) =>
+                              setCredentialForm((p) => ({
+                                ...p,
+                                studentName: e.target.value,
+                              }))
+                            }
+                            placeholder="Full name"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Faculty Name
+                        </label>
+                        <select
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          value={credentialForm.facultyName}
+                          onChange={(e) =>
+                            setCredentialForm((p) => ({
+                              ...p,
+                              facultyName: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Select faculty</option>
+                          {adminFacultyOptions.map((name) => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Student Email ID
+                        </label>
+                        <input
+                          type="email"
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          value={credentialForm.studentEmail}
+                          onChange={(e) =>
+                            setCredentialForm((p) => ({
+                              ...p,
+                              studentEmail: e.target.value,
+                            }))
+                          }
+                          placeholder="student@example.com"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Mobile Number
+                        </label>
+                        <input
+                          type="tel"
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          value={credentialForm.studentPhone}
+                          onChange={(e) =>
+                            setCredentialForm((p) => ({
+                              ...p,
+                              studentPhone: e.target.value,
+                            }))
+                          }
+                          placeholder="+91-9876543210"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            User Name
+                          </label>
+                          <input
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            value={credentialForm.username}
+                            onChange={(e) =>
+                              setCredentialForm((p) => ({
+                                ...p,
+                                username: e.target.value.toLowerCase(),
+                              }))
+                            }
+                            placeholder="username"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Default Password
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            value={credentialForm.defaultPassword}
+                            onChange={(e) =>
+                              setCredentialForm((p) => ({
+                                ...p,
+                                defaultPassword: e.target.value,
+                              }))
+                            }
+                            placeholder="LePearl@123"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        onClick={createStudentCredentials}
+                        disabled={
+                          credentialSubmitting ||
+                          !credentialForm.courseName ||
+                          !credentialForm.registrationNumber ||
+                          !credentialForm.studentName ||
+                          !credentialForm.facultyName ||
+                          !credentialForm.studentEmail ||
+                          !credentialForm.username ||
+                          !credentialForm.defaultPassword
+                        }
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
+                      >
+                        {credentialSubmitting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
+                        Create Credentials
+                      </button>
+
+                      {(credentialForm.registrationId ||
+                        credentialForm.studentName) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCredentialForm({
+                              registrationId: "",
+                              courseName: "",
+                              registrationNumber: "",
+                              studentName: "",
+                              facultyName: "",
+                              studentEmail: "",
+                              studentPhone: "",
+                              username: "",
+                              defaultPassword: "LePearl@123",
+                            });
+                            setCredentialMsg(null);
+                          }}
+                          className="text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                          Clear form
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>

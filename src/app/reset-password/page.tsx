@@ -15,6 +15,8 @@ function loginPathByRole(role: string) {
 function ResetPasswordInner() {
   const router = useRouter();
   const [role, setRole] = useState<AuthScope>("student");
+  const [firstLoginFlow, setFirstLoginFlow] = useState(false);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -25,6 +27,13 @@ function ResetPasswordInner() {
       roleParam === "student"
     ) {
       setRole(roleParam);
+    }
+
+    const firstLogin = params.get("firstLogin") === "1";
+    const nextPath = params.get("next");
+    setFirstLoginFlow(firstLogin);
+    if (nextPath && nextPath.startsWith("/")) {
+      setRedirectPath(nextPath);
     }
   }, []);
 
@@ -61,12 +70,36 @@ function ResetPasswordInner() {
       });
       if (error) throw error;
 
+      if ((role === "student" || role === "faculty") && firstLoginFlow) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          await fetch("/api/auth/complete-first-login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+        }
+      }
+
       setMsg({
         type: "ok",
-        text: "Password updated successfully. Redirecting to login...",
+        text: firstLoginFlow
+          ? "Password updated successfully. Redirecting to dashboard..."
+          : "Password updated successfully. Redirecting to login...",
       });
 
       setTimeout(() => {
+        if (firstLoginFlow) {
+          const fallback =
+            role === "faculty" ? "/faculty-dashboard" : "/student-dashboard";
+          router.push(redirectPath || fallback);
+          return;
+        }
         router.push(loginPathByRole(role));
       }, 1200);
     } catch (err) {

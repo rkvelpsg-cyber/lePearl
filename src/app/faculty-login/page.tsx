@@ -9,7 +9,7 @@ import { AlertCircle, LogIn, Loader2, X } from "lucide-react";
 
 export default function FacultyLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -21,14 +21,30 @@ export default function FacultyLoginPage() {
     text: string;
   } | null>(null);
 
+  async function resolveFacultyEmail(value: string) {
+    const res = await fetch("/api/auth/faculty-login-lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loginId: value }),
+    });
+
+    const payload = (await res.json()) as { email?: string; error?: string };
+    if (!res.ok || !payload.email) {
+      throw new Error(payload.error || "Invalid username or email.");
+    }
+
+    return payload.email;
+  }
+
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      const resolvedEmail = await resolveFacultyEmail(loginId);
       const { user, role, sessionError } = await signInWithEmail(
-        email,
+        resolvedEmail,
         password,
         "faculty",
       );
@@ -56,6 +72,20 @@ export default function FacultyLoginPage() {
         return;
       }
 
+      const supabase = createClient("faculty");
+      const { data: profileFlag, error: profileFlagError } = await supabase
+        .from("profiles")
+        .select("must_reset_password")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!profileFlagError && profileFlag?.must_reset_password) {
+        router.push(
+          "/reset-password?role=faculty&firstLogin=1&next=/faculty-dashboard",
+        );
+        return;
+      }
+
       // Faculty redirect
       router.push("/faculty-dashboard");
     } catch (err) {
@@ -66,18 +96,22 @@ export default function FacultyLoginPage() {
 
   async function handleForgotPassword(e: React.FormEvent) {
     e.preventDefault();
-    const emailValue = forgotEmail.trim();
-    if (!emailValue) {
-      setForgotMsg({ type: "err", text: "Please enter your email address." });
+    const loginValue = forgotEmail.trim();
+    if (!loginValue) {
+      setForgotMsg({
+        type: "err",
+        text: "Please enter your username or email.",
+      });
       return;
     }
 
     setForgotLoading(true);
     setForgotMsg(null);
     try {
+      const resolvedEmail = await resolveFacultyEmail(loginValue);
       const supabase = createClient("faculty");
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        emailValue,
+        resolvedEmail,
         {
           redirectTo: `${window.location.origin}/reset-password?role=faculty`,
         },
@@ -144,21 +178,21 @@ export default function FacultyLoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSignIn} className="space-y-5">
-            {/* Email Input */}
+            {/* Username / Email Input */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="login-id"
                 className="block text-sm font-semibold text-gray-700 mb-2"
               >
-                Email Address
+                Username or Email
               </label>
               <input
-                id="email"
-                type="email"
+                id="login-id"
+                type="text"
                 required
-                placeholder="faculty@lepearl.education"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter username or email"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 disabled={loading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-transparent outline-none transition-colors disabled:bg-gray-100"
               />
@@ -189,7 +223,7 @@ export default function FacultyLoginPage() {
                 type="button"
                 onClick={() => {
                   setForgotOpen(true);
-                  setForgotEmail(email);
+                  setForgotEmail(loginId);
                   setForgotMsg(null);
                 }}
                 className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
@@ -227,7 +261,7 @@ export default function FacultyLoginPage() {
                   key={f.email}
                   type="button"
                   onClick={() => {
-                    setEmail(f.email);
+                    setLoginId(f.email);
                     setPassword(f.password);
                   }}
                   className="w-full text-left bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg px-3 py-2 transition-colors"
@@ -304,7 +338,8 @@ export default function FacultyLoginPage() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              Enter your registered email to receive a password reset link.
+              Enter your username or registered email to receive a password
+              reset link.
             </p>
 
             {forgotMsg && (
@@ -317,11 +352,11 @@ export default function FacultyLoginPage() {
 
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <input
-                type="email"
+                type="text"
                 required
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="Enter your registered email"
+                placeholder="Enter username or registered email"
                 disabled={forgotLoading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-transparent outline-none disabled:bg-gray-100"
               />
