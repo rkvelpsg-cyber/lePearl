@@ -9,89 +9,130 @@ interface ScheduleEvent {
 
 const scheduleData: ScheduleEvent[] = [
   {
+    day: "Monday",
+    timeSlot: "7:45 - 9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Monday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "MPPSC by Neelu Patel",
+    color: "green",
+  },
+  {
+    day: "Monday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+  {
+    day: "Tuesday",
+    timeSlot: "7:45 - 9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Tuesday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+  {
+    day: "Wednesday",
+    timeSlot: "6:00 - 7:30 PM",
+    course: "LT Grade by Sadhana",
+    color: "orange",
+  },
+  {
+    day: "Wednesday",
+    timeSlot: "7:45 - 9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Wednesday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "MPPSC by Neelu Patel",
+    color: "green",
+  },
+  {
+    day: "Wednesday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+  {
+    day: "Thursday",
+    timeSlot: "7:45 - 9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Thursday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+  {
+    day: "Friday",
+    timeSlot: "7:45 - 9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Friday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "MPPSC by Neelu Patel",
+    color: "green",
+  },
+  {
+    day: "Friday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+  {
+    day: "Saturday",
+    timeSlot: "6:00 - 7:30 PM",
+    course: "LT Grade by Sadhana",
+    color: "orange",
+  },
+  {
+    day: "Saturday",
+    timeSlot: "7:45 - 9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Saturday",
+    timeSlot: "8:30 - 9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+  {
     day: "Sunday",
     timeSlot: "9:00 - 12:00 Noon",
     course: "NLP",
     color: "pink",
   },
-  {
-    day: "Monday",
-    timeSlot: "8:00 - 9:45 PM",
-    course: "UPHESC",
-    color: "blue",
-  },
-  {
-    day: "Monday",
-    timeSlot: "9:00 - 10:00 PM",
-    course: "MPPSC",
-    color: "green",
-  },
-  {
-    day: "Tuesday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET",
-    color: "purple",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "LT Grade",
-    color: "orange",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "8:00 - 9:45 PM",
-    course: "UPHESC",
-    color: "blue",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "9:00 - 10:00 PM",
-    course: "MPPSC",
-    color: "green",
-  },
-  {
-    day: "Thursday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET",
-    color: "purple",
-  },
-  { day: "Friday", timeSlot: "7:45 - 9:00 PM", course: "LT", color: "orange" },
-  {
-    day: "Friday",
-    timeSlot: "8:00 - 9:45 PM",
-    course: "UPHESC",
-    color: "blue",
-  },
-  {
-    day: "Friday",
-    timeSlot: "9:00 - 10:00 PM",
-    course: "MPPSC",
-    color: "green",
-  },
-  {
-    day: "Saturday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET",
-    color: "purple",
-  },
 ];
 
 const days = [
-  "Sunday",
   "Monday",
   "Tuesday",
   "Wednesday",
   "Thursday",
   "Friday",
   "Saturday",
+  "Sunday",
 ];
 
 const timeSlots = [
   "9:00 - 12:00 Noon",
+  "6:00 - 7:30 PM",
   "7:45 - 9:00 PM",
-  "8:00 - 9:45 PM",
-  "9:00 - 10:00 PM",
+  "8:30 - 9:30 PM",
 ];
 
 const colorClasses = {
@@ -242,9 +283,9 @@ export function WeeklyScheduleSection() {
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           {[
             { course: "NET", color: "purple" },
-            { course: "UPHESC", color: "blue" },
+            { course: "UP GDC", color: "blue" },
             { course: "MPPSC", color: "green" },
-            { course: "LT", color: "orange" },
+            { course: "LT Grade", color: "orange" },
             { course: "NLP", color: "pink" },
           ].map((item) => (
             <div key={item.course} className="flex items-center gap-2">

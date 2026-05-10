@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import {
@@ -62,7 +63,10 @@ type SubmissionState =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
+const REGISTRATION_UNLOCK_KEY = "lepearl-registration-submitted";
+
 export default function StudentRegistrationPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionState, setSubmissionState] = useState<SubmissionState>({
@@ -114,9 +118,20 @@ export default function StudentRegistrationPage() {
         type: "success",
         message:
           result.message ??
-          "Registration submitted successfully. Our team will contact you soon.",
+          "Registration submitted successfully. Redirecting you to Exam Resource Library...",
       });
+      window.localStorage.setItem(
+        REGISTRATION_UNLOCK_KEY,
+        JSON.stringify({
+          submittedAt: new Date().toISOString(),
+          email: payload.email,
+          phone: payload.phone,
+        }),
+      );
       setFormData(initialForm);
+      window.setTimeout(() => {
+        router.push("/#pyqs");
+      }, 1200);
     } catch (error) {
       setSubmissionState({
         type: "error",

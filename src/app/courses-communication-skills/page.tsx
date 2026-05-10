@@ -41,14 +41,16 @@ function HeroSection() {
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row">
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="rounded-lg bg-amber-500 px-8 py-4 text-center text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
             >
               Enroll Now
             </a>
             <button className="flex items-center justify-center gap-2 rounded-lg border-2 border-white/30 bg-white/10 px-8 py-4 text-lg font-bold text-white transition hover:bg-white/20">
               <Download className="h-5 w-5" />
-              Download Course Details
+              Download Syllabus
             </button>
           </div>
 
@@ -348,6 +350,3 @@ export default function CommunicationSkillsPage() {
     </div>
   );
 }
-
-
-

@@ -50,6 +50,23 @@ function HeroSection() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const downloadSyllabus = () => {
+    const files = [
+      { href: "/UPHESC_1.pdf", download: "UPHESC_1.pdf" },
+      { href: "/UPHESC_2.pdf", download: "UPHESC_2.pdf" },
+    ];
+    files.forEach(({ href, download }, i) => {
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = href;
+        a.download = download;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, i * 800);
+    });
+  };
+
   return (
     <section className="relative bg-gradient-to-br from-teal-800 via-cyan-700 to-teal-800 text-white overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -77,13 +94,18 @@ function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-yellow-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               Enroll Now
             </a>
-            <button className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white/20 transition-all duration-300">
-              Download Course Details
+            <button
+              onClick={downloadSyllabus}
+              className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white/20 transition-all duration-300"
+            >
+              Download Syllabus
             </button>
           </div>
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
@@ -511,7 +533,9 @@ function EnrollmentSection() {
                 </ul>
 
                 <a
-                  href="/login-portal" target="_blank" rel="noopener noreferrer"
+                  href="/login-portal"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`block w-full py-4 rounded-lg font-bold text-lg text-center transition-all duration-300 ${
                     option.popular
                       ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-teal-900 hover:shadow-xl hover:scale-105"
@@ -536,7 +560,9 @@ function EnrollmentSection() {
               the enrollment process
             </p>
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block bg-yellow-500 text-teal-900 px-10 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
             >
               Fill Registration Form

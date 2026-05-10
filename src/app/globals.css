@@ -156,12 +156,27 @@ body {
   animation-play-state: paused;
 }
 
+@media (max-width: 767px) {
+  .top-banner-marquee-track {
+    animation: bannerMarqueeReverse 8s linear infinite;
+  }
+}
+
 @keyframes bannerMarquee {
   0% {
     transform: translateX(0);
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes bannerMarqueeReverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 

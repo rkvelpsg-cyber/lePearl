@@ -91,6 +91,15 @@ export default function GICCoursePage() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const downloadSyllabus = () => {
+    const a = document.createElement("a");
+    a.href = "/Literature_Notes.pdf";
+    a.download = "Literature_Notes.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <CoursePageHeader onEnroll={scrollToEnrollment} />
@@ -109,11 +118,28 @@ export default function GICCoursePage() {
           <h1 className="mb-4 text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">
             Master the UPPSC GIC with Top Educators
           </h1>
-          <p className="text-lg text-blue-100">
+          <p className="text-lg text-blue-100 mb-8">
             A dedicated program designed to navigate the dual challenges of
             Objective Prelims and Descriptive Mains. Secure your position in
             Government Inter Colleges with our proven pedagogy.
           </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <a
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-amber-600"
+            >
+              Enroll Now
+            </a>
+            <button
+              type="button"
+              onClick={downloadSyllabus}
+              className="rounded-lg border-2 border-white bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+            >
+              Download Syllabus
+            </button>
+          </div>
         </div>
       </section>
 
@@ -238,7 +264,9 @@ export default function GICCoursePage() {
                 ))}
               </ul>
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
                 style={{ color: "#ffffff" }}
               >
@@ -268,7 +296,9 @@ export default function GICCoursePage() {
                 ))}
               </ul>
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-amber-500 py-3.5 text-center font-bold text-white hover:bg-amber-600"
               >
                 Fill Registration Form

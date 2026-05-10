@@ -25,9 +25,9 @@ const mockClasses: ClassData[] = [
   {
     id: "1",
     subject: "MPPSC",
-    faculty: "Dr Prem Shankar Pandey",
-    date: "Today",
-    time: "7:45 PM - 9:00 PM",
+    faculty: "Ms Neelu Patel",
+    date: "June 15, 2026",
+    time: "7:00 PM - 8:30 PM",
     status: "live",
     thumbnail:
       "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=900&h=500&fit=crop",
@@ -35,8 +35,8 @@ const mockClasses: ClassData[] = [
   {
     id: "2",
     subject: "NTA NET Paper 1 & Paper 2 (English)",
-    faculty: "Prof. Sarah Williams",
-    date: "Tomorrow",
+    faculty: "Ms. Sadhana",
+    date: "June 16, 2026",
     time: "6:00 PM - 7:30 PM",
     status: "upcoming",
     thumbnail:
@@ -45,8 +45,8 @@ const mockClasses: ClassData[] = [
   {
     id: "3",
     subject: "LT Grade",
-    faculty: "Dr. Rajesh Kumar",
-    date: "March 9, 2026",
+    faculty: "Ms. Sadhana",
+    date: "June 17, 2026",
     time: "8:00 PM - 9:30 PM",
     status: "upcoming",
     thumbnail:
@@ -55,9 +55,9 @@ const mockClasses: ClassData[] = [
   {
     id: "4",
     subject: "UP GDC",
-    faculty: "Prof. Emily Thompson",
-    date: "March 10, 2026",
-    time: "7:00 PM - 8:30 PM",
+    faculty: "Dr.Prem Shankar Pandey",
+    date: "June 18, 2026",
+    time: "7:15 PM - 8:45 PM",
     status: "upcoming",
     thumbnail:
       "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&h=500&fit=crop",
@@ -65,8 +65,8 @@ const mockClasses: ClassData[] = [
   {
     id: "5",
     subject: "UPHESC",
-    faculty: "Prof. Sarah Williams",
-    date: "March 11, 2026",
+    faculty: "Ms. Sadhana",
+    date: "June 19, 2026",
     time: "6:30 PM - 8:00 PM",
     status: "upcoming",
     thumbnail:
@@ -76,8 +76,8 @@ const mockClasses: ClassData[] = [
     id: "6",
     subject: "GIC",
     faculty: "Dr Prem Shankar Pandey",
-    date: "March 12, 2026",
-    time: "7:15 PM - 8:45 PM",
+    date: "June 20, 2026",
+    time: "7:30 PM - 9:00 PM",
     status: "upcoming",
     thumbnail:
       "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=900&h=500&fit=crop",

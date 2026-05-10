@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   Archive,
   BookOpen,
   ChevronDown,
   ChevronRight,
   Download,
-  Eye,
   FileText,
   GraduationCap,
   Search,
@@ -28,6 +29,7 @@ interface SubItem {
   name: string;
   papersCount: number;
   latestYear: string;
+  paperFiles?: string[];
 }
 
 interface Category {
@@ -41,24 +43,70 @@ const categories: Category[] = [
     id: "assistant-professor",
     name: "Assistant Professor",
     subItems: [
-      { name: "MPPSC", papersCount: 12, latestYear: "2025" },
-      { name: "UPHESC", papersCount: 18, latestYear: "2025" },
-      { name: "UP GDC", papersCount: 15, latestYear: "2024" },
+      {
+        name: "MPPSC",
+        papersCount: 14,
+        latestYear: "2024",
+        paperFiles: ["MPPSC 2017 Paper.pdf", "MPPSC ENGLISH 2024.pdf"],
+      },
+      {
+        name: "UPHESC",
+        papersCount: 23,
+        latestYear: "2025",
+        paperFiles: [
+          "English-master-Adv 51.pdf",
+          "Question Paper English Adv 50.pdf",
+          "Question Paper English Adv. 46.pdf",
+          "Question Paper English Adv. 47.pdf",
+          "uphesc Adv 51_english literature reexam paper.pdf",
+        ],
+      },
+      {
+        name: "UP GDC",
+        papersCount: 16,
+        latestYear: "2024",
+        paperFiles: ["GDC English 2022.pdf"],
+      },
     ],
   },
   {
     id: "nta-net",
     name: "NTA NET",
     subItems: [
-      { name: "Paper I", papersCount: 24, latestYear: "2025" },
-      { name: "Paper II", papersCount: 20, latestYear: "2025" },
+      {
+        name: "Paper I",
+        papersCount: 24,
+        latestYear: "2025",
+        paperFiles: [
+          "NET English 2023 Morning.pdf",
+          "Eng_Jun 23_Morning Shift.pdf",
+          "English Jun 2024.pdf",
+        ],
+      },
+      {
+        name: "Paper II",
+        papersCount: 20,
+        latestYear: "2025",
+        paperFiles: [
+          "NET English 2023 Afternoon.pdf",
+          "A_N Shift_NTA JUNE 2024.pdf",
+        ],
+      },
     ],
   },
   {
     id: "teaching-exams",
     name: "Other Teaching Exams",
     subItems: [
-      { name: "GIC", papersCount: 10, latestYear: "2024" },
+      {
+        name: "GIC",
+        papersCount: 10,
+        latestYear: "2024",
+        paperFiles: [
+          "UPPSC-GIC-English-Official-Paper-Held-On_-2017.pdf",
+          "UPPSC-GIC-English-Official-Paper-Held-On_-2021.pdf",
+        ],
+      },
       { name: "LT Grade", papersCount: 14, latestYear: "2025" },
     ],
   },
@@ -77,13 +125,20 @@ const categories: Category[] = [
 ];
 
 const filterChips = ["NET", "SET", "Assistant Professor", "Teaching Exams"];
+const REGISTRATION_UNLOCK_KEY = "lepearl-registration-submitted";
 
 export function PreviousPapersSection() {
+  const router = useRouter();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(["assistant-professor"]),
   );
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
+  const [downloadMessage, setDownloadMessage] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
 
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -122,6 +177,152 @@ export function PreviousPapersSection() {
       .filter((category): category is Category => !!category)
       .filter((category) => category.subItems.length > 0);
   }, [activeFilter, searchQuery]);
+
+  const buildPaperManifest = (categoryName: string, subItem: SubItem) => {
+    const latestYear = Number.parseInt(subItem.latestYear, 10);
+    const yearBuckets = Array.from(
+      { length: subItem.papersCount },
+      (_, index) => {
+        if (Number.isNaN(latestYear)) {
+          return subItem.latestYear;
+        }
+        return String(latestYear - Math.floor(index / 2));
+      },
+    );
+
+    const lines = [
+      "LePearl Education - Previous Year Question Papers",
+      `Category: ${categoryName}`,
+      `Exam: ${subItem.name}`,
+      `Total Papers: ${subItem.papersCount}`,
+      "",
+      "Included Papers:",
+      ...yearBuckets.map(
+        (year, index) => `${index + 1}. ${subItem.name} PYQ - ${year}`,
+      ),
+    ];
+
+    return lines.join("\n");
+  };
+
+  const handleDownload = async (
+    categoryName: string,
+    subItem: SubItem,
+    selectedFile?: string,
+  ) => {
+    const actionKey = selectedFile
+      ? `${categoryName}-${subItem.name}-${selectedFile}`
+      : `${categoryName}-${subItem.name}`;
+    setDownloadingKey(actionKey);
+    setDownloadMessage(null);
+
+    try {
+      const formRegistrationSubmitted =
+        window.localStorage.getItem(REGISTRATION_UNLOCK_KEY) !== null;
+
+      if (!formRegistrationSubmitted) {
+        const supabase = createClient("student");
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setDownloadMessage({
+            type: "err",
+            text: "Please complete student registration to download question papers.",
+          });
+          router.push("/student-registration");
+          return;
+        }
+
+        const [{ data: profileRow }, { data: studentProfileRow }] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("registration_no")
+              .eq("user_id", user.id)
+              .maybeSingle(),
+            supabase
+              .from("student_profiles")
+              .select("registration_no")
+              .eq("user_id", user.id)
+              .maybeSingle(),
+          ]);
+
+        const registrationNo =
+          profileRow?.registration_no ??
+          studentProfileRow?.registration_no ??
+          null;
+
+        if (!registrationNo) {
+          setDownloadMessage({
+            type: "err",
+            text: "Student registration is required before downloading papers.",
+          });
+          router.push("/student-registration");
+          return;
+        }
+      }
+
+      const filesToDownload = selectedFile
+        ? [selectedFile]
+        : (subItem.paperFiles ?? []);
+
+      if (filesToDownload.length > 0) {
+        filesToDownload.forEach((fileName) => {
+          const anchor = document.createElement("a");
+          anchor.href = encodeURI(`/${fileName}`);
+          anchor.download = fileName;
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+        });
+
+        setDownloadMessage({
+          type: "ok",
+          text: selectedFile
+            ? `Download started for ${selectedFile}.`
+            : `Download started for ${subItem.name} papers.`,
+        });
+        window.setTimeout(() => {
+          setDownloadMessage(null);
+        }, 3000);
+        return;
+      }
+
+      const content = buildPaperManifest(categoryName, subItem);
+      const fileBlob = new Blob([content], {
+        type: "text/plain;charset=utf-8",
+      });
+      const blobUrl = window.URL.createObjectURL(fileBlob);
+      const anchor = document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = `${subItem.name.replace(/\s+/g, "-").toLowerCase()}-previous-year-papers.txt`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(blobUrl);
+
+      setDownloadMessage({
+        type: "ok",
+        text: `Download started for ${subItem.name}.`,
+      });
+      window.setTimeout(() => {
+        setDownloadMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to process paper download:", error);
+      setDownloadMessage({
+        type: "err",
+        text: "Unable to download papers right now. Please try again.",
+      });
+      window.setTimeout(() => {
+        setDownloadMessage(null);
+      }, 5000);
+    } finally {
+      setDownloadingKey(null);
+    }
+  };
 
   return (
     <section id="pyqs" className="min-h-screen bg-[#F5F3FF] py-12">
@@ -228,6 +429,22 @@ export function PreviousPapersSection() {
                 Browse by Category
               </h3>
 
+              {downloadMessage && (
+                <div
+                  className="mb-4 rounded-lg border px-4 py-3 text-sm"
+                  style={{
+                    borderColor:
+                      downloadMessage.type === "ok" ? "#22C55E" : "#EF4444",
+                    backgroundColor:
+                      downloadMessage.type === "ok" ? "#F0FDF4" : "#FEF2F2",
+                    color:
+                      downloadMessage.type === "ok" ? "#166534" : "#991B1B",
+                  }}
+                >
+                  {downloadMessage.text}
+                </div>
+              )}
+
               <div className="space-y-4">
                 {filteredCategories.map((category) => {
                   const isExpanded = expandedCategories.has(category.id);
@@ -310,27 +527,62 @@ export function PreviousPapersSection() {
                                       {subItem.papersCount} Papers Available -
                                       Latest: {subItem.latestYear}
                                     </p>
+                                    {subItem.paperFiles &&
+                                      subItem.paperFiles.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {subItem.paperFiles.map(
+                                            (fileName) => (
+                                              <button
+                                                key={fileName}
+                                                type="button"
+                                                onClick={() =>
+                                                  void handleDownload(
+                                                    category.name,
+                                                    subItem,
+                                                    fileName,
+                                                  )
+                                                }
+                                                disabled={
+                                                  downloadingKey ===
+                                                  `${category.name}-${subItem.name}-${fileName}`
+                                                }
+                                                className="rounded-md border border-[#D8B4FE] bg-white px-2 py-1 text-xs text-[#5B21B6] transition-colors hover:bg-[#F3E8FF]"
+                                              >
+                                                {downloadingKey ===
+                                                `${category.name}-${subItem.name}-${fileName}`
+                                                  ? "Checking..."
+                                                  : fileName}
+                                              </button>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
                                 <div className="flex gap-2 sm:ml-auto">
                                   <button
                                     type="button"
-                                    className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition-colors hover:bg-white"
-                                    style={{
-                                      borderColor: COLORS.purple,
-                                      color: COLORS.purple,
-                                      backgroundColor: "transparent",
-                                    }}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                    <span>View</span>
-                                  </button>
-                                  <button
-                                    type="button"
+                                    onClick={() =>
+                                      void handleDownload(
+                                        category.name,
+                                        subItem,
+                                      )
+                                    }
+                                    disabled={
+                                      downloadingKey ===
+                                      `${category.name}-${subItem.name}`
+                                    }
                                     className="flex items-center gap-2 rounded-lg bg-[#6A0DAD] px-4 py-2 text-sm text-white transition-opacity hover:opacity-90"
                                   >
                                     <Download className="h-4 w-4" />
-                                    <span>Download</span>
+                                    <span>
+                                      {downloadingKey ===
+                                      `${category.name}-${subItem.name}`
+                                        ? "Checking..."
+                                        : subItem.paperFiles?.length
+                                          ? "Download All"
+                                          : "Download"}
+                                    </span>
                                   </button>
                                 </div>
                               </div>

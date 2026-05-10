@@ -132,13 +132,13 @@ export function StudentReviewsSection({ reviews }: StudentReviewsSectionProps) {
 
       <div className="flex justify-center pt-8 sm:pt-10 px-4 sm:px-6">
         <Link
-          href="/achievers"
+          href="https://www.google.com/search?client=ms-android-samsung-ss&sca_esv=292821a49894646c&sxsrf=ANbL-n7WDB7-FKEPporrY_lcySyVlZANUw:1778434135459&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOZpdLRwQkaTy5aiZSKNnEDvyNx4kYI0sSyjhZ-nxWOFTzJrCdGOzNM-lf4l07WrK7TP05d6asbNgt-j7dIYYwOhu23eqSEnT2HrENTfpEZGQsdaUtw%3D%3D&q=LePearl+Education+Reviews&sa=X&ved=2ahUKEwir35m3n6-UAxVdUWwGHR5yBvkQ0bkNegQIJBAF&biw=1912&bih=948&dpr=1"
           target="_blank"
           rel="noopener noreferrer"
           className="group relative inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-sm sm:text-base md:text-lg px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
           style={{ color: "#FFFFFF" }}
         >
-          <span className="text-white">View All Achievers</span>
+          <span className="text-white">View All Reviews</span>
           <svg
             className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform"
             fill="none"

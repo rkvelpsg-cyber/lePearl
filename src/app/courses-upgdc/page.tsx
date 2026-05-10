@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import {
-  Award,
-  BookOpen,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -15,10 +13,7 @@ import {
   Linkedin,
   Mail,
   MessageCircle,
-  PenTool,
   Phone,
-  TrendingUp,
-  Users,
   Video,
   X,
   type LucideIcon,
@@ -27,102 +22,12 @@ import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
 
-type Feature = {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-};
-
-type OverviewPoint = {
-  icon: LucideIcon;
-  text: string;
-};
-
 type Testimonial = {
   name: string;
   exam: string;
   photo: string;
   quote: string;
 };
-
-const features: Feature[] = [
-  {
-    icon: Video,
-    title: "Free Demo Class",
-    description: "Experience our teaching methodology before enrolling.",
-  },
-  {
-    icon: BookOpen,
-    title: "Complete Coverage of Syllabus for Prelims + Mains",
-    description:
-      "Comprehensive coverage of both preliminary and main examination syllabus.",
-  },
-  {
-    icon: Video,
-    title: "Video Lectures",
-    description:
-      "In-depth coverage of the UP GDC pattern, simplified complex topics.",
-  },
-  {
-    icon: FileText,
-    title: "Mock Tests",
-    description: "50+ Mock tests with detailed analysis.",
-  },
-  {
-    icon: BookOpen,
-    title: "Study Material",
-    description:
-      "Concise PDFs, recorded lectures, and previous papers decoded.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Live Doubt Clearing",
-    description: "Weekly sessions for real-time support.",
-  },
-  {
-    icon: Users,
-    title: "Personalized Attention",
-    description: "One-to-one attention for each student as needed.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Holistic Development",
-    description: "Holistic development of the students.",
-  },
-  {
-    icon: PenTool,
-    title: "Important points of every topic are highlighted",
-    description:
-      "Key points and concepts are clearly marked for easy revision.",
-  },
-];
-
-const overviewPoints: OverviewPoint[] = [
-  {
-    icon: Award,
-    text: "Tailored for UP GDC aspirants",
-  },
-  {
-    icon: Video,
-    text: "Blend of live video lectures, PDFs, and live doubt resolution sessions",
-  },
-  {
-    icon: Users,
-    text: "One year of access to the videos and PDFs",
-  },
-  {
-    icon: GraduationCap,
-    text: "Flipped Live Classes with live Question and Answer solving with explanation.",
-  },
-  {
-    icon: TrendingUp,
-    text: "Subject Expertise with teaching experience of more than 15 years.",
-  },
-  {
-    icon: CheckCircle2,
-    text: "No shortcuts, just proven strategies for first-attempt success.",
-  },
-];
 
 const testimonials: Testimonial[] = [
   {
@@ -151,6 +56,352 @@ const testimonials: Testimonial[] = [
   },
 ];
 
+type TabId = "general-studies" | "prelims" | "mains";
+
+const tabItems: { id: TabId; label: string; icon: LucideIcon }[] = [
+  { id: "general-studies", label: "General Studies", icon: GraduationCap },
+  { id: "prelims", label: "Prelims", icon: FileText },
+  { id: "mains", label: "Mains", icon: MessageCircle },
+];
+
+const tabTitles: Record<TabId, string> = {
+  "general-studies": "GENERAL STUDIES",
+  prelims: "PRELIMS",
+  mains: "MAINS",
+};
+
+const tabBg: Record<TabId, string> = {
+  "general-studies": "bg-gradient-to-b from-blue-50 via-blue-50/70 to-white",
+  prelims: "bg-gradient-to-b from-white via-white to-blue-50",
+  mains: "bg-gradient-to-b from-yellow-50 via-yellow-50/70 to-white",
+};
+
+function ProgramTabsPanel() {
+  const [activeTab, setActiveTab] = useState<TabId>("general-studies");
+
+  const contentMap: Record<TabId, React.ReactNode> = {
+    "general-studies": (
+      <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-md sm:p-8">
+        <div className="mb-8 rounded-xl border border-blue-100 bg-blue-50/60 p-5">
+          <h3 className="mb-3 text-xl font-bold text-blue-900">
+            Strategic GS Preparation for UP GDC
+          </h3>
+          <p className="text-gray-700 leading-relaxed">
+            The Uttar Pradesh Government Degree College (GDC) Assistant
+            Professor examination demands a strategic approach to the General
+            Studies (GS) paper. This section is often the "rank-decider,"
+            bridging the gap between a candidate and their final selection.
+          </p>
+        </div>
+
+        <p className="mb-6 text-gray-700 leading-relaxed">
+          Our platform offers a comprehensive ecosystem: Live Interactive
+          Classes, Curated Study Material, and Pattern-Aligned Mock Tests to
+          ensure you stay ahead of the curve.
+        </p>
+
+        <h3 className="mb-4 text-xl font-bold text-blue-900">
+          Comprehensive Syllabus Breakdown
+        </h3>
+        <p className="mb-5 text-gray-700 leading-relaxed">
+          The GS paper covers a diverse range of topics designed to test your
+          awareness and analytical ability. We break it down into high-yield
+          segments:
+        </p>
+
+        <div className="mb-8 overflow-x-auto rounded-xl border border-blue-100">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-blue-900 text-white">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Category</th>
+                <th className="px-4 py-3 font-semibold">Key Focus Areas</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-blue-100 bg-white text-gray-700">
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  Current Affairs
+                </td>
+                <td className="px-4 py-3">
+                  National and International importance; Latest awards, sports,
+                  and summits.
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  History of India
+                </td>
+                <td className="px-4 py-3">
+                  Emphasis on the Indian National Movement and Socio-Religious
+                  reform movements.
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  Geography
+                </td>
+                <td className="px-4 py-3">
+                  Physical, Social, and Economic Geography of India and the
+                  World.
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  Indian Polity
+                </td>
+                <td className="px-4 py-3">
+                  Constitution, Panchayati Raj, Public Policy, and Rights
+                  Issues.
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  Indian Economy
+                </td>
+                <td className="px-4 py-3">
+                  Sustainable Development, Poverty, Inclusion, and Demographics.
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  General Science
+                </td>
+                <td className="px-4 py-3">
+                  Everyday observations and experience (Physics, Chemistry,
+                  Biology).
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  UP Special
+                </td>
+                <td className="px-4 py-3">
+                  History, Culture, Geography, and Administrative setup of Uttar
+                  Pradesh.
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 font-semibold text-blue-900">
+                  Elementary Math
+                </td>
+                <td className="px-4 py-3">
+                  Basic Arithmetic, Algebra, and Geometry (up to Class 10
+                  level).
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 className="mb-4 text-xl font-bold text-blue-900">
+          Why Choose Our GS Program?
+        </h3>
+        <ul className="mb-8 list-disc space-y-2 pl-6 text-gray-700 marker:text-yellow-500">
+          <li>
+            Live &amp; Recorded Sessions: Dynamic classes that simplify complex
+            concepts, available for replay anytime.
+          </li>
+          <li>
+            Precision Mock Tests: Experience the actual exam environment with
+            tests designed strictly on the latest UPPSC patterns.
+          </li>
+          <li>
+            Holistic Mentorship: We don&apos;t just teach subjects; we guide
+            students. Our one-on-one sessions address academic doubts and
+            provide non-academic support, such as time management and exam-day
+            anxiety.
+          </li>
+          <li>
+            Crisp PDF Notes: Eliminate the fluff. Get structured notes that are
+            easy to revise in the final weeks.
+          </li>
+        </ul>
+
+        <h3 className="mb-4 text-xl font-bold text-blue-900">
+          Beyond the Books: Our Holistic Edge
+        </h3>
+        <p className="mb-3 text-gray-700 leading-relaxed">
+          We believe that a candidate&apos;s mental and emotional well-being is
+          as crucial as their subject knowledge. Our mentors provide:
+        </p>
+        <ul className="list-disc space-y-2 pl-6 text-gray-700 marker:text-yellow-500">
+          <li>
+            Personalised Feedback: Detailed analysis of your mock test
+            performance.
+          </li>
+          <li>
+            Strategic Planning: Tailored study schedules that fit your routine.
+          </li>
+          <li>
+            Wellness Support: Guidance on maintaining focus and motivation
+            throughout the preparation journey.
+          </li>
+        </ul>
+      </div>
+    ),
+    prelims: (
+      <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-md sm:p-8">
+        <div className="mb-8 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-900 to-blue-700 p-5 text-white">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-blue-100">
+            UP GDC Assistant Professor Exam
+          </p>
+          <h3 className="mb-2 text-2xl font-bold">
+            Excel in UP GDC Asst Prof Exam, Ignite Your Teaching Career
+          </h3>
+          <p className="text-blue-100">
+            Proven course: Deep dive into syllabus, mocks, and strategies for
+            Government Degree College placements.
+          </p>
+        </div>
+
+        <h3 className="mb-3 text-xl font-bold text-blue-900">
+          Course Overview
+        </h3>
+        <ul className="mb-8 list-disc space-y-2 pl-6 text-gray-700 marker:text-yellow-500">
+          <li>Tailored for UP GDC aspirants</li>
+          <li>
+            Blend of live video lectures, PDFs, and live doubt resolution
+            sessions
+          </li>
+          <li>One year of access to the videos and PDFs</li>
+          <li>
+            Flipped Live Classes with live Question and Answer solving with
+            explanation.
+          </li>
+          <li>
+            Subject Expertise with teaching experience of more than 15 years.
+          </li>
+          <li>
+            No shortcuts, just proven strategies for first-attempt success.
+          </li>
+        </ul>
+
+        <h3 className="mb-3 text-xl font-bold text-blue-900">
+          Features &amp; Benefits
+        </h3>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            "Free Demo Class",
+            "Complete Coverage of Syllabus for Prelims + Mains",
+            "Video Lectures: In-depth coverage of the UP GDC pattern, simplified complex topics.",
+            "Mock Tests: 50+ Mock tests with detailed analysis.",
+            "Study Material: Concise PDFs, recorded lectures, and previous papers decoded.",
+            "Live Doubt Clearing: Weekly sessions for real-time support.",
+            "One-to-one attention for each student as needed.",
+            "Holistic development of the students.",
+            "Important points of every topic are highlighted",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 text-sm leading-relaxed text-gray-700"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    mains: (
+      <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-md sm:p-8">
+        <h3 className="mb-3 text-xl font-bold text-blue-900">
+          Answer Writing for Descriptive Examination
+        </h3>
+        <p className="mb-6 text-lg font-semibold text-blue-800">
+          Master the Art of Descriptive Writing: From Draft to Distinction
+        </p>
+
+        <h4 className="mb-3 text-lg font-bold text-blue-900">
+          The Methodology:
+        </h4>
+        <div className="mb-8 space-y-3">
+          {[
+            "Unlike bulk coaching, each student is assigned a mentor who tracks their progress through every answer script.",
+            "We teach you how to structure answers, from impactful introductions to data-backed body paragraphs and balanced conclusions.",
+            'Learn how to use "High-Yield Keywords" that UPPSC evaluators look for in GDC Mains scripts.',
+            "Every mock answer you write is deeply evaluated with written annotations, pointing out exactly where you can gain an extra half-mark.",
+            "Real-time sessions where we pick a previous year's question and build a model answer together on screen.",
+          ].map((item) => (
+            <div
+              key={item}
+              className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50/60 p-4 text-gray-700"
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  };
+
+  return (
+    <section className="bg-gray-50 py-12 lg:py-16">
+      <div className="w-full max-w-none px-0">
+        <div className="lg:flex lg:items-start">
+          <aside className="hidden lg:block w-56 xl:w-64 flex-shrink-0 sticky top-20 self-start pl-0 pr-3 pt-2 pb-8">
+            <div className="bg-white border border-teal-100 rounded-2xl shadow-lg p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-3 px-2">
+                Programs
+              </p>
+              <nav className="flex flex-col gap-1.5">
+                {tabItems.map(({ id, label, icon: Icon }) => {
+                  const isActive = activeTab === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setActiveTab(id)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm font-medium transition-all duration-200 w-full group ${isActive ? "bg-teal-800 text-white shadow-md" : "text-gray-600 hover:bg-teal-50 hover:text-teal-800"}`}
+                    >
+                      <span
+                        className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${isActive ? "bg-white/20" : "bg-teal-100 group-hover:bg-teal-200"}`}
+                      >
+                        <Icon
+                          className={`w-3.5 h-3.5 ${isActive ? "text-amber-300" : "text-teal-700"}`}
+                        />
+                      </span>
+                      <span className="leading-tight">{label}</span>
+                      {isActive && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
+
+          <div className="lg:hidden overflow-x-auto flex gap-2 px-3 py-3 bg-white border-y border-teal-100 rounded-none mb-0">
+            {tabItems.map(({ id, label, icon: Icon }) => {
+              const isActive = activeTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isActive ? "bg-teal-800 text-white" : "bg-teal-50 text-teal-700"}`}
+                >
+                  <Icon className="w-3 h-3 flex-shrink-0" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            className={`flex-1 min-w-0 ${tabBg[activeTab]} rounded-none border-y border-blue-100 px-4 py-10 sm:px-6 sm:py-12 lg:px-8`}
+          >
+            <div className="mb-8 text-center">
+              <h2 className="text-2xl font-bold text-blue-900 sm:text-3xl lg:text-4xl">
+                {tabTitles[activeTab]}
+              </h2>
+              <div className="mx-auto mt-4 h-1 w-24 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
+            </div>
+            {contentMap[activeTab]}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function UPGDCPage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
@@ -158,6 +409,15 @@ function UPGDCPage() {
     document
       .getElementById("enrollment")
       ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const downloadSyllabus = () => {
+    const a = document.createElement("a");
+    a.href = "/GDC Syllabus-2025.pdf";
+    a.download = "GDC Syllabus-2025.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const nextTestimonial = () => {
@@ -198,16 +458,19 @@ function UPGDCPage() {
 
             <div className="mb-10 flex flex-wrap gap-4">
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Enroll Now
               </a>
               <button
                 type="button"
+                onClick={downloadSyllabus}
                 className="rounded-lg border-2 border-white bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20"
               >
-                Download Course Details
+                Download Syllabus
               </button>
             </div>
 
@@ -229,114 +492,7 @@ function UPGDCPage() {
         </div>
       </section>
 
-      <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-16 text-center text-4xl font-bold text-blue-900">
-            Course Overview
-          </h2>
-          <div className="grid gap-8 md:grid-cols-2">
-            {overviewPoints.map((point, index) => {
-              const Icon = point.icon;
-
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-4 rounded-xl bg-white p-6 shadow-md transition-shadow duration-300 hover:shadow-lg"
-                >
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-900 to-blue-700">
-                    <Icon className="h-6 w-6 text-yellow-400" />
-                  </div>
-                  <p className="pt-2 leading-relaxed text-gray-700">
-                    {point.text}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-16 text-center text-4xl font-bold text-blue-900">
-            Course Features &amp; Benefits
-          </h2>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-
-              return (
-                <div
-                  key={index}
-                  className="rounded-xl border border-gray-200 bg-white p-8 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-500">
-                    <Icon className="h-8 w-8 text-blue-900" />
-                  </div>
-                  <h3 className="mb-3 text-xl font-bold text-blue-900">
-                    {feature.title}
-                  </h3>
-                  <p className="leading-relaxed text-gray-600">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-gradient-to-br from-yellow-50 to-blue-50 py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-blue-900 mb-4">MAINS</h2>
-            <h3 className="text-2xl font-semibold text-blue-800 mb-6">
-              Master the Art of Descriptive Writing: From Draft to Distinction
-            </h3>
-            <div className="w-24 h-1 bg-gradient-to-r from-yellow-500 to-yellow-600 mx-auto"></div>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <h4 className="text-xl font-bold text-blue-900 mb-8 text-center">
-              The Methodology:
-            </h4>
-            <div className="grid gap-6 md:grid-cols-1">
-              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
-                <p className="text-gray-700 leading-relaxed">
-                  Unlike bulk coaching, each student is assigned a mentor who
-                  tracks their progress through every answer script.
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
-                <p className="text-gray-700 leading-relaxed">
-                  We teach you how to structure answers, from impactful
-                  introductions to data-backed body paragraphs and balanced
-                  conclusions.
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
-                <p className="text-gray-700 leading-relaxed">
-                  Learn how to use "High-Yield Keywords" that UPPSC evaluators
-                  look for in GDC Mains scripts.
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
-                <p className="text-gray-700 leading-relaxed">
-                  Every mock answer you write is deeply evaluated with written
-                  annotations, pointing out exactly where you can gain an extra
-                  half-mark.
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-md border-l-4 border-yellow-500">
-                <p className="text-gray-700 leading-relaxed">
-                  Real-time sessions where we pick a previous year's question
-                  and build a model answer together on screen.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ProgramTabsPanel />
 
       <section className="bg-blue-900 py-20 text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -444,7 +600,9 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
                 style={{ color: "#ffffff" }}
               >
@@ -477,7 +635,9 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Fill Registration Form
@@ -509,7 +669,9 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
                 style={{ color: "#ffffff" }}
               >
@@ -541,7 +703,9 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal" target="_blank" rel="noopener noreferrer"
+                href="/login-portal"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Fill Registration Form

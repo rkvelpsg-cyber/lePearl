@@ -54,6 +54,23 @@ function Hero() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const downloadSyllabus = () => {
+    const files = [
+      { href: "/english syllabus MPPSC.pdf", download: "MPPSC_Syllabus1.pdf" },
+      { href: "/MPPSC_Syllabus2.pdf", download: "MPPSC_Syllabus2.pdf" },
+    ];
+    files.forEach(({ href, download }, i) => {
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = href;
+        a.download = download;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, i * 800);
+    });
+  };
+
   return (
     <section className="relative bg-gradient-to-r from-blue-900 to-blue-800 text-white overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -77,14 +94,19 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Enroll Now
             </a>
-            <button className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2">
+            <button
+              onClick={downloadSyllabus}
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2"
+            >
               <Download className="w-5 h-5" />
-              Download Course Details
+              Download Syllabus
             </button>
           </div>
 
@@ -400,7 +422,9 @@ function Pricing() {
             </div>
 
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full bg-blue-900 hover:bg-blue-800 text-white hover:text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
               style={{ color: "white" }}
             >
@@ -440,7 +464,9 @@ function Pricing() {
             </div>
 
             <a
-              href="/login-portal" target="_blank" rel="noopener noreferrer"
+              href="/login-portal"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
             >
               Fill Registration Form
