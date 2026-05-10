@@ -230,27 +230,24 @@ export default async function Home() {
             width: "100%",
             background: "#12606a",
             color: "#fff",
-            textAlign: "center",
             fontWeight: 700,
             fontSize: "clamp(12px, 2.5vw, 18px)",
-            padding: "clamp(6px, 2vw, 12px) clamp(12px, 3vw, 20px)",
+            padding: "clamp(6px, 1.5vw, 10px) clamp(10px, 2vw, 16px)",
             letterSpacing: 0.2,
-            overflowX: "hidden",
-            overflowY: "hidden",
-            scrollbarWidth: "none",
             display: "flex",
-            flexWrap: "wrap",
+            flexWrap: "nowrap",
             alignItems: "center",
-            justifyContent: "center",
-            gap: "clamp(8px, 2vw, 16px)",
+            gap: "clamp(8px, 1.5vw, 14px)",
+            overflow: "hidden",
           }}
         >
-          {/* Social Media Icons - Right Side */}
+          {/* Social Media Icons - Fixed Left */}
           <div
             style={{
               display: "flex",
-              gap: "clamp(8px, 1.5vw, 12px)",
+              gap: "clamp(6px, 1.2vw, 10px)",
               flexShrink: 0,
+              alignItems: "center",
             }}
           >
             <a
@@ -260,7 +257,7 @@ export default async function Home() {
               className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
-                padding: "clamp(6px, 1vw, 10px)",
+                padding: "clamp(5px, 0.8vw, 9px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -269,8 +266,8 @@ export default async function Home() {
             >
               <Youtube
                 style={{
-                  width: "clamp(14px, 2.5vw, 20px)",
-                  height: "clamp(14px, 2.5vw, 20px)",
+                  width: "clamp(13px, 2vw, 18px)",
+                  height: "clamp(13px, 2vw, 18px)",
                 }}
               />
             </a>
@@ -281,7 +278,7 @@ export default async function Home() {
               className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
-                padding: "clamp(6px, 1vw, 10px)",
+                padding: "clamp(5px, 0.8vw, 9px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -290,8 +287,8 @@ export default async function Home() {
             >
               <Facebook
                 style={{
-                  width: "clamp(14px, 2.5vw, 20px)",
-                  height: "clamp(14px, 2.5vw, 20px)",
+                  width: "clamp(13px, 2vw, 18px)",
+                  height: "clamp(13px, 2vw, 18px)",
                 }}
               />
             </a>
@@ -302,7 +299,7 @@ export default async function Home() {
               className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
-                padding: "clamp(6px, 1vw, 10px)",
+                padding: "clamp(5px, 0.8vw, 9px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -311,8 +308,8 @@ export default async function Home() {
             >
               <Instagram
                 style={{
-                  width: "clamp(14px, 2.5vw, 20px)",
-                  height: "clamp(14px, 2.5vw, 20px)",
+                  width: "clamp(13px, 2vw, 18px)",
+                  height: "clamp(13px, 2vw, 18px)",
                 }}
               />
             </a>
@@ -323,7 +320,7 @@ export default async function Home() {
               className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
-                padding: "clamp(6px, 1vw, 10px)",
+                padding: "clamp(5px, 0.8vw, 9px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -332,8 +329,8 @@ export default async function Home() {
             >
               <Twitter
                 style={{
-                  width: "clamp(14px, 2.5vw, 20px)",
-                  height: "clamp(14px, 2.5vw, 20px)",
+                  width: "clamp(13px, 2vw, 18px)",
+                  height: "clamp(13px, 2vw, 18px)",
                 }}
               />
             </a>
@@ -344,7 +341,7 @@ export default async function Home() {
               className="rounded-full transition-all duration-300 hover:scale-110"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
-                padding: "clamp(6px, 1vw, 10px)",
+                padding: "clamp(5px, 0.8vw, 9px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -353,143 +350,107 @@ export default async function Home() {
             >
               <Linkedin
                 style={{
-                  width: "clamp(14px, 2.5vw, 20px)",
-                  height: "clamp(14px, 2.5vw, 20px)",
+                  width: "clamp(13px, 2vw, 18px)",
+                  height: "clamp(13px, 2vw, 18px)",
                 }}
               />
             </a>
           </div>
 
-          {/* Admission Text - Center/Left */}
-          <div style={{ flex: "1 1 auto", minWidth: 0, maxWidth: "100%" }}>
-            Admission opened for:{" "}
-            <span
-              className="top-admission-highlight"
-              style={{
-                display: "inline-flex",
-                gap: "clamp(4px, 1vw, 8px)",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Link
-                href="/courses-net-paper1"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderRight: "1px solid #fff",
-                  paddingRight: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                NTA NET Jun 2026 Paper 1
-              </Link>
-              <Link
-                href="/courses-net-paper2"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderRight: "1px solid #fff",
-                  paddingRight: "clamp(4px, 1vw, 8px)",
-                  paddingLeft: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                NTA NET Jun 2026 Paper 2 (English)
-              </Link>
-              <Link
-                href="/courses-mppsc"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderRight: "1px solid #fff",
-                  paddingRight: "clamp(4px, 1vw, 8px)",
-                  paddingLeft: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                MPPSC
-              </Link>
-              <Link
-                href="/courses-uphesc"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderRight: "1px solid #fff",
-                  paddingRight: "clamp(4px, 1vw, 8px)",
-                  paddingLeft: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                UPHESC
-              </Link>
-              <Link
-                href="/courses-upgdc"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderRight: "1px solid #fff",
-                  paddingRight: "clamp(4px, 1vw, 8px)",
-                  paddingLeft: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                UP GDC
-              </Link>
-              <Link
-                href="/courses-ltgrade"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  borderRight: "1px solid #fff",
-                  paddingRight: "clamp(4px, 1vw, 8px)",
-                  paddingLeft: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                LT GRADE
-              </Link>
-              <Link
-                href="/courses-gic"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#fff",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  paddingLeft: "clamp(4px, 1vw, 8px)",
-                  fontSize: "clamp(11px, 2.5vw, 16px)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                GIC
-              </Link>
-            </span>
+          {/* Scrolling Marquee - Admission Links */}
+          <div className="top-banner-marquee-wrapper">
+            <div className="top-banner-marquee-track">
+              {[
+                {
+                  href: "/courses-net-paper1",
+                  label: "NTA NET Jun 2026 Paper 1",
+                },
+                {
+                  href: "/courses-net-paper2",
+                  label: "NTA NET Jun 2026 Paper 2 (English)",
+                },
+                { href: "/courses-mppsc", label: "MPPSC" },
+                { href: "/courses-uphesc", label: "UPHESC" },
+                { href: "/courses-upgdc", label: "UP GDC" },
+                { href: "/courses-ltgrade", label: "LT GRADE" },
+                { href: "/courses-gic", label: "GIC" },
+                {
+                  href: "/interview-preparation/assistant-professor-1",
+                  label: "Assistant Professor Interview",
+                },
+                {
+                  href: "/interview-preparation/du-interview",
+                  label: "DU Interview",
+                },
+                {
+                  href: "/interview-preparation/phd-interview",
+                  label: "Ph.D Interview",
+                },
+                { href: "/research-assistance", label: "Research Assistance" },
+              ]
+                .concat([
+                  {
+                    href: "/courses-net-paper1",
+                    label: "NTA NET Jun 2026 Paper 1",
+                  },
+                  {
+                    href: "/courses-net-paper2",
+                    label: "NTA NET Jun 2026 Paper 2 (English)",
+                  },
+                  { href: "/courses-mppsc", label: "MPPSC" },
+                  { href: "/courses-uphesc", label: "UPHESC" },
+                  { href: "/courses-upgdc", label: "UP GDC" },
+                  { href: "/courses-ltgrade", label: "LT GRADE" },
+                  { href: "/courses-gic", label: "GIC" },
+                  {
+                    href: "/interview-preparation/assistant-professor-1",
+                    label: "Assistant Professor Interview",
+                  },
+                  {
+                    href: "/interview-preparation/du-interview",
+                    label: "DU Interview",
+                  },
+                  {
+                    href: "/interview-preparation/phd-interview",
+                    label: "Ph.D Interview",
+                  },
+                  {
+                    href: "/research-assistance",
+                    label: "Research Assistance",
+                  },
+                ])
+                .map((item, i) => (
+                  <span
+                    key={i}
+                    style={{ display: "inline-flex", alignItems: "center" }}
+                  >
+                    <Link
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "#fff",
+                        textDecoration: "none",
+                        fontSize: "clamp(11px, 2vw, 15px)",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        padding: "0 clamp(10px, 2vw, 20px)",
+                        letterSpacing: "0.3px",
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                    <span
+                      style={{
+                        color: "rgba(255,255,255,0.45)",
+                        fontSize: "clamp(10px, 1.5vw, 14px)",
+                      }}
+                    >
+                      •
+                    </span>
+                  </span>
+                ))}
+            </div>
           </div>
         </div>
 

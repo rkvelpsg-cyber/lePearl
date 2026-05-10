@@ -132,6 +132,39 @@ body {
   }
 }
 
+/* Top banner marquee */
+.top-banner-marquee-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  height: 1.8em;
+  display: flex;
+  align-items: center;
+}
+
+.top-banner-marquee-track {
+  display: flex;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  width: max-content;
+  animation: bannerMarquee 38s linear infinite;
+  will-change: transform;
+}
+
+.top-banner-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes bannerMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;

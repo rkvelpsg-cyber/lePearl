@@ -1068,7 +1068,7 @@ export function CoursesBooksSection() {
               marginBottom: "1rem",
             }}
           >
-            Our Programs
+            Programs & Achievement
           </p>
           <h2
             style={{
@@ -1079,7 +1079,7 @@ export function CoursesBooksSection() {
               marginBottom: "1rem",
             }}
           >
-            Comprehensive Exam Coaching
+            Holistic Success
           </h2>
           <p
             style={{
