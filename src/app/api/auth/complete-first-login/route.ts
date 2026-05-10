@@ -21,7 +21,8 @@ async function getUserFromToken(token: string) {
     return null;
   }
 
-  const { data: profile, error: profileError } = await anon
+  const service = createServerClient();
+  const { data: profile, error: profileError } = await service
     .from("profiles")
     .select("role")
     .eq("user_id", userData.user.id)
@@ -50,13 +51,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const service = createServerClient();
     const normalizedRole = tokenUser.role.toLowerCase();
 
     if (normalizedRole !== "student" && normalizedRole !== "faculty") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const service = createServerClient();
     const tableName =
       normalizedRole === "faculty" ? "profiles" : "student_profiles";
 

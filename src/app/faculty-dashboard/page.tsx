@@ -838,6 +838,23 @@ export default function FacultyDashboardPage() {
     isUpcomingSession(s.session_date, s.start_time),
   );
 
+  const dashboardStudents = [...batchStudents]
+    .filter(
+      (student, index, self) =>
+        self.findIndex(
+          (item) => item.student_user_id === student.student_user_id,
+        ) === index,
+    )
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+  const dashboardUpcomingTests = mcqTests
+    .filter((t) => {
+      if (!t.scheduled_at) return false;
+      const when = new Date(t.scheduled_at).getTime();
+      return !Number.isNaN(when) && when >= Date.now();
+    })
+    .sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
+
   const upcomingLiveClassesCount = dashboardUpcomingClasses.filter(
     (s) => s.is_live,
   ).length;
@@ -1996,8 +2013,7 @@ export default function FacultyDashboardPage() {
                   {profile?.full_name ?? "Faculty"}
                 </p>
                 <p className="text-xs text-emerald-700 font-semibold mt-1">
-                  {batches.length} batch{batches.length !== 1 ? "es" : ""} |{" "}
-                  {totalStudents} students
+                  {totalStudents} student{totalStudents !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -2071,17 +2087,11 @@ export default function FacultyDashboardPage() {
                     Welcome, {profile?.full_name ?? "Faculty"}!
                   </h1>
                   <p className="text-emerald-200 text-sm">
-                    Manage your batches, students, and content from here
+                    Manage your students, classes, and tests from here
                   </p>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                  <StatCard
-                    label="My Batches"
-                    value={batches.length}
-                    icon={BookOpen}
-                    iconBg="bg-emerald-100"
-                    iconColor="text-emerald-600"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatCard
                     label="Total Students"
                     value={totalStudents}
@@ -2097,111 +2107,176 @@ export default function FacultyDashboardPage() {
                     iconColor="text-purple-600"
                   />
                   <StatCard
-                    label="Live Classes"
-                    value={upcomingLiveClassesCount}
-                    icon={Zap}
-                    iconBg="bg-red-100"
-                    iconColor="text-red-600"
-                  />
-                  <StatCard
-                    label="Active Tasks"
-                    value={activeTasksCount}
-                    icon={ClipboardList}
+                    label="Upcoming Tests (MCQ + Descriptive)"
+                    value={dashboardUpcomingTests.length}
+                    icon={FileQuestion}
                     iconBg="bg-amber-100"
                     iconColor="text-amber-600"
                   />
                 </div>
 
-                {/* batches */}
-                <div className="bg-white rounded-2xl shadow-sm p-5">
-                  <h2 className="text-lg font-bold text-gray-900 mb-4">
-                    My Batches
-                  </h2>
-                  {batches.length === 0 ? (
-                    <p className="text-sm text-gray-500">
-                      No batches assigned.
-                    </p>
-                  ) : (
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      {batches.map((b) => {
-                        const course = unwrapOne(
-                          b.courses as
-                            | { id: number; title: string }
-                            | { id: number; title: string }[]
-                            | null,
-                        );
-                        const cnt =
-                          (b.enrollments as unknown as { count: number }[])?.[0]
-                            ?.count ?? 0;
-                        return (
-                          <div
-                            key={b.id}
-                            className="bg-emerald-50 rounded-xl p-4 border border-emerald-100"
-                          >
-                            <p className="font-bold text-emerald-800">
-                              {b.batch_name}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                              {course?.title ?? "-"}
-                            </p>
-                            <div className="flex items-center justify-between mt-3">
-                              <span className="text-xs text-gray-500">
-                                <Users className="w-3.5 h-3.5 inline mr-1" />
-                                {cnt} enrolled
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {fmtDate(b.start_date)} - {fmtDate(b.end_date)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                <div className="grid gap-4 lg:grid-cols-3 items-start">
+                  <div className="bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm p-5 border border-blue-100 min-h-[520px] flex flex-col">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div>
+                        <h2 className="text-base font-bold text-blue-900">
+                          Enrolled Students
+                        </h2>
+                        <p className="text-xs text-blue-700 mt-1">
+                          All students currently enrolled under your batches.
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold text-blue-700 bg-white px-2.5 py-1 rounded-full border border-blue-100 shadow-sm">
+                        {dashboardStudents.length}
+                      </span>
                     </div>
-                  )}
-                </div>
-
-                {/* upcoming classes */}
-                {dashboardUpcomingClasses.length > 0 && (
-                  <div className="bg-white rounded-2xl shadow-sm p-5">
-                    <h2 className="text-base font-bold text-gray-900 mb-3">
-                      Upcoming Classes
-                    </h2>
-                    <div className="space-y-2">
-                      {dashboardUpcomingClasses.map((s) => {
-                        const batch = unwrapOne(s.batches);
-                        return (
+                    <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                      {dashboardStudents.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          No enrolled students found.
+                        </p>
+                      ) : (
+                        dashboardStudents.map((student) => (
                           <div
-                            key={s.id}
-                            className={`flex items-center justify-between p-3 rounded-xl border ${s.is_live ? "border-red-200 bg-red-50" : "border-gray-100 bg-gray-50"}`}
+                            key={student.student_user_id}
+                            className="rounded-xl border border-blue-100 bg-white/80 px-3 py-3 shadow-[0_1px_0_rgba(37,99,235,0.05)]"
                           >
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-gray-900">
-                                  {s.title}
-                                </p>
-                                {s.is_live && (
-                                  <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">
-                                    LIVE
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                {fmtDate(s.session_date)} |{" "}
-                                {fmtTime(s.start_time)} | {batch?.batch_name}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => toggleLive(s)}
-                              className={`text-xs px-3 py-1.5 rounded-xl font-semibold ${s.is_live ? "bg-gray-200 text-gray-700" : "bg-red-600 text-white"}`}
-                            >
-                              {s.is_live ? "End Live" : "Go Live"}
-                            </button>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {student.full_name}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {student.batch_name} • {student.course_title}
+                            </p>
                           </div>
-                        );
-                      })}
+                        ))
+                      )}
                     </div>
                   </div>
-                )}
+
+                  <div className="bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm p-5 border border-purple-100 min-h-[520px] flex flex-col">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div>
+                        <h2 className="text-base font-bold text-purple-900">
+                          Upcoming Live Classes
+                        </h2>
+                        <p className="text-xs text-purple-700 mt-1">
+                          Live or scheduled classes coming up next.
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold text-purple-700 bg-white px-2.5 py-1 rounded-full border border-purple-100 shadow-sm">
+                        {dashboardUpcomingClasses.length}
+                      </span>
+                    </div>
+                    <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                      {dashboardUpcomingClasses.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          No upcoming classes found.
+                        </p>
+                      ) : (
+                        dashboardUpcomingClasses.map((s) => {
+                          const batch = unwrapOne(s.batches);
+                          return (
+                            <div
+                              key={s.id}
+                              className={`rounded-xl border p-3 shadow-[0_1px_0_rgba(124,58,237,0.05)] ${s.is_live ? "border-red-200 bg-red-50" : "border-purple-100 bg-white/80"}`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="text-sm font-semibold text-gray-900 truncate">
+                                      {s.title}
+                                    </p>
+                                    {s.is_live ? (
+                                      <span className="text-[11px] bg-red-600 text-white px-2 py-0.5 rounded-full">
+                                        LIVE
+                                      </span>
+                                    ) : (
+                                      <span className="text-[11px] bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
+                                        Scheduled
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {fmtDate(s.session_date)} |{" "}
+                                    {fmtTime(s.start_time)}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {batch?.batch_name ?? "-"}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => toggleLive(s)}
+                                  className={`shrink-0 text-[11px] px-2.5 py-1 rounded-xl font-semibold ${s.is_live ? "bg-gray-200 text-gray-700" : "bg-red-600 text-white"}`}
+                                >
+                                  {s.is_live ? "End Live" : "Go Live"}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-b from-amber-50 to-white rounded-2xl shadow-sm p-5 border border-amber-100 min-h-[520px] flex flex-col">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div>
+                        <h2 className="text-base font-bold text-amber-900">
+                          Upcoming Tests
+                        </h2>
+                        <p className="text-xs text-amber-700 mt-1">
+                          MCQ and descriptive tests scheduled ahead.
+                        </p>
+                      </div>
+                      <span className="text-xs font-semibold text-amber-700 bg-white px-2.5 py-1 rounded-full border border-amber-100 shadow-sm">
+                        {dashboardUpcomingTests.length}
+                      </span>
+                    </div>
+                    <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+                      {dashboardUpcomingTests.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          No upcoming tests found.
+                        </p>
+                      ) : (
+                        dashboardUpcomingTests.map((test) => {
+                          const batch = unwrapOne(test.batches);
+                          const course = unwrapOne(test.courses);
+                          return (
+                            <div
+                              key={test.id}
+                              className="rounded-xl border border-amber-100 bg-white/80 px-3 py-3 shadow-[0_1px_0_rgba(180,83,9,0.05)]"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="text-sm font-semibold text-gray-900 truncate">
+                                      {test.title}
+                                    </p>
+                                    <span
+                                      className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${test.test_type === "descriptive" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}
+                                    >
+                                      {test.test_type === "descriptive"
+                                        ? "Descriptive"
+                                        : "MCQ"}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    {fmtDate(test.scheduled_at)} |{" "}
+                                    {test.time_limit_minutes} min |{" "}
+                                    {test.total_marks} marks
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {batch?.batch_name ?? course?.title ?? "-"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 

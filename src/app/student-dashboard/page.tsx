@@ -2311,6 +2311,9 @@ export default function StudentDashboardPage() {
                                 Description
                               </th>
                               <th className="pb-2 font-semibold">Mode</th>
+                              <th className="pb-2 font-semibold">
+                                Transaction ID
+                              </th>
                               <th className="pb-2 font-semibold">Status</th>
                             </tr>
                           </thead>
@@ -2328,6 +2331,9 @@ export default function StudentDashboardPage() {
                                 </td>
                                 <td className="py-3 text-gray-500">
                                   {p.payment_mode ?? "-"}
+                                </td>
+                                <td className="py-3 text-gray-500 font-mono text-xs">
+                                  {p.razorpay_payment_id ?? "-"}
                                 </td>
                                 <td className="py-3">
                                   <span

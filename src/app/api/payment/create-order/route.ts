@@ -72,7 +72,16 @@ export async function POST(req: NextRequest) {
       key_id: keyId,
     });
   } catch (err: unknown) {
+    console.error("[payment/create-order] Error:", err);
     const msg = err instanceof Error ? err.message : "Order creation failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    // Surface Razorpay API error detail if available
+    const detail =
+      typeof err === "object" && err !== null && "error" in err
+        ? (err as { error?: { description?: string } }).error?.description
+        : undefined;
+    return NextResponse.json(
+      { error: detail ? `${msg}: ${detail}` : msg },
+      { status: 500 },
+    );
   }
 }

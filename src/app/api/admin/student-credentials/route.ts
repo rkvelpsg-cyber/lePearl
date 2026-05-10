@@ -448,12 +448,12 @@ export async function POST(req: NextRequest) {
     if (registrationId) {
       await service
         .from("student_registrations")
-        .update({ status: "credentials_created" })
+        .update({ status: "completed" })
         .eq("id", registrationId);
     } else {
       await service
         .from("student_registrations")
-        .update({ status: "credentials_created" })
+        .update({ status: "completed" })
         .eq("email", studentEmail)
         .eq("course", courseName)
         .eq("full_name", studentName)

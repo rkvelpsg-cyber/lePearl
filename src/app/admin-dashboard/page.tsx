@@ -88,6 +88,8 @@ type PaymentRow = {
   amount: number;
   status: string;
   payment_date: string | null;
+  payment_mode: string | null;
+  razorpay_payment_id: string | null;
   description: string | null;
   student_name: string;
   course_title: string;
@@ -378,6 +380,9 @@ export default function AdminDashboardPage() {
     text: string;
   } | null>(null);
   const [facultyManageLoading, setFacultyManageLoading] = useState(false);
+  const [facultyManageAction, setFacultyManageAction] = useState<
+    "save" | "remove" | null
+  >(null);
 
   const [facultyAttendanceRows, setFacultyAttendanceRows] = useState<
     FacultyAttendanceRow[]
@@ -485,7 +490,7 @@ export default function AdminDashboardPage() {
         supabase
           .from("payments")
           .select(
-            "id, student_user_id, amount, status, payment_date, description, student_profiles(profiles(full_name)), courses(title)",
+            "id, student_user_id, amount, status, payment_date, payment_mode, razorpay_payment_id, description, student_profiles(profiles(full_name)), courses(title)",
           )
           .order("payment_date", { ascending: false })
           .limit(100),
@@ -847,6 +852,8 @@ export default function AdminDashboardPage() {
             amount: number;
             status: string;
             payment_date: string | null;
+            payment_mode: string | null;
+            razorpay_payment_id: string | null;
             description: string | null;
             student_profiles: { profiles: { full_name: string } | null } | null;
             courses: { title: string } | null;
@@ -866,6 +873,8 @@ export default function AdminDashboardPage() {
             amount: p.amount,
             status: p.status,
             payment_date: p.payment_date,
+            payment_mode: p.payment_mode,
+            razorpay_payment_id: p.razorpay_payment_id,
             description: p.description,
             student_name:
               unwrapOne(p.student_profiles)?.profiles?.full_name ?? "Student",
@@ -1186,6 +1195,7 @@ export default function AdminDashboardPage() {
   }
 
   async function saveFacultyProfileAndCredentials() {
+    setFacultyManageAction("save");
     setFacultyManageLoading(true);
     setFacultyManageMsg(null);
     try {
@@ -1252,6 +1262,7 @@ export default function AdminDashboardPage() {
       });
     } finally {
       setFacultyManageLoading(false);
+      setFacultyManageAction(null);
     }
   }
 
@@ -1275,6 +1286,7 @@ export default function AdminDashboardPage() {
     );
     if (!ok) return;
 
+    setFacultyManageAction("remove");
     setFacultyManageLoading(true);
     setFacultyManageMsg(null);
 
@@ -1326,6 +1338,7 @@ export default function AdminDashboardPage() {
       });
     } finally {
       setFacultyManageLoading(false);
+      setFacultyManageAction(null);
     }
   }
 
@@ -1746,14 +1759,28 @@ export default function AdminDashboardPage() {
   async function updateRegistrationStatus(id: string, newStatus: string) {
     setStatusUpdatingId(id);
     try {
+      const normalizedStatus = newStatus.toLowerCase();
+      if (
+        normalizedStatus !== "pending" &&
+        normalizedStatus !== "completed" &&
+        normalizedStatus !== "cancelled"
+      ) {
+        throw new Error("Invalid status selected.");
+      }
+
       const supabase = createClient();
-      await supabase
+      const { error } = await supabase
         .from("student_registrations")
-        .update({ status: newStatus })
+        .update({ status: normalizedStatus })
         .eq("id", id);
+
+      if (error) throw error;
+
       setRegistrations((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
+        prev.map((r) => (r.id === id ? { ...r, status: normalizedStatus } : r)),
       );
+    } catch (error) {
+      console.error("Failed to update registration status:", error);
     } finally {
       setStatusUpdatingId(null);
     }
@@ -1993,7 +2020,7 @@ export default function AdminDashboardPage() {
                 active={activeSection}
                 onClick={setActiveSection}
                 icon={FileQuestion}
-                label={`MCQ Tests (${totalTests})`}
+                label={`Tests (${totalTests})`}
               />
               <SideBtn
                 s="registrations"
@@ -2062,7 +2089,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <StatCard
-                    label="MCQ Tests"
+                    label="Tests"
                     value={totalTests}
                     icon={FileQuestion}
                     iconBg="bg-violet-100"
@@ -2750,7 +2777,8 @@ export default function AdminDashboardPage() {
                       }
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 disabled:opacity-60"
                     >
-                      {facultyManageLoading ? (
+                      {facultyManageLoading &&
+                      facultyManageAction === "save" ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Plus className="w-4 h-4" />
@@ -2769,7 +2797,8 @@ export default function AdminDashboardPage() {
                         }
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
                       >
-                        {facultyManageLoading ? (
+                        {facultyManageLoading &&
+                        facultyManageAction === "remove" ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Trash2 className="w-4 h-4" />
@@ -2869,6 +2898,7 @@ export default function AdminDashboardPage() {
                                         );
                                       }
 
+                                      setFacultyManageAction("remove");
                                       setFacultyManageLoading(true);
                                       setFacultyManageMsg(null);
 
@@ -2916,6 +2946,7 @@ export default function AdminDashboardPage() {
                                       });
                                     } finally {
                                       setFacultyManageLoading(false);
+                                      setFacultyManageAction(null);
                                     }
                                   }}
                                   className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 text-xs font-semibold"
@@ -3809,6 +3840,12 @@ export default function AdminDashboardPage() {
                             Date
                           </th>
                           <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Method
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Transaction ID
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                             Status
                           </th>
                           <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
@@ -3830,6 +3867,12 @@ export default function AdminDashboardPage() {
                             </td>
                             <td className="px-4 py-3 text-gray-500">
                               {fmtDate(p.payment_date)}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {p.payment_mode ?? "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 font-mono text-xs">
+                              {p.razorpay_payment_id ?? "-"}
                             </td>
                             <td className="px-4 py-3">
                               <Badge
@@ -3959,9 +4002,7 @@ export default function AdminDashboardPage() {
             {activeSection === "mcq" && (
               <>
                 <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-6 text-white">
-                  <h1 className="text-xl font-bold mb-1">
-                    MCQ Tests & Results
-                  </h1>
+                  <h1 className="text-xl font-bold mb-1">Tests & Results</h1>
                   <p className="text-violet-100 text-sm">
                     {mcqTests.length} tests created across all faculty
                   </p>
@@ -4228,7 +4269,9 @@ export default function AdminDashboardPage() {
                                           value={
                                             r.status === "credentials_created"
                                               ? "completed"
-                                              : r.status || "pending"
+                                              : r.status === "canceled"
+                                                ? "cancelled"
+                                                : r.status || "pending"
                                           }
                                           onChange={(e) =>
                                             updateRegistrationStatus(
@@ -4240,11 +4283,17 @@ export default function AdminDashboardPage() {
                                             r.status === "completed" ||
                                             r.status === "credentials_created"
                                               ? "bg-green-100 text-green-700 focus:ring-green-400"
-                                              : "bg-amber-100 text-amber-700 focus:ring-amber-400"
+                                              : r.status === "cancelled" ||
+                                                  r.status === "canceled"
+                                                ? "bg-red-100 text-red-700 focus:ring-red-400"
+                                                : "bg-amber-100 text-amber-700 focus:ring-amber-400"
                                           }`}
                                         >
                                           <option value="pending">
                                             Pending
+                                          </option>
+                                          <option value="cancelled">
+                                            Cancelled
                                           </option>
                                           <option value="completed">
                                             Completed

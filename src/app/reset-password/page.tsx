@@ -76,13 +76,30 @@ function ResetPasswordInner() {
         } = await supabase.auth.getSession();
 
         if (session?.access_token) {
-          await fetch("/api/auth/complete-first-login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
+          const completeFirstLoginRes = await fetch(
+            "/api/auth/complete-first-login",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
             },
-          });
+          );
+
+          if (!completeFirstLoginRes.ok) {
+            const payload = (await completeFirstLoginRes.json()) as {
+              error?: string;
+            };
+            throw new Error(
+              payload.error ||
+                "Password was updated, but first-login setup could not be completed.",
+            );
+          }
+        } else {
+          throw new Error(
+            "Password was updated, but your session expired before first-login setup completed.",
+          );
         }
       }
 
