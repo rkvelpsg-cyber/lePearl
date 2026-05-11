@@ -91,11 +91,13 @@ type McqTest = {
   id: number;
   title: string;
   total_marks: number;
+  negative_marking: number | null;
   time_limit_minutes: number;
   exam_type: string;
   test_type?: string; // 'mcq' or 'descriptive'
   created_by: string;
   scheduled_at: string | null;
+  available_until: string | null;
   is_published: boolean;
   courses: { title: string } | null;
   batches: { batch_name: string } | null;
@@ -126,6 +128,22 @@ type McqQuestion = {
   option_b: string;
   option_c: string;
   option_d: string;
+  correct_option?: "A" | "B" | "C" | "D" | null;
+};
+type McqResultSummary = {
+  score: number;
+  rank: number | null;
+  participantCount: number;
+};
+type McqReviewQuestion = McqQuestion & {
+  correct_option: "A" | "B" | "C" | "D" | null;
+  chosen_option: "A" | "B" | "C" | "D" | null;
+  is_correct: boolean;
+};
+type McqReviewState = {
+  test: McqTest;
+  summary: McqResultSummary | null;
+  questions: McqReviewQuestion[];
 };
 type StudentTask = {
   id: number;
@@ -177,6 +195,15 @@ function fmtTime(t: string | null) {
   const [h, m] = t.split(":");
   const hr = parseInt(h);
   return `${hr % 12 || 12}:${m} ${hr >= 12 ? "PM" : "AM"}`;
+}
+function optionText(question: McqQuestion, option: "A" | "B" | "C" | "D") {
+  return question[
+    `option_${option.toLowerCase()}` as
+      | "option_a"
+      | "option_b"
+      | "option_c"
+      | "option_d"
+  ];
 }
 function localDateKey(d: Date = new Date()) {
   return localDateKeyIST(d);
@@ -325,6 +352,10 @@ export default function StudentDashboardPage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [testSubmitting, setTestSubmitting] = useState(false);
   const [testSubmitted, setTestSubmitted] = useState(false);
+  const [mcqResultsByTest, setMcqResultsByTest] = useState<
+    Record<number, McqResultSummary>
+  >({});
+  const [reviewTest, setReviewTest] = useState<McqReviewState | null>(null);
 
   /* fee/payment state */
   const [payAmount, setPayAmount] = useState("");
@@ -501,6 +532,7 @@ export default function StudentDashboardPage() {
       if (tasksRes.data)
         setFacultyTasks(tasksRes.data as unknown as StudentTask[]);
 
+      let attemptedTestIds: number[] = [];
       if (mockRes.data && mockRes.data.length > 0) {
         const scored = mockRes.data.reduce(
           (s, r) => s + Number(r.scored_marks),
@@ -516,18 +548,85 @@ export default function StudentDashboardPage() {
           return s + Number(mt?.total_marks ?? 0);
         }, 0);
         setMockStat({ scored, total });
-        setTestAttempted(new Set(mockRes.data.map((a) => a.mock_test_id)));
+        attemptedTestIds = mockRes.data.map((a) => a.mock_test_id);
+        setTestAttempted(new Set(attemptedTestIds));
+      } else {
+        setMockStat({ scored: 0, total: 0 });
+        setTestAttempted(new Set());
+        setMcqResultsByTest({});
+      }
+
+      if (attemptedTestIds.length > 0) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+
+        if (accessToken) {
+          const response = await fetch("/api/student/test-results", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ testIds: attemptedTestIds }),
+          });
+
+          if (response.ok) {
+            const data = (await response.json()) as {
+              summaries?: Record<string, McqResultSummary>;
+            };
+
+            const summaryMap: Record<number, McqResultSummary> = {};
+            Object.entries(data.summaries ?? {}).forEach(([key, value]) => {
+              summaryMap[Number(key)] = value;
+            });
+            setMcqResultsByTest(summaryMap);
+          }
+        }
       }
 
       /* Published tests visible to this student via RLS */
       if (ids.length > 0) {
-        const { data: testsData, error: testsError } = await supabase
+        let testsData: unknown[] | null = null;
+        let testsError: { code?: string; message?: string } | null = null;
+
+        const fullTestsRes = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, courses(title), batches(batch_name)",
+            "id, title, total_marks, negative_marking, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, available_until, is_published, courses(title), batches(batch_name)",
           )
           .eq("is_published", true)
           .order("scheduled_at", { ascending: true });
+
+        testsData = fullTestsRes.data as unknown[] | null;
+        testsError = fullTestsRes.error as {
+          code?: string;
+          message?: string;
+        } | null;
+
+        if (testsError?.code === "42703") {
+          const fallbackTestsRes = await supabase
+            .from("mock_tests")
+            .select(
+              "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, courses(title), batches(batch_name)",
+            )
+            .eq("is_published", true)
+            .order("scheduled_at", { ascending: true });
+
+          testsData = (
+            (fallbackTestsRes.data ?? []) as Record<string, unknown>[]
+          ).map((test) => ({
+            ...test,
+            negative_marking: 0,
+            available_until: null,
+          }));
+          testsError = fallbackTestsRes.error as {
+            code?: string;
+            message?: string;
+          } | null;
+        }
+
         console.log(
           "[student-tests] batch ids:",
           ids,
@@ -539,13 +638,31 @@ export default function StudentDashboardPage() {
         if (testsData) {
           const now = new Date();
           const allPublishedTests = testsData as unknown as McqTest[];
+
+          // Filter tests based on availability window
           const availableNow = allPublishedTests.filter((test) => {
-            if (!test.scheduled_at) return true;
-            return new Date(test.scheduled_at) <= now;
+            if (!test.scheduled_at) return true; // Tests without scheduled_at are always available
+            const scheduledTime = new Date(test.scheduled_at);
+            if (scheduledTime > now) return false; // Not started yet
+
+            // Check 48-hour availability window
+            if (test.available_until) {
+              const availableUntilTime = new Date(test.available_until);
+              return now <= availableUntilTime; // Still within 48-hour window
+            }
+            // If no available_until set, assume test is available (backward compatibility)
+            return true;
           });
+
           const upcoming = allPublishedTests.filter(
             (test) => !!test.scheduled_at && new Date(test.scheduled_at) > now,
           );
+
+          // Expired tests (past their 48-hour window)
+          const expired = allPublishedTests.filter((test) => {
+            if (!test.available_until) return false;
+            return new Date(test.available_until) < now;
+          });
 
           const mcqTests = availableNow.filter(
             (t) => t.test_type !== "descriptive",
@@ -658,7 +775,9 @@ export default function StudentDashboardPage() {
       if (!user) return;
       const { data: qWithAnswers } = await supabase
         .from("mcq_questions")
-        .select("id, correct_option, marks")
+        .select(
+          "id, question_text, question_order, marks, option_a, option_b, option_c, option_d, correct_option",
+        )
         .eq("mock_test_id", activeTest.test.id);
       const answers = activeTest.questions.map((q) => {
         const chosen = testAnswers[q.id] ?? null;
@@ -681,7 +800,9 @@ export default function StudentDashboardPage() {
             ? s +
               (activeTest.questions.find((q) => q.id === a.question_id)
                 ?.marks ?? 1)
-            : s,
+            : a.chosen_option !== null
+              ? s - Number(activeTest.test.negative_marking ?? 0)
+              : s,
         0,
       );
       await supabase.from("mock_test_attempts").upsert(
@@ -692,6 +813,61 @@ export default function StudentDashboardPage() {
         },
         { onConflict: "mock_test_id,student_user_id" },
       );
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      let summary: McqResultSummary = {
+        score: scored,
+        rank: null,
+        participantCount: 1,
+      };
+
+      if (accessToken) {
+        const response = await fetch("/api/student/test-results", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ testIds: [activeTest.test.id] }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            summaries?: Record<string, McqResultSummary>;
+          };
+          summary = data.summaries?.[String(activeTest.test.id)] ?? summary;
+        }
+      }
+
+      setMcqResultsByTest((prev) => ({
+        ...prev,
+        [activeTest.test.id]: summary,
+      }));
+      setReviewTest({
+        test: activeTest.test,
+        summary,
+        questions: activeTest.questions.map((question) => {
+          const detail = qWithAnswers?.find((item) => item.id === question.id);
+          const chosenOption =
+            (testAnswers[question.id] as "A" | "B" | "C" | "D" | undefined) ??
+            null;
+          const correctOption =
+            (detail?.correct_option as "A" | "B" | "C" | "D" | undefined) ??
+            null;
+          return {
+            ...question,
+            correct_option: correctOption,
+            chosen_option: chosenOption,
+            is_correct:
+              chosenOption !== null && correctOption !== null
+                ? chosenOption === correctOption
+                : false,
+          };
+        }),
+      });
       setTestSubmitted(true);
       setTestAttempted((prev) => new Set([...prev, activeTest.test.id]));
     } finally {
@@ -719,12 +895,24 @@ export default function StudentDashboardPage() {
   }, [activeTest, testSubmitted, handleSubmitTest]);
 
   async function startTest(test: McqTest) {
-    if (test.scheduled_at && new Date(test.scheduled_at) > new Date()) {
+    const now = new Date();
+
+    // Check if test hasn't started yet
+    if (test.scheduled_at && new Date(test.scheduled_at) > now) {
       alert(
         `This test will be available from ${fmtDateTime(test.scheduled_at)}`,
       );
       return;
     }
+
+    // Check if test is past the 48-hour availability window
+    if (test.available_until && new Date(test.available_until) < now) {
+      alert(
+        `This test is no longer available. It was available for 48 hours from ${fmtDateTime(test.scheduled_at)}.`,
+      );
+      return;
+    }
+
     const supabase = createClient();
     const { data: qData } = await supabase
       .from("mcq_questions")
@@ -743,6 +931,58 @@ export default function StudentDashboardPage() {
     setTimerSecs(test.time_limit_minutes * 60);
   }
 
+  async function openMcqReview(test: McqTest) {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const [questionsRes, answersRes] = await Promise.all([
+      supabase
+        .from("mcq_questions")
+        .select(
+          "id, question_text, question_order, marks, option_a, option_b, option_c, option_d, correct_option",
+        )
+        .eq("mock_test_id", test.id)
+        .order("question_order", { ascending: true }),
+      supabase
+        .from("mcq_student_answers")
+        .select("question_id, chosen_option, is_correct")
+        .eq("mock_test_id", test.id)
+        .eq("student_user_id", user.id),
+    ]);
+
+    if (questionsRes.error || !questionsRes.data) {
+      alert("Failed to load test review.");
+      return;
+    }
+
+    const answerMap = new Map(
+      (answersRes.data ?? []).map((row) => [
+        row.question_id,
+        {
+          chosen_option: row.chosen_option as "A" | "B" | "C" | "D" | null,
+          is_correct: !!row.is_correct,
+        },
+      ]),
+    );
+
+    setReviewTest({
+      test,
+      summary: mcqResultsByTest[test.id] ?? null,
+      questions: (questionsRes.data as McqQuestion[]).map((question) => {
+        const answer = answerMap.get(question.id);
+        return {
+          ...question,
+          correct_option: question.correct_option ?? null,
+          chosen_option: answer?.chosen_option ?? null,
+          is_correct: answer?.is_correct ?? false,
+        };
+      }),
+    });
+  }
+
   async function loadDescriptiveQuestions(test: McqTest) {
     const supabase = createClient();
     const now = new Date();
@@ -755,6 +995,18 @@ export default function StudentDashboardPage() {
         setUploadMsg({
           type: "err",
           text: `This test will be available from ${fmtDateTime(test.scheduled_at)}`,
+        });
+        return;
+      }
+    }
+
+    // Check if test is past the 48-hour availability window
+    if (test.available_until) {
+      const availableUntilTime = new Date(test.available_until);
+      if (now > availableUntilTime) {
+        setUploadMsg({
+          type: "err",
+          text: `This test is no longer available. It was available for 48 hours from ${fmtDateTime(test.scheduled_at)}.`,
         });
         return;
       }
@@ -1071,6 +1323,112 @@ export default function StudentDashboardPage() {
   /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• RENDER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
   return (
     <>
+      {reviewTest && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl my-4 shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
+              <div>
+                <h2 className="font-bold text-gray-900 text-lg">
+                  {reviewTest.test.title}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Review answers and correct options
+                </p>
+              </div>
+              <button
+                onClick={() => setReviewTest(null)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-semibold text-sm"
+              >
+                <X className="w-4 h-4" /> Close
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                    Score
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-green-800">
+                    {reviewTest.summary
+                      ? `${reviewTest.summary.score}/${reviewTest.test.total_marks}`
+                      : `-/${reviewTest.test.total_marks}`}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    Rank
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-blue-800">
+                    {reviewTest.summary?.rank != null
+                      ? `${reviewTest.summary.rank}`
+                      : "-"}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    Participants
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-amber-800">
+                    {reviewTest.summary?.participantCount ?? 0}
+                  </p>
+                </div>
+              </div>
+
+              {reviewTest.questions.map((q, idx) => (
+                <div
+                  key={q.id}
+                  className="bg-gray-50 rounded-xl p-5 border border-gray-200"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <p className="font-semibold text-gray-900">
+                      <span className="text-purple-600 mr-2">Q{idx + 1}.</span>
+                      {q.question_text}
+                    </p>
+                    <span
+                      className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${q.is_correct ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                    >
+                      {q.is_correct
+                        ? "Correct"
+                        : q.chosen_option
+                          ? "Incorrect"
+                          : "Not Answered"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {(["A", "B", "C", "D"] as const).map((opt) => {
+                      const isCorrect = q.correct_option === opt;
+                      const isChosen = q.chosen_option === opt;
+                      return (
+                        <div
+                          key={opt}
+                          className={`rounded-xl border p-3 text-sm ${isCorrect ? "border-green-300 bg-green-50" : isChosen ? "border-red-300 bg-red-50" : "border-gray-200 bg-white"}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <span className="text-gray-800">
+                              <strong className="text-purple-600">
+                                {opt}.
+                              </strong>{" "}
+                              {optionText(q, opt)}
+                            </span>
+                            <span className="shrink-0 text-[11px] font-semibold text-gray-600">
+                              {isCorrect
+                                ? "Correct Answer"
+                                : isChosen
+                                  ? "Your Answer"
+                                  : ""}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* â”€â”€ MCQ TEST OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTest && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4">
@@ -1126,15 +1484,54 @@ export default function StudentDashboardPage() {
                   Test submitted successfully
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Your responses have been submitted. Marks will be reviewed and
-                  managed by faculty or admin.
+                  Your MCQ result is available now. You can review your marks,
+                  rank, and the correct answers.
                 </p>
-                <button
-                  onClick={() => setActiveTest(null)}
-                  className="px-8 py-3 bg-purple-600 text-white rounded-xl font-semibold"
-                >
-                  Close
-                </button>
+                <div className="grid gap-3 sm:grid-cols-3 max-w-2xl mx-auto mb-6 text-left">
+                  <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                      Score
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-green-800">
+                      {mcqResultsByTest[activeTest.test.id]
+                        ? `${mcqResultsByTest[activeTest.test.id].score}/${activeTest.test.total_marks}`
+                        : `-/${activeTest.test.total_marks}`}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                      Rank
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-blue-800">
+                      {mcqResultsByTest[activeTest.test.id]?.rank != null
+                        ? mcqResultsByTest[activeTest.test.id].rank
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                      Participants
+                    </p>
+                    <p className="mt-2 text-2xl font-bold text-amber-800">
+                      {mcqResultsByTest[activeTest.test.id]?.participantCount ??
+                        0}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => void openMcqReview(activeTest.test)}
+                    className="px-8 py-3 bg-white border border-purple-200 text-purple-700 rounded-xl font-semibold"
+                  >
+                    Review Answers
+                  </button>
+                  <button
+                    onClick={() => setActiveTest(null)}
+                    className="px-8 py-3 bg-purple-600 text-white rounded-xl font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-6 space-y-6">
@@ -1715,6 +2112,7 @@ export default function StudentDashboardPage() {
                         <div className="grid gap-4 sm:grid-cols-2">
                           {availableTests.map((t) => {
                             const attempted = testAttempted.has(t.id);
+                            const result = mcqResultsByTest[t.id];
                             return (
                               <div
                                 key={t.id}
@@ -1757,9 +2155,40 @@ export default function StudentDashboardPage() {
                                   )}
                                 </div>
                                 {attempted ? (
-                                  <div className="w-full py-2 text-center text-sm font-semibold text-green-600 bg-green-50 rounded-xl flex items-center justify-center gap-2">
-                                    <CheckCircle className="w-4 h-4" />
-                                    <span>Completed</span>
+                                  <div className="space-y-3">
+                                    <div className="w-full py-2 text-center text-sm font-semibold text-green-600 bg-green-50 rounded-xl flex items-center justify-center gap-2">
+                                      <CheckCircle className="w-4 h-4" />
+                                      <span>Completed</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div className="rounded-xl bg-gray-50 border border-gray-200 p-3">
+                                        <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                                          Marks
+                                        </p>
+                                        <p className="text-base font-bold text-gray-900 mt-1">
+                                          {result
+                                            ? `${result.score}/${t.total_marks}`
+                                            : `-/${t.total_marks}`}
+                                        </p>
+                                      </div>
+                                      <div className="rounded-xl bg-gray-50 border border-gray-200 p-3">
+                                        <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                                          Rank
+                                        </p>
+                                        <p className="text-base font-bold text-gray-900 mt-1">
+                                          {result?.rank != null
+                                            ? `${result.rank}/${result.participantCount}`
+                                            : "-"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => void openMcqReview(t)}
+                                      className="w-full py-2 bg-white border border-purple-200 text-purple-700 text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                    >
+                                      <ChevronRight className="w-4 h-4" />{" "}
+                                      Review Result
+                                    </button>
                                   </div>
                                 ) : (
                                   <button

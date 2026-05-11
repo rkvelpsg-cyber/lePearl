@@ -105,6 +105,7 @@ type McqTestFaculty = {
   id: number;
   title: string;
   total_marks: number;
+  negative_marking: number | null;
   time_limit_minutes: number;
   exam_type: string;
   test_type?: string; // 'mcq' or 'descriptive'
@@ -365,6 +366,7 @@ export default function FacultyDashboardPage() {
   const [mcqTests, setMcqTests] = useState<McqTestFaculty[]>([]);
   const [selectedTest, setSelectedTest] = useState<McqTestFaculty | null>(null);
   const [editingTestId, setEditingTestId] = useState<number | null>(null);
+  const [editingTestWasPublished, setEditingTestWasPublished] = useState(false);
   const [testQuestions, setTestQuestions] = useState<McqQuestion[]>([]);
   const [showMcqForm, setShowMcqForm] = useState(false);
   const [showQForm, setShowQForm] = useState(false);
@@ -374,12 +376,14 @@ export default function FacultyDashboardPage() {
   } | null>(null);
   const [mcqSubmitting, setMcqSubmitting] = useState(false);
   const [mcqForm, setMcqForm] = useState({
+    courseId: "",
     batchId: "",
     title: "",
     testType: "mcq", // 'mcq' or 'descriptive'
     timeLimitMinutes: "60",
     examType: "mock",
     scheduledAt: "",
+    negativeMarking: "0",
     totalMarks: "100",
   });
   const [qForm, setQForm] = useState({
@@ -472,6 +476,106 @@ export default function FacultyDashboardPage() {
     text: string;
   } | null>(null);
 
+  /* course selection */
+  const [selectedCourseId, setSelectedCourseId] = useState<number | "all">(
+    "all",
+  );
+
+  /* derived state: courses and filtered batches */
+  const courses = Array.from(
+    new Map(
+      batches
+        .map((b) => {
+          const courseObj = unwrapOne(
+            b.courses as
+              | { id: number; title: string }
+              | { id: number; title: string }[]
+              | null,
+          );
+          return courseObj ? [courseObj.id, courseObj] : null;
+        })
+        .filter(Boolean) as [number, { id: number; title: string }][],
+    ).values(),
+  );
+
+  useEffect(() => {
+    if (courses.length === 0) {
+      setSelectedCourseId("all");
+      return;
+    }
+    if (
+      selectedCourseId !== "all" &&
+      !courses.some((c) => c.id === selectedCourseId)
+    ) {
+      setSelectedCourseId("all");
+    }
+  }, [courses, selectedCourseId]);
+
+  const filteredBatches =
+    selectedCourseId === "all"
+      ? batches
+      : batches.filter((b) => {
+          const courseObj = unwrapOne(
+            b.courses as
+              | { id: number; title: string }
+              | { id: number; title: string }[]
+              | null,
+          );
+          return courseObj?.id === selectedCourseId;
+        });
+
+  const filteredBatchIds = new Set(filteredBatches.map((b) => b.id));
+  const filteredBatchStudents = batchStudents.filter((s) =>
+    filteredBatchIds.has(s.batch_id),
+  );
+  const filteredStudentIds = new Set(
+    filteredBatchStudents.map((s) => s.student_user_id),
+  );
+  const filteredMcqTests = mcqTests.filter(
+    (t) => t.batch_id != null && filteredBatchIds.has(t.batch_id),
+  );
+  const filteredUpcomingClasses = upcomingClasses.filter((s) =>
+    filteredBatchIds.has(s.batch_id),
+  );
+  const filteredAttendanceSessions = attendanceSessions.filter((s) =>
+    filteredBatchIds.has(s.batch_id),
+  );
+  const filteredTasks = tasks.filter((t) => {
+    if (t.batch_id != null) return filteredBatchIds.has(t.batch_id);
+    if (t.student_user_id) return filteredStudentIds.has(t.student_user_id);
+    return false;
+  });
+  const selectedCourseStudentCount = new Set(
+    filteredBatchStudents.map((s) => s.student_user_id),
+  ).size;
+
+  const mcqFormCourseOptions = Array.from(
+    new Map(
+      filteredBatches
+        .map((b) =>
+          unwrapOne(
+            b.courses as
+              | { id: number; title: string }
+              | { id: number; title: string }[]
+              | null,
+          ),
+        )
+        .filter((c): c is { id: number; title: string } => Boolean(c))
+        .map((c) => [c.id, c] as const),
+    ).values(),
+  );
+
+  const mcqFormBatchOptions = filteredBatches.filter((b) => {
+    if (!mcqForm.courseId) return true;
+    const courseObj = unwrapOne(
+      b.courses as
+        | { id: number; title: string }
+        | { id: number; title: string }[]
+        | null,
+    );
+    return courseObj?.id === parseInt(mcqForm.courseId, 10);
+  });
+
   /* â”€â”€ load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
     try {
@@ -517,7 +621,7 @@ export default function FacultyDashboardPage() {
         supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            "id, title, total_marks, negative_marking, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
           )
           .eq("created_by", uid)
           .order("created_at", { ascending: false }),
@@ -552,7 +656,25 @@ export default function FacultyDashboardPage() {
           taskRows.filter((t) => t.status !== "completed").length,
         );
       }
-      if (mcqRes.data) setMcqTests(mcqRes.data as unknown as McqTestFaculty[]);
+      if (mcqRes.data) {
+        setMcqTests(mcqRes.data as unknown as McqTestFaculty[]);
+      } else if (mcqRes.error && mcqRes.error.code === "42703") {
+        const { data: legacyMcqData, error: legacyMcqError } = await supabase
+          .from("mock_tests")
+          .select(
+            "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+          )
+          .eq("created_by", uid)
+          .order("created_at", { ascending: false });
+
+        if (legacyMcqError) throw legacyMcqError;
+        setMcqTests(
+          ((legacyMcqData ?? []) as Record<string, unknown>[]).map((test) => ({
+            ...test,
+            negative_marking: 0,
+          })) as unknown as McqTestFaculty[],
+        );
+      }
       if (lecturesRes.data)
         setLectures(lecturesRes.data as unknown as RecordedLectureFaculty[]);
 
@@ -598,22 +720,77 @@ export default function FacultyDashboardPage() {
         );
 
       if (batchesRes.data) {
-        const batchData = batchesRes.data as unknown as Batch[];
+        let batchData = batchesRes.data as unknown as Batch[];
+
+        const linkedBatchIds = new Set<number>(batchData.map((b) => b.id));
+        (tasksRes.data as unknown as FacultyTask[] | null)?.forEach((task) => {
+          if (task.batch_id != null) linkedBatchIds.add(task.batch_id);
+        });
+        (mcqRes.data as unknown as McqTestFaculty[] | null)?.forEach((test) => {
+          if (test.batch_id != null) linkedBatchIds.add(test.batch_id);
+        });
+        (
+          lecturesRes.data as unknown as RecordedLectureFaculty[] | null
+        )?.forEach((lecture) => {
+          if (lecture.batch_id != null) linkedBatchIds.add(lecture.batch_id);
+        });
+
+        const missingBatchIds = Array.from(linkedBatchIds).filter(
+          (batchId) => !batchData.some((batch) => batch.id === batchId),
+        );
+
+        if (missingBatchIds.length > 0) {
+          const { data: extraBatches, error: extraBatchesError } =
+            await supabase
+              .from("batches")
+              .select(
+                "id, batch_name, start_date, end_date, courses(id, title), enrollments(count)",
+              )
+              .in("id", missingBatchIds);
+
+          if (extraBatchesError) throw extraBatchesError;
+
+          batchData = [
+            ...batchData,
+            ...((extraBatches ?? []) as unknown as Batch[]),
+          ];
+        }
+
         setBatches(batchData);
 
         if (batchData.length > 0) {
           const batchIds = batchData.map((b) => b.id);
 
           // Pull tests tied to faculty batches (not only tests created by this faculty)
-          const { data: batchTestsData } = await supabase
+          const batchTestsRes = await supabase
             .from("mock_tests")
             .select(
-              "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+              "id, title, total_marks, negative_marking, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
             )
             .in("batch_id", batchIds)
             .order("created_at", { ascending: false });
-          if (batchTestsData) {
-            setMcqTests(batchTestsData as unknown as McqTestFaculty[]);
+          if (batchTestsRes.data) {
+            setMcqTests(batchTestsRes.data as unknown as McqTestFaculty[]);
+          } else if (
+            batchTestsRes.error &&
+            batchTestsRes.error.code === "42703"
+          ) {
+            const legacyBatchTestsRes = await supabase
+              .from("mock_tests")
+              .select(
+                "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+              )
+              .in("batch_id", batchIds)
+              .order("created_at", { ascending: false });
+            if (legacyBatchTestsRes.error) throw legacyBatchTestsRes.error;
+            setMcqTests(
+              (
+                (legacyBatchTestsRes.data ?? []) as Record<string, unknown>[]
+              ).map((test) => ({
+                ...test,
+                negative_marking: 0,
+              })) as unknown as McqTestFaculty[],
+            );
           }
 
           const { data: enrollData } = await supabase
@@ -838,7 +1015,7 @@ export default function FacultyDashboardPage() {
     isUpcomingSession(s.session_date, s.start_time),
   );
 
-  const dashboardStudents = [...batchStudents]
+  const dashboardStudents = [...filteredBatchStudents]
     .filter(
       (student, index, self) =>
         self.findIndex(
@@ -847,7 +1024,7 @@ export default function FacultyDashboardPage() {
     )
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
-  const dashboardUpcomingTests = mcqTests
+  const dashboardUpcomingTests = filteredMcqTests
     .filter((t) => {
       if (!t.scheduled_at) return false;
       const when = new Date(t.scheduled_at).getTime();
@@ -855,7 +1032,11 @@ export default function FacultyDashboardPage() {
     })
     .sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
 
-  const upcomingLiveClassesCount = dashboardUpcomingClasses.filter(
+  const dashboardCourseUpcomingClasses = filteredUpcomingClasses.filter((s) =>
+    isUpcomingSession(s.session_date, s.start_time),
+  );
+
+  const upcomingLiveClassesCount = dashboardCourseUpcomingClasses.filter(
     (s) => s.is_live,
   ).length;
 
@@ -982,7 +1163,7 @@ export default function FacultyDashboardPage() {
   }
 
   async function exportAttendanceConsolidated() {
-    if (attendanceSessions.length === 0) {
+    if (filteredAttendanceSessions.length === 0) {
       setAttendanceMsg({
         type: "err",
         text: "No completed sessions available for consolidated export.",
@@ -994,8 +1175,10 @@ export default function FacultyDashboardPage() {
     setAttendanceExporting(true);
     setAttendanceMsg(null);
     try {
-      const sessionMap = new Map(attendanceSessions.map((s) => [s.id, s]));
-      const sessionIds = attendanceSessions.map((s) => s.id);
+      const sessionMap = new Map(
+        filteredAttendanceSessions.map((s) => [s.id, s]),
+      );
+      const sessionIds = filteredAttendanceSessions.map((s) => s.id);
       const { data, error } = await supabase
         .from("student_attendance")
         .select("session_id, student_user_id, status")
@@ -1062,28 +1245,42 @@ export default function FacultyDashboardPage() {
   /* â”€â”€ MCQ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   function resetMcqForm() {
     setEditingTestId(null);
+    setEditingTestWasPublished(false);
     setShowMcqForm(false);
     setMcqForm({
+      courseId: selectedCourseId === "all" ? "" : String(selectedCourseId),
       batchId: "",
       title: "",
       testType: "mcq",
       timeLimitMinutes: "60",
       examType: "mock",
       scheduledAt: "",
+      negativeMarking: "0",
       totalMarks: "100",
     });
   }
 
   function startEditingTest(test: McqTestFaculty) {
+    const selectedBatch = batches.find((b) => b.id === test.batch_id);
+    const selectedBatchCourse = unwrapOne(
+      selectedBatch?.courses as
+        | { id: number; title: string }
+        | { id: number; title: string }[]
+        | null,
+    );
+
     setEditingTestId(test.id);
+    setEditingTestWasPublished(test.is_published);
     setShowMcqForm(true);
     setMcqForm({
+      courseId: selectedBatchCourse ? String(selectedBatchCourse.id) : "",
       batchId: test.batch_id ? String(test.batch_id) : "",
       title: test.title,
       testType: test.test_type ?? "mcq",
       timeLimitMinutes: String(test.time_limit_minutes ?? 60),
       examType: test.exam_type ?? "mock",
       scheduledAt: toLocalDateTimeInput(test.scheduled_at),
+      negativeMarking: String(test.negative_marking ?? 0),
       totalMarks: String(test.total_marks),
     });
   }
@@ -1100,6 +1297,7 @@ export default function FacultyDashboardPage() {
       const batchId = parseInt(mcqForm.batchId, 10);
       const totalMarks = parseInt(mcqForm.totalMarks, 10);
       const timeLimitMinutes = parseInt(mcqForm.timeLimitMinutes, 10);
+      const negativeMarking = parseFloat(mcqForm.negativeMarking || "0");
 
       if (!Number.isFinite(batchId)) {
         setMcqMsg({ type: "err", text: "Please select a batch." });
@@ -1111,6 +1309,13 @@ export default function FacultyDashboardPage() {
       }
       if (!Number.isFinite(timeLimitMinutes) || timeLimitMinutes <= 0) {
         setMcqMsg({ type: "err", text: "Time limit must be greater than 0." });
+        return;
+      }
+      if (!Number.isFinite(negativeMarking) || negativeMarking < 0) {
+        setMcqMsg({
+          type: "err",
+          text: "Negative marking must be 0 or a positive number.",
+        });
         return;
       }
 
@@ -1135,11 +1340,10 @@ export default function FacultyDashboardPage() {
         time_limit_minutes: timeLimitMinutes,
         exam_type: mcqForm.examType,
         test_type: mcqForm.testType,
+        negative_marking: mcqForm.testType === "mcq" ? negativeMarking : 0,
         batch_id: batchId,
         course_id: courseId,
-        is_published: editingTestId
-          ? (selectedTest?.is_published ?? false)
-          : false,
+        is_published: editingTestId ? editingTestWasPublished : false,
         scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
         created_by: user.id,
       };
@@ -1148,6 +1352,7 @@ export default function FacultyDashboardPage() {
         // Base schema compatibility payload (without newer columns)
         title: mcqForm.title.trim(),
         total_marks: totalMarks,
+        negative_marking: mcqForm.testType === "mcq" ? negativeMarking : 0,
         course_id: courseId,
         scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
         created_by: user.id,
@@ -2013,10 +2218,39 @@ export default function FacultyDashboardPage() {
                   {profile?.full_name ?? "Faculty"}
                 </p>
                 <p className="text-xs text-emerald-700 font-semibold mt-1">
-                  {totalStudents} student{totalStudents !== 1 ? "s" : ""}
+                  {selectedCourseStudentCount} student
+                  {selectedCourseStudentCount !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
+
+            <div className="mt-4 pb-4 border-b border-emerald-100">
+              <label className="text-xs font-semibold text-emerald-700 mb-1 block">
+                Course
+              </label>
+              <select
+                className="w-full border border-emerald-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                value={
+                  selectedCourseId === "all" ? "all" : String(selectedCourseId)
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "all") {
+                    setSelectedCourseId("all");
+                    return;
+                  }
+                  setSelectedCourseId(parseInt(value, 10));
+                }}
+              >
+                <option value="all">All Courses</option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <nav className="mt-4 space-y-1.5">
               <NavBtn
                 section="dashboard"
@@ -2094,14 +2328,14 @@ export default function FacultyDashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatCard
                     label="Total Students"
-                    value={totalStudents}
+                    value={selectedCourseStudentCount}
                     icon={Users}
                     iconBg="bg-blue-100"
                     iconColor="text-blue-600"
                   />
                   <StatCard
                     label="Upcoming Classes"
-                    value={dashboardUpcomingClasses.length}
+                    value={dashboardCourseUpcomingClasses.length}
                     icon={Video}
                     iconBg="bg-purple-100"
                     iconColor="text-purple-600"
@@ -2164,16 +2398,16 @@ export default function FacultyDashboardPage() {
                         </p>
                       </div>
                       <span className="text-xs font-semibold text-purple-700 bg-white px-2.5 py-1 rounded-full border border-purple-100 shadow-sm">
-                        {dashboardUpcomingClasses.length}
+                        {dashboardCourseUpcomingClasses.length}
                       </span>
                     </div>
                     <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                      {dashboardUpcomingClasses.length === 0 ? (
+                      {dashboardCourseUpcomingClasses.length === 0 ? (
                         <p className="text-sm text-gray-500">
                           No upcoming classes found.
                         </p>
                       ) : (
-                        dashboardUpcomingClasses.map((s) => {
+                        dashboardCourseUpcomingClasses.map((s) => {
                           const batch = unwrapOne(s.batches);
                           return (
                             <div
@@ -2323,13 +2557,13 @@ export default function FacultyDashboardPage() {
                     <h2 className="font-bold text-gray-900 mb-3">
                       Select Session
                     </h2>
-                    {attendanceSessions.length === 0 ? (
+                    {filteredAttendanceSessions.length === 0 ? (
                       <p className="text-sm text-gray-500">
                         No completed class sessions found.
                       </p>
                     ) : (
                       <div className="space-y-2 max-h-80 overflow-y-auto">
-                        {attendanceSessions.map((s) => {
+                        {filteredAttendanceSessions.map((s) => {
                           const batch = unwrapOne(s.batches);
                           return (
                             <button
@@ -2517,6 +2751,29 @@ export default function FacultyDashboardPage() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Course
+                        </label>
+                        <select
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                          value={mcqForm.courseId}
+                          onChange={(e) =>
+                            setMcqForm((p) => ({
+                              ...p,
+                              courseId: e.target.value,
+                              batchId: "",
+                            }))
+                          }
+                        >
+                          <option value="">Select course</option>
+                          {mcqFormCourseOptions.map((course) => (
+                            <option key={course.id} value={course.id}>
+                              {course.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
                           Batch
                         </label>
                         <select
@@ -2529,8 +2786,12 @@ export default function FacultyDashboardPage() {
                             }))
                           }
                         >
-                          <option value="">Select batch</option>
-                          {batches.map((b) => (
+                          <option value="">
+                            {mcqForm.courseId
+                              ? "Select batch"
+                              : "Select course first"}
+                          </option>
+                          {mcqFormBatchOptions.map((b) => (
                             <option key={b.id} value={b.id}>
                               {b.batch_name}
                             </option>
@@ -2573,6 +2834,25 @@ export default function FacultyDashboardPage() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Negative Marking (per wrong answer)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          value={mcqForm.negativeMarking}
+                          onChange={(e) =>
+                            setMcqForm((p) => ({
+                              ...p,
+                              negativeMarking: e.target.value,
+                            }))
+                          }
+                          disabled={mcqForm.testType !== "mcq"}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
                           Time Limit (minutes)
                         </label>
                         <input
@@ -2607,7 +2887,10 @@ export default function FacultyDashboardPage() {
                     <button
                       onClick={createMcqTest}
                       disabled={
-                        mcqSubmitting || !mcqForm.title || !mcqForm.batchId
+                        mcqSubmitting ||
+                        !mcqForm.title ||
+                        !mcqForm.courseId ||
+                        !mcqForm.batchId
                       }
                       className="mt-4 flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-xl font-semibold text-sm disabled:opacity-60"
                     >
@@ -2621,7 +2904,17 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setShowMcqForm(true)}
+                    onClick={() => {
+                      setMcqForm((prev) => ({
+                        ...prev,
+                        courseId:
+                          prev.courseId ||
+                          (selectedCourseId === "all"
+                            ? ""
+                            : String(selectedCourseId)),
+                      }));
+                      setShowMcqForm(true);
+                    }}
                     className="flex items-center gap-2 px-5 py-3 bg-purple-600 text-white rounded-xl font-semibold text-sm hover:bg-purple-700"
                   >
                     <Plus className="w-4 h-4" /> Create New Test
@@ -2910,11 +3203,11 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   /* test list */
-                  mcqTests.length > 0 && (
+                  filteredMcqTests.length > 0 && (
                     <div className="bg-white rounded-2xl shadow-sm p-5">
                       <h2 className="font-bold text-gray-900 mb-3">My Tests</h2>
                       <div className="space-y-3">
-                        {mcqTests.map((t) => {
+                        {filteredMcqTests.map((t) => {
                           const qCount =
                             (
                               t.mcq_questions as unknown as { count: number }[]
@@ -2938,6 +3231,10 @@ export default function FacultyDashboardPage() {
                                 <p className="text-xs text-gray-500 mt-0.5">
                                   {qCount} questions | {t.total_marks} marks |{" "}
                                   {t.time_limit_minutes} min | {t.exam_type}
+                                  {t.test_type !== "descriptive" &&
+                                  (t.negative_marking ?? 0) > 0
+                                    ? ` | -${t.negative_marking}/wrong`
+                                    : ""}
                                 </p>
                               </div>
                               <div className="flex gap-2">
@@ -3397,7 +3694,7 @@ export default function FacultyDashboardPage() {
                           }
                         >
                           <option value="">Select batch</option>
-                          {batches.map((b) => (
+                          {filteredBatches.map((b) => (
                             <option key={b.id} value={b.id}>
                               {b.batch_name}
                             </option>
@@ -3519,13 +3816,13 @@ export default function FacultyDashboardPage() {
 
                 <div className="bg-white rounded-2xl shadow-sm p-5">
                   <h2 className="font-bold text-gray-900 mb-3">My Classes</h2>
-                  {upcomingClasses.length === 0 ? (
+                  {filteredUpcomingClasses.length === 0 ? (
                     <p className="text-sm text-gray-500">
                       No classes scheduled.
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {upcomingClasses.map((s) => {
+                      {filteredUpcomingClasses.map((s) => {
                         const batch = unwrapOne(s.batches);
                         return (
                           <div
@@ -3664,7 +3961,7 @@ export default function FacultyDashboardPage() {
                             }
                           >
                             <option value="">All my students</option>
-                            {batches.map((b) => (
+                            {filteredBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
                               </option>
@@ -3866,7 +4163,7 @@ export default function FacultyDashboardPage() {
                             }
                           >
                             <option value="">- Select batch -</option>
-                            {batches.map((b) => (
+                            {filteredBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
                               </option>
@@ -3893,7 +4190,7 @@ export default function FacultyDashboardPage() {
                                   (s) =>
                                     s.batch_id === parseInt(taskForm.batchId),
                                 )
-                              : batchStudents
+                              : filteredBatchStudents
                             ).map((s) => (
                               <option
                                 key={s.student_user_id}
@@ -3976,11 +4273,11 @@ export default function FacultyDashboardPage() {
                   </button>
                 )}
 
-                {tasks.length > 0 && (
+                {filteredTasks.length > 0 && (
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <h2 className="font-bold text-gray-900 mb-3">All Tasks</h2>
                     <div className="space-y-3">
-                      {tasks.map((t) => {
+                      {filteredTasks.map((t) => {
                         const batch = unwrapOne(t.batches);
                         const student = unwrapOne(t.profiles);
                         return (

@@ -287,6 +287,16 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const createClient = () => createSupabaseClient("admin");
 
+  function isMissingRefreshTokenError(error: unknown) {
+    const message =
+      error instanceof Error ? error.message : String(error || "");
+    const normalized = message.toLowerCase();
+    return (
+      normalized.includes("refresh token not found") ||
+      normalized.includes("invalid refresh token")
+    );
+  }
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<AdminSection>("overview");
@@ -442,11 +452,22 @@ export default function AdminDashboardPage() {
   const load = useCallback(async () => {
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      let user = null;
+
+      try {
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+      } catch (error) {
+        if (isMissingRefreshTokenError(error)) {
+          await supabase.auth.signOut({ scope: "local" });
+          router.replace("/admin-login");
+          return;
+        }
+        throw error;
+      }
+
       if (!user) {
-        router.push("/login-portal");
+        router.replace("/admin-login");
         return;
       }
 
@@ -1449,14 +1470,30 @@ export default function AdminDashboardPage() {
   async function getAdminAccessToken() {
     const supabase = createClient();
 
-    const { data: refreshed } = await supabase.auth.refreshSession();
-    const refreshedToken = refreshed.session?.access_token || null;
-    if (refreshedToken) return refreshedToken;
-
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    return session?.access_token || null;
+
+    if (session?.access_token) {
+      return session.access_token;
+    }
+
+    if (!session?.refresh_token) {
+      return null;
+    }
+
+    try {
+      const { data: refreshed, error } = await supabase.auth.refreshSession();
+      if (error) {
+        if (isMissingRefreshTokenError(error)) return null;
+        throw error;
+      }
+
+      return refreshed.session?.access_token || null;
+    } catch (error) {
+      if (isMissingRefreshTokenError(error)) return null;
+      throw error;
+    }
   }
 
   async function recordPayment() {
@@ -1640,8 +1677,7 @@ export default function AdminDashboardPage() {
       let accessToken = currentSession?.access_token || null;
 
       if (!accessToken) {
-        const { data: refreshed } = await supabase.auth.refreshSession();
-        accessToken = refreshed.session?.access_token || null;
+        accessToken = await getAdminAccessToken();
       }
 
       if (!accessToken) {
@@ -1672,8 +1708,7 @@ export default function AdminDashboardPage() {
 
       // One transparent retry for stale/expired token cases.
       if (res.status === 401) {
-        const { data: refreshed } = await supabase.auth.refreshSession();
-        const retryToken = refreshed.session?.access_token;
+        const retryToken = await getAdminAccessToken();
 
         if (retryToken) {
           res = await fetch("/api/admin/student-credentials", {

@@ -207,6 +207,7 @@ async function verifyAdminFromToken(token: string): Promise<AdminVerifyResult> {
 
 export async function POST(req: NextRequest) {
   let createdUserId: string | null = null;
+  let reusedExistingAccount = false;
 
   try {
     const body = (await req.json()) as CreateStudentCredentialBody;
@@ -301,11 +302,30 @@ export async function POST(req: NextRequest) {
 
     const service = createServerClient();
 
-    const { data: existingUsername } = await service
+    const { data: existingStudent } = await service
+      .from("profiles")
+      .select("user_id, role, username")
+      .ilike("email", studentEmail)
+      .eq("role", "student")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingStudent?.user_id) {
+      reusedExistingAccount = true;
+      createdUserId = existingStudent.user_id;
+    }
+
+    let usernameQuery = service
       .from("profiles")
       .select("user_id")
-      .ilike("username", username)
-      .maybeSingle();
+      .ilike("username", username);
+
+    if (createdUserId) {
+      usernameQuery = usernameQuery.neq("user_id", createdUserId);
+    }
+
+    const { data: existingUsername } = await usernameQuery.maybeSingle();
 
     if (existingUsername) {
       return NextResponse.json(
@@ -361,50 +381,96 @@ export async function POST(req: NextRequest) {
       matchedCourse = createdCourse;
     }
 
-    const { data: createdAuthUser, error: createUserError } =
-      await service.auth.admin.createUser({
-        email: studentEmail,
-        password: defaultPassword,
-        email_confirm: true,
-        user_metadata: {
+    if (!createdUserId) {
+      const { data: createdAuthUser, error: createUserError } =
+        await service.auth.admin.createUser({
+          email: studentEmail,
+          password: defaultPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: studentName,
+            username,
+          },
+        });
+
+      if (createUserError || !createdAuthUser.user) {
+        const msg = createUserError?.message || "Failed to create auth user.";
+        if (msg.toLowerCase().includes("already exists")) {
+          return NextResponse.json(
+            {
+              error:
+                "This email is already linked to an existing student account. Reuse that account and add the new course enrollment instead.",
+            },
+            { status: 409 },
+          );
+        }
+
+        return NextResponse.json({ error: msg }, { status: 400 });
+      }
+
+      createdUserId = createdAuthUser.user.id;
+
+      const { error: profileInsertError } = await service
+        .from("profiles")
+        .insert({
+          user_id: createdUserId,
+          role: "student",
           full_name: studentName,
+          registration_no: registrationNumber,
+          email: studentEmail,
+          phone: studentPhone || null,
+          is_active: true,
           username,
-        },
-      });
+        });
 
-    if (createUserError || !createdAuthUser.user) {
-      const msg = createUserError?.message || "Failed to create auth user.";
-      return NextResponse.json({ error: msg }, { status: 400 });
+      if (profileInsertError) throw profileInsertError;
+
+      const { error: studentProfileInsertError } = await service
+        .from("student_profiles")
+        .insert({
+          user_id: createdUserId,
+          registration_no: registrationNumber,
+          target_exam: courseName,
+          joined_on: new Date().toISOString().slice(0, 10),
+          must_reset_password: true,
+        });
+
+      if (studentProfileInsertError) throw studentProfileInsertError;
+    } else {
+      const { error: profileUpdateError } = await service
+        .from("profiles")
+        .update({
+          full_name: studentName,
+          phone: studentPhone || null,
+          email: studentEmail,
+          username,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", createdUserId)
+        .eq("role", "student");
+
+      if (profileUpdateError) throw profileUpdateError;
+
+      const { error: authUpdateError } =
+        await service.auth.admin.updateUserById(createdUserId, {
+          user_metadata: {
+            full_name: studentName,
+            username,
+          },
+        });
+
+      if (authUpdateError) throw authUpdateError;
+
+      const { error: studentProfileUpdateError } = await service
+        .from("student_profiles")
+        .update({
+          target_exam: courseName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", createdUserId);
+
+      if (studentProfileUpdateError) throw studentProfileUpdateError;
     }
-
-    createdUserId = createdAuthUser.user.id;
-
-    const { error: profileInsertError } = await service
-      .from("profiles")
-      .insert({
-        user_id: createdUserId,
-        role: "student",
-        full_name: studentName,
-        registration_no: registrationNumber,
-        email: studentEmail,
-        phone: studentPhone || null,
-        is_active: true,
-        username,
-      });
-
-    if (profileInsertError) throw profileInsertError;
-
-    const { error: studentProfileInsertError } = await service
-      .from("student_profiles")
-      .insert({
-        user_id: createdUserId,
-        registration_no: registrationNumber,
-        target_exam: courseName,
-        joined_on: new Date().toISOString().slice(0, 10),
-        must_reset_password: true,
-      });
-
-    if (studentProfileInsertError) throw studentProfileInsertError;
 
     const { data: existingBatch } = await service
       .from("batches")
@@ -476,13 +542,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      message: "Student credentials created and assigned successfully.",
+      message: reusedExistingAccount
+        ? "Existing student account reused and assigned to the selected course successfully."
+        : "Student credentials created and assigned successfully.",
       data: {
         userId: createdUserId,
         username,
         email: studentEmail,
         course: courseName,
         faculty: faculty.full_name,
+        reusedExistingAccount,
       },
     });
   } catch (error) {
