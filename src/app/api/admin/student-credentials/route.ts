@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!isValidEmail(studentEmail)) {
+    if (studentEmail && !isValidEmail(studentEmail)) {
       return NextResponse.json(
         { error: "Please enter a valid Student Email ID." },
         { status: 400 },
@@ -302,18 +302,20 @@ export async function POST(req: NextRequest) {
 
     const service = createServerClient();
 
-    const { data: existingStudent } = await service
-      .from("profiles")
-      .select("user_id, role, username")
-      .ilike("email", studentEmail)
-      .eq("role", "student")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (studentEmail) {
+      const { data: existingStudent } = await service
+        .from("profiles")
+        .select("user_id, role, username")
+        .ilike("email", studentEmail)
+        .eq("role", "student")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (existingStudent?.user_id) {
-      reusedExistingAccount = true;
-      createdUserId = existingStudent.user_id;
+      if (existingStudent?.user_id) {
+        reusedExistingAccount = true;
+        createdUserId = existingStudent.user_id;
+      }
     }
 
     let usernameQuery = service
@@ -382,9 +384,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (!createdUserId) {
+      // Use provided email or generate a placeholder so Supabase Auth can create the account.
+      // Students log in via username + password, not email.
+      const authEmail =
+        studentEmail ||
+        `${registrationNumber.toLowerCase().replace(/[^a-z0-9]/g, "-")}@lepearl.internal`;
+
       const { data: createdAuthUser, error: createUserError } =
         await service.auth.admin.createUser({
-          email: studentEmail,
+          email: authEmail,
           password: defaultPassword,
           email_confirm: true,
           user_metadata: {
@@ -417,7 +425,7 @@ export async function POST(req: NextRequest) {
           role: "student",
           full_name: studentName,
           registration_no: registrationNumber,
-          email: studentEmail,
+          email: studentEmail || null,
           phone: studentPhone || null,
           is_active: true,
           username,
@@ -437,39 +445,22 @@ export async function POST(req: NextRequest) {
 
       if (studentProfileInsertError) throw studentProfileInsertError;
     } else {
+      // Existing account reused — only update fields that may have changed
+      // (phone, email). Do NOT overwrite username or target_exam since
+      // the student may already be enrolled in another course.
+      const profileUpdates: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (studentPhone) profileUpdates.phone = studentPhone;
+      if (studentEmail) profileUpdates.email = studentEmail;
+
       const { error: profileUpdateError } = await service
         .from("profiles")
-        .update({
-          full_name: studentName,
-          phone: studentPhone || null,
-          email: studentEmail,
-          username,
-          updated_at: new Date().toISOString(),
-        })
+        .update(profileUpdates)
         .eq("user_id", createdUserId)
         .eq("role", "student");
 
       if (profileUpdateError) throw profileUpdateError;
-
-      const { error: authUpdateError } =
-        await service.auth.admin.updateUserById(createdUserId, {
-          user_metadata: {
-            full_name: studentName,
-            username,
-          },
-        });
-
-      if (authUpdateError) throw authUpdateError;
-
-      const { error: studentProfileUpdateError } = await service
-        .from("student_profiles")
-        .update({
-          target_exam: courseName,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", createdUserId);
-
-      if (studentProfileUpdateError) throw studentProfileUpdateError;
     }
 
     const { data: existingBatch } = await service
@@ -558,7 +549,11 @@ export async function POST(req: NextRequest) {
     if (createdUserId) {
       try {
         const service = createServerClient();
-        await service.auth.admin.deleteUser(createdUserId);
+        // Only delete the auth user if we just created it in this request.
+        // Never delete a pre-existing student account on rollback.
+        if (!reusedExistingAccount) {
+          await service.auth.admin.deleteUser(createdUserId);
+        }
       } catch (rollbackError) {
         console.error(
           "Rollback failed after create-student error:",

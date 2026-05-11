@@ -4459,7 +4459,10 @@ export default function AdminDashboardPage() {
 
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                          Student Email ID
+                          Student Email ID{" "}
+                          <span className="text-gray-400 font-normal">
+                            (Optional)
+                          </span>
                         </label>
                         <input
                           type="email"
@@ -4540,7 +4543,6 @@ export default function AdminDashboardPage() {
                           !credentialForm.registrationNumber ||
                           !credentialForm.studentName ||
                           !credentialForm.facultyName ||
-                          !credentialForm.studentEmail ||
                           !credentialForm.username ||
                           !credentialForm.defaultPassword
                         }
