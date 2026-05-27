@@ -107,42 +107,42 @@ async function verifyAdminFromToken(token: string): Promise<AdminVerifyResult> {
     return { adminUserId: null, reason: "Missing bearer token" };
   }
 
-  const url = sanitizeEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const anonKey = sanitizeEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  if (!url || !anonKey) {
-    return {
-      adminUserId: null,
-      reason: "Supabase client configuration is missing",
-    };
-  }
+  const url = sanitizeEnv(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+  );
+  const anonKey = sanitizeEnv(
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+  );
 
   let userId: string | null = null;
 
-  try {
-    // Verify using the same project/session context as the frontend token.
-    const anon = createClient(url, anonKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: { headers: { Authorization: `Bearer ${cleanedToken}` } },
-    });
+  if (url && anonKey) {
+    try {
+      // Verify using the same project/session context as the frontend token.
+      const anon = createClient(url, anonKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { headers: { Authorization: `Bearer ${cleanedToken}` } },
+      });
 
-    const { data: tokenData, error: tokenError } = await anon.auth.getUser();
-    if (!tokenError && tokenData.user) {
-      userId = tokenData.user.id;
+      const { data: tokenData, error: tokenError } = await anon.auth.getUser();
+      if (!tokenError && tokenData.user) {
+        userId = tokenData.user.id;
 
-      // Primary role check via DB helper in JWT context.
-      const { data: rpcRole } = await anon.rpc("current_user_role");
-      const normalizedRpcRole = String(rpcRole || "").toLowerCase();
-      const rpcIsAdmin =
-        normalizedRpcRole === "admin" ||
-        normalizedRpcRole === "super_admin" ||
-        normalizedRpcRole === "administrator";
+        // Primary role check via DB helper in JWT context.
+        const { data: rpcRole } = await anon.rpc("current_user_role");
+        const normalizedRpcRole = String(rpcRole || "").toLowerCase();
+        const rpcIsAdmin =
+          normalizedRpcRole === "admin" ||
+          normalizedRpcRole === "super_admin" ||
+          normalizedRpcRole === "administrator";
 
-      if (rpcIsAdmin) {
-        return { adminUserId: userId };
+        if (rpcIsAdmin) {
+          return { adminUserId: userId };
+        }
       }
+    } catch {
+      // Fallback below handles environments where anon key is invalid on server.
     }
-  } catch {
-    // Fallback below handles environments where anon key is invalid on server.
   }
 
   // Service-key fallback for token validation + role checks.

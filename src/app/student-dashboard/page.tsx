@@ -171,6 +171,9 @@ type EnrollmentRow = {
   } | null;
 };
 
+const ONBOARDING_VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+const PROFILE_PHOTO_KEY_PREFIX = "lepearl-student-profile-photo";
+
 function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
   return Array.isArray(v) ? (v[0] ?? null) : v;
@@ -303,6 +306,11 @@ export default function StudentDashboardPage() {
 
   /* data states */
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userId, setUserId] = useState<string>("");
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(
+    null,
+  );
+  const [profilePhotoMsg, setProfilePhotoMsg] = useState<string | null>(null);
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
     null,
   );
@@ -368,6 +376,35 @@ export default function StudentDashboardPage() {
 
   const useUpiQrPayment = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
 
+  useEffect(() => {
+    if (!userId) return;
+    const stored = window.localStorage.getItem(
+      `${PROFILE_PHOTO_KEY_PREFIX}-${userId}`,
+    );
+    if (stored) setProfilePhotoPreview(stored);
+  }, [userId]);
+
+  function handleProfilePhotoChange(file: File | null) {
+    if (!file || !userId) return;
+    if (!file.type.startsWith("image/")) {
+      setProfilePhotoMsg("Please upload a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : null;
+      if (!dataUrl) return;
+      setProfilePhotoPreview(dataUrl);
+      window.localStorage.setItem(
+        `${PROFILE_PHOTO_KEY_PREFIX}-${userId}`,
+        dataUrl,
+      );
+      setProfilePhotoMsg("Profile picture updated.");
+    };
+    reader.readAsDataURL(file);
+  }
+
   /* â”€â”€ load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
     try {
@@ -380,6 +417,7 @@ export default function StudentDashboardPage() {
         return;
       }
       const uid = user.id;
+      setUserId(uid);
 
       /* stage 1 */
       const [profileRes, spRes, enrollRes] = await Promise.all([
@@ -1651,8 +1689,19 @@ export default function StudentDashboardPage() {
             {/* sidebar */}
             <aside className="bg-purple-50 border border-purple-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24">
               <div className="flex items-center gap-3 pb-4 border-b border-purple-100">
-                <div className="w-14 h-14 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-xl">
-                  {profile?.full_name?.charAt(0) ?? "S"}
+                <div className="w-14 h-14 rounded-full bg-purple-200 overflow-hidden flex items-center justify-center text-purple-700 font-bold text-xl">
+                  {profilePhotoPreview ? (
+                    // Local preview keeps student profile image available without backend migration.
+                    <Image
+                      src={profilePhotoPreview}
+                      alt="Profile"
+                      width={56}
+                      height={56}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <>{profile?.full_name?.charAt(0) ?? "S"}</>
+                  )}
                 </div>
                 <div>
                   <p className="text-lg font-bold text-gray-900 leading-tight">
@@ -1660,6 +1709,9 @@ export default function StudentDashboardPage() {
                   </p>
                   <p className="text-sm text-gray-500 mt-0.5">
                     {studentProfile?.registration_no ?? "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    User-ID: {userId ? userId.slice(0, 8).toUpperCase() : "N/A"}
                   </p>
                   <p className="text-xs text-purple-700 font-semibold mt-1">
                     Batch: {batchLabel ?? "Not Assigned"}
@@ -1731,6 +1783,60 @@ export default function StudentDashboardPage() {
                     <p className="text-purple-200 text-sm">
                       Here&apos;s your learning journey at a glance
                     </p>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                        Registration Number
+                      </p>
+                      <p className="mt-1 text-base font-bold text-gray-900 break-all">
+                        {studentProfile?.registration_no ?? "Pending"}
+                      </p>
+                      <p className="mt-3 text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                        User-ID
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-purple-700 break-all">
+                        {userId || "Pending"}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                        Onboarding Video
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Start here to understand your dashboard, classes and
+                        test workflow.
+                      </p>
+                      <a
+                        href={ONBOARDING_VIDEO_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                      >
+                        <PlayCircle className="h-4 w-4" /> Watch Onboarding
+                      </a>
+                    </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                        Profile Picture
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Upload your profile photo for dashboard personalization.
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          handleProfilePhotoChange(e.target.files?.[0] ?? null)
+                        }
+                        className="mt-3 block w-full text-xs text-gray-600"
+                      />
+                      {profilePhotoMsg && (
+                        <p className="mt-2 text-xs text-emerald-700">
+                          {profilePhotoMsg}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard

@@ -153,13 +153,40 @@ type LiveClassRow = {
 };
 type RegistrationRow = {
   id: string;
+  mode: "paid" | "free" | null;
   full_name: string;
   qualification: string;
   course: string;
   phone: string;
   email: string;
+  registration_no: string | null;
+  username: string | null;
+  accepted_terms: boolean;
+  accepted_privacy: boolean;
+  accepted_refund: boolean;
+  is_pearlian: boolean;
+  pearlian_eligible: boolean;
+  include_books_addon: boolean;
+  base_course_fee: number | null;
+  discount_amount: number | null;
+  books_fee: number | null;
+  final_payable: number | null;
   created_at: string;
   status: string;
+};
+
+type FacultyRegistrationRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  whatsapp: string;
+  education: string;
+  net_category: string;
+  teaching_mode: string;
+  expertise: string;
+  created_at: string;
+  status: string;
+  review_notes: string | null;
 };
 
 type StudentEditForm = {
@@ -327,6 +354,9 @@ export default function AdminDashboardPage() {
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [mcqTests, setMcqTests] = useState<McqRow[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRow[]>([]);
+  const [facultyRegistrations, setFacultyRegistrations] = useState<
+    FacultyRegistrationRow[]
+  >([]);
   const [liveClasses, setLiveClasses] = useState<LiveClassRow[]>([]);
   const [credentialSubmitting, setCredentialSubmitting] = useState(false);
   const [credentialMsg, setCredentialMsg] = useState<{
@@ -349,6 +379,13 @@ export default function AdminDashboardPage() {
   const [regDateFrom, setRegDateFrom] = useState("");
   const [regDateTo, setRegDateTo] = useState("");
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [facultyStatusUpdatingId, setFacultyStatusUpdatingId] = useState<
+    string | null
+  >(null);
+  const [facultyRegistrationMsg, setFacultyRegistrationMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
 
   /* payment form */
   const [showPayForm, setShowPayForm] = useState(false);
@@ -481,6 +518,7 @@ export default function AdminDashboardPage() {
         coursesRes,
         batchesRes,
         registrationsRes,
+        facultyRegistrationsRes,
         mcqRes,
         classesRes,
       ] = await Promise.all([
@@ -531,7 +569,13 @@ export default function AdminDashboardPage() {
         supabase
           .from("student_registrations")
           .select(
-            "id, full_name, qualification, course, phone, email, created_at, status",
+            "id, mode, full_name, qualification, course, phone, email, registration_no, username, accepted_terms, accepted_privacy, accepted_refund, is_pearlian, pearlian_eligible, include_books_addon, base_course_fee, discount_amount, books_fee, final_payable, created_at, status",
+          )
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("faculty_registrations")
+          .select(
+            "id, full_name, email, whatsapp, education, net_category, teaching_mode, expertise, created_at, status, review_notes",
           )
           .order("created_at", { ascending: false }),
         supabase
@@ -1043,6 +1087,12 @@ export default function AdminDashboardPage() {
       /* registrations */
       if (registrationsRes.data) {
         setRegistrations(registrationsRes.data as RegistrationRow[]);
+      }
+
+      if (facultyRegistrationsRes.data) {
+        setFacultyRegistrations(
+          facultyRegistrationsRes.data as FacultyRegistrationRow[],
+        );
       }
 
       if (classesRes.data) {
@@ -1821,14 +1871,99 @@ export default function AdminDashboardPage() {
     }
   }
 
+  async function reviewFacultyRegistration(
+    id: string,
+    newStatus: "pending" | "approved" | "rejected",
+  ) {
+    setFacultyStatusUpdatingId(id);
+    setFacultyRegistrationMsg(null);
+    try {
+      const accessToken = await getAdminAccessToken();
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const res = await fetch("/api/admin/faculty-registrations/review", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          id,
+          status: newStatus,
+        }),
+      });
+
+      const payload = (await res.json()) as {
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok) {
+        throw new Error(payload.error || "Failed to update faculty status.");
+      }
+
+      setFacultyRegistrations((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
+      );
+
+      setFacultyRegistrationMsg({
+        type: "ok",
+        text: payload.message || `Faculty request marked as ${newStatus}.`,
+      });
+    } catch (error) {
+      setFacultyRegistrationMsg({
+        type: "err",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to update faculty request.",
+      });
+    } finally {
+      setFacultyStatusUpdatingId(null);
+    }
+  }
+
+  function prefillFacultyManageFromRegistration(row: FacultyRegistrationRow) {
+    const normalizedUsername = row.email
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, "");
+
+    setFacultyManageMode("create");
+    setFacultyManageMsg(null);
+    setFacultyManageForm({
+      facultyUserId: "",
+      facultyName: row.full_name,
+      phone: row.whatsapp,
+      facultyEmail: row.email,
+      username: normalizedUsername,
+      defaultPassword: "Faculty@123",
+    });
+    setActiveSection("faculty");
+  }
+
   /* ── export registrations to CSV (Excel-compatible) ── */
   function exportRegistrationsToExcel(rows: RegistrationRow[]) {
     const headers = [
+      "Flow",
       "Name",
       "Qualification",
       "Course",
+      "Registration No",
+      "Username",
       "Phone",
       "Email",
+      "Accepted Terms",
+      "Accepted Privacy",
+      "Accepted Refund",
+      "Pearlian",
+      "Pearlian Eligible",
+      "Books Add-on",
+      "Base Fee",
+      "Discount",
+      "Books Fee",
+      "Final Payable",
       "Submitted",
       "Status",
     ];
@@ -1836,11 +1971,24 @@ export default function AdminDashboardPage() {
       headers.join(","),
       ...rows.map((r) =>
         [
+          `"${(r.mode || "paid").replace(/"/g, '""')}"`,
           `"${r.full_name.replace(/"/g, '""')}"`,
           `"${(r.qualification || "").replace(/"/g, '""')}"`,
           `"${r.course.replace(/"/g, '""')}"`,
+          `"${(r.registration_no || "").replace(/"/g, '""')}"`,
+          `"${(r.username || "").replace(/"/g, '""')}"`,
           `"${r.phone}"`,
           `"${r.email}"`,
+          `"${r.accepted_terms ? "Yes" : "No"}"`,
+          `"${r.accepted_privacy ? "Yes" : "No"}"`,
+          `"${r.accepted_refund ? "Yes" : "No"}"`,
+          `"${r.is_pearlian ? "Yes" : "No"}"`,
+          `"${r.pearlian_eligible ? "Yes" : "No"}"`,
+          `"${r.include_books_addon ? "Yes" : "No"}"`,
+          `"${r.base_course_fee ?? ""}"`,
+          `"${r.discount_amount ?? ""}"`,
+          `"${r.books_fee ?? ""}"`,
+          `"${r.final_payable ?? ""}"`,
           `"${fmtDate(r.created_at)}"`,
           `"${r.status || "pending"}"`,
         ].join(","),
@@ -4195,16 +4343,33 @@ export default function AdminDashboardPage() {
                           </button>
                         )}
                       </div>
+
+                      {registrations.some((r) => !r.mode) && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                          Migration warning: Some registration rows are legacy
+                          records (missing flow metadata). Apply latest
+                          migration and review registration workflow fields.
+                        </div>
+                      )}
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Flow
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                               Name
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                               Course
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Payment
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Consents
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                               Phone
@@ -4249,13 +4414,17 @@ export default function AdminDashboardPage() {
                                   setCredentialForm((p) => ({
                                     ...p,
                                     registrationId: r.id,
+                                    registrationNumber: r.registration_no || "",
                                     studentName: r.full_name,
                                     studentEmail: r.email,
+                                    studentPhone: r.phone,
                                     courseName: r.course,
-                                    username: r.email
-                                      .split("@")[0]
-                                      .toLowerCase()
-                                      .replace(/[^a-z0-9._-]/g, ""),
+                                    username:
+                                      r.username ||
+                                      r.email
+                                        .split("@")[0]
+                                        .toLowerCase()
+                                        .replace(/[^a-z0-9._-]/g, ""),
                                   }));
                                   setCredentialMsg(null);
                                 }}
@@ -4265,6 +4434,12 @@ export default function AdminDashboardPage() {
                                     : "hover:bg-gray-50"
                                 }`}
                               >
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    text={r.mode === "free" ? "Free" : "Paid"}
+                                    color={r.mode === "free" ? "blue" : "green"}
+                                  />
+                                </td>
                                 <td className="px-4 py-3 font-medium text-gray-900">
                                   {r.full_name}
                                   {r.qualification && (
@@ -4272,9 +4447,28 @@ export default function AdminDashboardPage() {
                                       ({r.qualification})
                                     </span>
                                   )}
+                                  {r.registration_no && (
+                                    <div className="mt-1 text-[11px] text-gray-500">
+                                      Reg: {r.registration_no}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate">
                                   {r.course}
+                                </td>
+                                <td className="px-4 py-3 text-xs text-gray-600">
+                                  {r.mode === "paid" && r.final_payable != null
+                                    ? `Rs. ${r.final_payable.toLocaleString("en-IN")}`
+                                    : "-"}
+                                </td>
+                                <td className="px-4 py-3 text-xs text-gray-600">
+                                  {r.accepted_terms &&
+                                  r.accepted_privacy &&
+                                  r.accepted_refund
+                                    ? "3/3"
+                                    : r.mode === "free"
+                                      ? "N/A"
+                                      : "Incomplete"}
                                 </td>
                                 <td className="px-4 py-3 text-gray-600 text-xs">
                                   {r.phone}
@@ -4580,6 +4774,144 @@ export default function AdminDashboardPage() {
                         </button>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 mt-6">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <h2 className="font-bold text-gray-900">
+                          Faculty Registration Requests
+                        </h2>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Review and approve/reject public faculty applications.
+                        </p>
+                      </div>
+                      <Badge
+                        text={`${facultyRegistrations.length} requests`}
+                        color="blue"
+                      />
+                    </div>
+                    {facultyRegistrationMsg && (
+                      <div
+                        className={`mt-3 rounded-xl px-3 py-2 text-xs ${facultyRegistrationMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
+                      >
+                        {facultyRegistrationMsg.text}
+                      </div>
+                    )}
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Name
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Contact
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Category
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Expertise
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Submitted
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Status
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {facultyRegistrations.map((row) => (
+                          <tr key={row.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-900">
+                              {row.full_name}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-600">
+                              <div>{row.email}</div>
+                              <div className="text-gray-500">
+                                {row.whatsapp}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              <div className="text-xs">{row.net_category}</div>
+                              <div className="text-[11px] text-gray-500">
+                                {row.teaching_mode}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px]">
+                              {row.expertise}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-500">
+                              {fmtDate(row.created_at)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge
+                                text={row.status || "pending"}
+                                color={
+                                  row.status === "approved"
+                                    ? "green"
+                                    : row.status === "rejected"
+                                      ? "red"
+                                      : "yellow"
+                                }
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() =>
+                                    reviewFacultyRegistration(
+                                      row.id,
+                                      "approved",
+                                    )
+                                  }
+                                  disabled={facultyStatusUpdatingId === row.id}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                                >
+                                  {facultyStatusUpdatingId === row.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : null}
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    reviewFacultyRegistration(
+                                      row.id,
+                                      "rejected",
+                                    )
+                                  }
+                                  disabled={facultyStatusUpdatingId === row.id}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    prefillFacultyManageFromRegistration(row)
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-indigo-700"
+                                >
+                                  Create Login
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {facultyRegistrations.length === 0 && (
+                      <p className="text-center py-8 text-sm text-gray-400">
+                        No faculty registration requests yet.
+                      </p>
+                    )}
                   </div>
                 </div>
               </>

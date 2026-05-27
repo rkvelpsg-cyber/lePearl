@@ -140,6 +140,7 @@ export function Header() {
 
           {/* Online Courses */}
           <DrawerSection label="Online Courses">
+            <DrawerLink href="/all-courses" label="All Courses" />
             <DrawerSubSection label="Assistant Professor">
               <DrawerLink href="/courses-mppsc" label="MPPSC" />
               <DrawerLink href="/courses-uphesc" label="UPHESC" />
@@ -216,21 +217,15 @@ export function Header() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <DrawerLink
+            href="/faculty-registration"
+            label="Career"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <DrawerLink
             href="#live-class"
             label="Live Class"
             onClick={() => setMobileMenuOpen(false)}
           />
-
-          {/* Drawer Footer */}
-          <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
-            <a
-              href="#live-class"
-              className="block px-4 py-2 text-sm font-semibold text-purple-600 hover:bg-purple-50 rounded transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Live Class
-            </a>
-          </div>
         </nav>
       </div>
     </header>
@@ -323,6 +318,10 @@ function DesktopHeader() {
             href="#"
             openSubmenuInNewTab
             submenu={[
+              {
+                label: "All Courses",
+                href: "/all-courses",
+              },
               {
                 label: "Assistant Professor",
                 isSection: true,
@@ -458,6 +457,19 @@ function DesktopHeader() {
             whiteSpace: "nowrap",
           }}
         >
+          <a
+            href="/faculty-registration"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#222",
+              fontWeight: 500,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Career
+          </a>
           <a
             href="#live-class"
             style={{

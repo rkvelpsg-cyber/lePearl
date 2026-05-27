@@ -83,12 +83,12 @@ export default function LoginPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-sky-100 flex flex-col items-center justify-center px-4 py-12">
       {/* Background blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-purple-700/20 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-700/20 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-violet-600/10 blur-2xl" />
+        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-200/35 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-cyan-200/25 blur-2xl" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl">
@@ -105,14 +105,14 @@ export default function LoginPortal() {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
-            <span className="text-2xl font-bold text-white group-hover:text-purple-300 transition-colors">
+            <span className="text-2xl font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
               LePearl Education
             </span>
           </a>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-3">
             Welcome Back
           </h1>
-          <p className="text-lg text-purple-200">
+          <p className="text-lg text-slate-600">
             Choose your login type to continue
           </p>
         </div>
@@ -182,18 +182,16 @@ export default function LoginPortal() {
         </div>
 
         {/* Footer note and registration CTA */}
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 text-sm text-purple-300 sm:flex-row sm:gap-4">
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 text-sm text-slate-600 sm:gap-4">
           <p className="text-center sm:text-left">
             New student? If you have not enrolled in a course or do not have
             login credentials yet.
           </p>
           <a
             href="/student-registration"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-600 via-teal-600 to-slate-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/35 transition-all duration-200 hover:from-blue-500 hover:via-teal-500 hover:to-slate-600 hover:shadow-slate-900/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-purple-950"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-blue-600 via-teal-600 to-slate-700 px-8 py-3 text-sm font-bold !text-white shadow-lg shadow-slate-400/40 transition-all duration-200 hover:from-blue-500 hover:via-teal-500 hover:to-slate-600 hover:shadow-slate-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100"
           >
-            Register Here
+            Student Registration
           </a>
         </div>
       </div>

@@ -37,6 +37,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: `${BASE_URL}/all-courses`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${BASE_URL}/interview-preparation`,
       lastModified: now,
       changeFrequency: "monthly",
@@ -98,6 +104,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE_URL}/student-registration`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/faculty-registration`,
       lastModified: now,
       changeFrequency: "yearly",
       priority: 0.6,

@@ -191,7 +191,10 @@ export default function TermsAndConditions() {
               </section>
 
               <section>
-                <h2 className="mb-4 text-2xl font-semibold text-[#1E3A8A]">
+                <h2
+                  id="refund-policy"
+                  className="mb-4 text-2xl font-semibold text-[#1E3A8A]"
+                >
                   12. Refund Policy
                 </h2>
                 <p>

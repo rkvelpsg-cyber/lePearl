@@ -231,7 +231,7 @@ export function PreviousPapersSection() {
             type: "err",
             text: "Please complete student registration to download question papers.",
           });
-          router.push("/student-registration");
+          router.push("/student-registration?mode=free");
           return;
         }
 
@@ -259,7 +259,7 @@ export function PreviousPapersSection() {
             type: "err",
             text: "Student registration is required before downloading papers.",
           });
-          router.push("/student-registration");
+          router.push("/student-registration?mode=free");
           return;
         }
       }

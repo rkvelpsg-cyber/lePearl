@@ -24,7 +24,11 @@ function isPlaceholderKey(value: string) {
 }
 
 export function createServerClient() {
-  const url = sanitizeEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const url = sanitizeEnv(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.SUPABASE_URL ||
+      process.env.SUPABASE_PROJECT_URL,
+  );
   const serviceKey = sanitizeEnv(
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
       process.env.SUPABASE_SERVICE_ROLE ||
@@ -36,7 +40,7 @@ export function createServerClient() {
 
   if (!url || !serviceKey) {
     throw new Error(
-      "Supabase environment variables are not configured (NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).",
+      "Supabase environment variables are not configured (SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY).",
     );
   }
 

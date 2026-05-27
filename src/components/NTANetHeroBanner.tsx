@@ -184,12 +184,20 @@ export function NTANetHeroBanner() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <button className="flex items-center justify-center gap-2 rounded-full bg-white px-6 py-2.5 text-base font-semibold text-purple-600 shadow-2xl transition-transform duration-200 hover:scale-105 hover:shadow-xl">
+              <a
+                href="/student-registration"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-full bg-white px-6 py-2.5 text-base font-semibold text-purple-600 shadow-2xl transition-transform duration-200 hover:scale-105 hover:shadow-xl"
+              >
                 <span>Enroll Now</span>
-              </button>
-              <button className="rounded-full border-2 border-white bg-transparent px-6 py-2.5 text-base font-semibold text-white shadow-lg transition-colors duration-200 hover:bg-white hover:text-purple-600">
+              </a>
+              <a
+                href="/all-courses"
+                className="flex items-center justify-center rounded-full border-2 border-white bg-transparent px-6 py-2.5 text-base font-semibold text-white shadow-lg transition-colors duration-200 hover:bg-white hover:text-purple-600"
+              >
                 View Course Details
-              </button>
+              </a>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-white">
