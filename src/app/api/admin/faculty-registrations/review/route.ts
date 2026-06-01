@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@/lib/supabase/server";
+import nodemailer from "nodemailer";
 
 export const runtime = "nodejs";
 
@@ -8,6 +9,13 @@ type ReviewBody = {
   id?: string;
   status?: "pending" | "approved" | "rejected";
   reviewNotes?: string;
+};
+
+type FacultyRegistrationRecord = {
+  full_name: string;
+  email: string;
+  status: "pending" | "approved" | "rejected";
+  review_notes: string | null;
 };
 
 function sanitizeEnv(value?: string) {
@@ -61,6 +69,86 @@ async function verifyAdminFromToken(token: string) {
   return null;
 }
 
+function getTransporter() {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+
+  if (gmailUser && gmailAppPassword) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: gmailUser,
+        pass: gmailAppPassword,
+      },
+    });
+  }
+
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT ?? "587");
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
+}
+
+function buildFacultyStatusEmail(
+  fullName: string,
+  status: "pending" | "approved" | "rejected",
+  reviewNotes?: string | null,
+) {
+  const subjectMap = {
+    approved: "LePearl Faculty Registration Approved",
+    rejected: "LePearl Faculty Registration Update",
+    pending: "LePearl Faculty Registration Update",
+  } as const;
+
+  const messageMap = {
+    approved:
+      "Your faculty registration has been approved. Our team will contact you with the next steps shortly.",
+    rejected: "Your faculty registration was not approved at this time.",
+    pending: "Your faculty registration status has been updated.",
+  } as const;
+
+  const subject = subjectMap[status];
+  const reviewLine = reviewNotes
+    ? `<p><strong>Admin notes:</strong> ${reviewNotes}</p>`
+    : "";
+  const text = [
+    `Dear ${fullName},`,
+    "",
+    messageMap[status],
+    reviewNotes ? `Admin notes: ${reviewNotes}` : "",
+    "",
+    "Regards,",
+    "LePearl Education",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:680px;margin:0 auto;">
+      <p>Dear ${fullName},</p>
+      <p>${messageMap[status]}</p>
+      ${reviewLine}
+      <p>Regards,<br />LePearl Education</p>
+    </div>
+  `;
+
+  return { subject, text, html };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ReviewBody;
@@ -96,6 +184,14 @@ export async function POST(req: NextRequest) {
     }
 
     const service = createServerClient();
+    const { data: existingRegistration, error: fetchError } = await service
+      .from("faculty_registrations")
+      .select("full_name, email, status, review_notes")
+      .eq("id", id)
+      .maybeSingle<FacultyRegistrationRecord>();
+
+    if (fetchError) throw fetchError;
+
     const { error } = await service
       .from("faculty_registrations")
       .update({
@@ -119,6 +215,39 @@ export async function POST(req: NextRequest) {
         reviewNotes: body.reviewNotes?.trim() || null,
       },
     });
+
+    const transporter = getTransporter();
+    if (
+      transporter &&
+      existingRegistration?.email &&
+      (normalizedStatus === "approved" || normalizedStatus === "rejected")
+    ) {
+      try {
+        const emailContent = buildFacultyStatusEmail(
+          existingRegistration.full_name,
+          normalizedStatus,
+          body.reviewNotes?.trim() || null,
+        );
+        const fromAddress =
+          process.env.REGISTRATION_EMAIL_FROM ??
+          process.env.GMAIL_USER ??
+          process.env.SMTP_USER ??
+          "admin@lepearleducation.com";
+
+        await transporter.sendMail({
+          from: `LePearl Education <${fromAddress}>`,
+          to: existingRegistration.email,
+          subject: emailContent.subject,
+          text: emailContent.text,
+          html: emailContent.html,
+        });
+      } catch (emailError) {
+        console.warn(
+          "Faculty status email send failed (non-critical):",
+          emailError instanceof Error ? emailError.message : emailError,
+        );
+      }
+    }
 
     return NextResponse.json({
       ok: true,

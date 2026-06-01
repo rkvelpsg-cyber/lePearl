@@ -39,6 +39,7 @@ type AdminSection =
   | "overview"
   | "students"
   | "faculty"
+  | "facultyRegistrations"
   | "attendance"
   | "payments"
   | "courses"
@@ -187,6 +188,7 @@ type FacultyRegistrationRow = {
   created_at: string;
   status: string;
   review_notes: string | null;
+  source?: "primary" | "legacy";
 };
 
 type StudentEditForm = {
@@ -2055,6 +2057,42 @@ export default function AdminDashboardPage() {
       p.student_name.toLowerCase().includes(search.toLowerCase()) ||
       p.course_title.toLowerCase().includes(search.toLowerCase()),
   );
+  const legacyFacultyRegistrations: FacultyRegistrationRow[] = registrations
+    .filter((row) => row.course.trim().toLowerCase() === "faculty registration")
+    .map((row) => ({
+      id: `legacy-${row.id}`,
+      full_name: row.full_name,
+      email: row.email,
+      whatsapp: row.phone,
+      education: row.qualification || "N/A",
+      net_category: "Legacy",
+      teaching_mode: "N/A",
+      expertise:
+        "Stored via legacy fallback. Apply faculty_registrations migration.",
+      created_at: row.created_at,
+      status: row.status || "pending",
+      review_notes: "legacy_fallback",
+      source: "legacy",
+    }));
+
+  const facultyRegistrationRows = [
+    ...facultyRegistrations.map((row) => ({
+      ...row,
+      source: "primary" as const,
+    })),
+    ...legacyFacultyRegistrations,
+  ];
+  const hasLegacyFacultyRows = legacyFacultyRegistrations.length > 0;
+
+  const filteredFacultyRegistrations = facultyRegistrationRows.filter(
+    (row) =>
+      !search ||
+      row.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      row.email.toLowerCase().includes(search.toLowerCase()) ||
+      row.whatsapp.includes(search) ||
+      row.net_category.toLowerCase().includes(search.toLowerCase()) ||
+      row.expertise.toLowerCase().includes(search.toLowerCase()),
+  );
   const filteredStudentFeeDetails = studentFeeDetails.filter(
     (row) =>
       !search ||
@@ -2211,6 +2249,13 @@ export default function AdminDashboardPage() {
                 onClick={setActiveSection}
                 icon={Bell}
                 label={`New Registrations (${registrations.length})`}
+              />
+              <SideBtn
+                s="facultyRegistrations"
+                active={activeSection}
+                onClick={setActiveSection}
+                icon={Users}
+                label={`New Faculty Registration (${facultyRegistrationRows.length})`}
               />
             </nav>
           </aside>
@@ -4776,8 +4821,51 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </div>
+              </>
+            )}
 
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 mt-6">
+            {activeSection === "facultyRegistrations" && (
+              <>
+                <div className="bg-gradient-to-r from-purple-600 to-violet-600 rounded-2xl p-6 text-white">
+                  <h1 className="text-xl font-bold mb-1">
+                    New Faculty Registration
+                  </h1>
+                  <p className="text-purple-100 text-sm">
+                    {filteredFacultyRegistrations.length} faculty applications
+                    pending review and onboarding actions.
+                  </p>
+                </div>
+
+                {hasLegacyFacultyRows && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                    <p className="text-sm font-semibold">
+                      Migration required for full faculty workflow
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                      Some requests are stored in legacy fallback mode because
+                      the table public.faculty_registrations is not present in
+                      the connected Supabase project.
+                    </p>
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-white px-3 py-2">
+                      <p className="text-[11px] font-semibold text-amber-900">
+                        Apply this migration in Supabase SQL Editor:
+                      </p>
+                      <p className="mt-1 font-mono text-[11px] text-amber-900">
+                        20260517_create_faculty_registrations.sql
+                      </p>
+                    </div>
+                    <div className="mt-2 rounded-lg border border-amber-200 bg-white px-3 py-2">
+                      <p className="text-[11px] font-semibold text-amber-900">
+                        CLI option after setting DB password:
+                      </p>
+                      <p className="mt-1 font-mono text-[11px] text-amber-900">
+                        npx supabase db push
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                   <div className="px-5 py-4 border-b border-gray-100">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
@@ -4789,7 +4877,7 @@ export default function AdminDashboardPage() {
                         </p>
                       </div>
                       <Badge
-                        text={`${facultyRegistrations.length} requests`}
+                        text={`${filteredFacultyRegistrations.length} requests`}
                         color="blue"
                       />
                     </div>
@@ -4829,7 +4917,7 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {facultyRegistrations.map((row) => (
+                        {filteredFacultyRegistrations.map((row) => (
                           <tr key={row.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-900">
                               {row.full_name}
@@ -4866,33 +4954,45 @@ export default function AdminDashboardPage() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-2">
-                                <button
-                                  onClick={() =>
-                                    reviewFacultyRegistration(
-                                      row.id,
-                                      "approved",
-                                    )
-                                  }
-                                  disabled={facultyStatusUpdatingId === row.id}
-                                  className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-60"
-                                >
-                                  {facultyStatusUpdatingId === row.id ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : null}
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    reviewFacultyRegistration(
-                                      row.id,
-                                      "rejected",
-                                    )
-                                  }
-                                  disabled={facultyStatusUpdatingId === row.id}
-                                  className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-                                >
-                                  Reject
-                                </button>
+                                {row.source !== "legacy" ? (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        reviewFacultyRegistration(
+                                          row.id,
+                                          "approved",
+                                        )
+                                      }
+                                      disabled={
+                                        facultyStatusUpdatingId === row.id
+                                      }
+                                      className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                                    >
+                                      {facultyStatusUpdatingId === row.id ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                      ) : null}
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        reviewFacultyRegistration(
+                                          row.id,
+                                          "rejected",
+                                        )
+                                      }
+                                      disabled={
+                                        facultyStatusUpdatingId === row.id
+                                      }
+                                      className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="text-[11px] text-amber-700 font-semibold">
+                                    Migration pending
+                                  </span>
+                                )}
                                 <button
                                   onClick={() =>
                                     prefillFacultyManageFromRegistration(row)
@@ -4907,7 +5007,7 @@ export default function AdminDashboardPage() {
                         ))}
                       </tbody>
                     </table>
-                    {facultyRegistrations.length === 0 && (
+                    {filteredFacultyRegistrations.length === 0 && (
                       <p className="text-center py-8 text-sm text-gray-400">
                         No faculty registration requests yet.
                       </p>

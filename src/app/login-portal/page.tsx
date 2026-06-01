@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, GraduationCap, ShieldCheck, Users } from "lucide-react";
 
 const roles = [
   {
@@ -92,6 +92,16 @@ export default function LoginPortal() {
       </div>
 
       <div className="relative z-10 w-full max-w-5xl">
+        <div className="mb-6 flex justify-end">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-bold !text-white hover:!text-white focus:!text-white shadow-md transition-all hover:bg-violet-700 hover:shadow-lg"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home Page
+          </a>
+        </div>
+
         {/* Header */}
         <div className="mb-12 text-center">
           <a href="/" className="inline-flex items-center gap-3 mb-6 group">

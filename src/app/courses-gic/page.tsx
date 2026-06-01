@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import {
@@ -48,7 +48,7 @@ const methodologyPoints = [
   "We teach you how to structure answers, from impactful introductions to data-backed body paragraphs and balanced conclusions.",
   'Learn how to use "High-Yield Keywords" that UPPSC evaluators look for in GIC Mains scripts.',
   "Every mock answer you write is deeply evaluated with written annotations, pointing out exactly where you can gain an extra half-mark.",
-  "Real-time sessions where we pick a previous year’s question and build a model answer together on screen.",
+  "Real-time sessions where we pick a previous year's question and build a model answer together on screen.",
 ];
 
 const featurePoints = [
@@ -74,7 +74,7 @@ const featurePoints = [
     icon: MessageCircle,
     title: "Live Doubt Support",
     description:
-      "Don’t let doubts pile up; resolve them in every live class with subject experts.",
+      "Don't let doubts pile up; resolve them in every live class with subject experts.",
   },
   {
     icon: PenTool,
@@ -125,9 +125,7 @@ export default function GICCoursePage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=GIC"
               className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-amber-600"
             >
               Enroll Now
@@ -238,18 +236,29 @@ export default function GICCoursePage() {
             <h2 className="mb-3 text-3xl font-bold md:text-4xl">
               Enrollment Section
             </h2>
+            <p className="text-blue-100">
+              Choose the payment plan that works best for your preparation.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <div className="rounded-2xl bg-white p-8 text-gray-900 shadow-2xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1 text-sm font-bold text-blue-900">
-                <Sparkles className="h-4 w-4" />
-                Single Payment Offer
+            <div className="relative overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
+              <div className="absolute right-0 top-0 bg-amber-500 px-4 py-1 text-sm font-bold text-white">
+                SINGLE PAYMENT OFFER
               </div>
-              <p className="mb-6 text-lg text-gray-700">
-                Get complete course access with one-time payment. Contact us for
-                the latest offer details.
-              </p>
+
+              <div className="mb-6">
+                <h3 className="mb-2 text-2xl font-bold text-blue-900">
+                  One-Time Payment
+                </h3>
+                <div className="mb-1 flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-blue-900">
+                    Rs. 7,995
+                  </span>
+                </div>
+                <p className="text-gray-600">(Prelims + Mains)</p>
+              </div>
+
               <ul className="mb-8 space-y-3">
                 {[
                   "Full syllabus coverage (Prelims + Mains)",
@@ -263,28 +272,41 @@ export default function GICCoursePage() {
                   </li>
                 ))}
               </ul>
+
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
+                href="/student-registration?mode=paid&course=GIC"
+                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-blue-800"
                 style={{ color: "#ffffff" }}
               >
                 Enroll Now
               </a>
             </div>
 
-            <div className="rounded-2xl border-4 border-amber-400 bg-white p-8 text-gray-900 shadow-2xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1 text-sm font-bold text-amber-700">
-                Instalment
+            <div className="relative rounded-2xl border-4 border-amber-400 bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
+              <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-amber-500 px-6 py-2 text-sm font-bold text-white shadow-lg">
+                <Sparkles className="h-4 w-4" />
+                POPULAR
               </div>
-              <p className="mb-6 text-lg text-gray-700">
-                Flexible instalment option available. Connect with us to choose
-                the best plan as per your preparation timeline.
+
+              <div className="mb-6 mt-4">
+                <h3 className="mb-2 text-2xl font-bold text-blue-900">
+                  Installment Plan
+                </h3>
+                <div className="mb-1 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-blue-900">
+                    2 Instalments of Rs. 4,397
+                  </span>
+                </div>
+                <p className="text-gray-600">Total Cost: Rs. 8,794</p>
+              </div>
+
+              <p className="mb-6 text-base text-gray-700">
+                Two equal instalments for both Prelims and Mains access.
               </p>
+
               <ul className="mb-8 space-y-3">
                 {[
-                  "Flexible monthly payment support",
+                  "Flexible two-step payment support",
                   "All live + recorded sessions included",
                   "Personal mentoring continuity",
                   "Complete test series access",
@@ -295,11 +317,10 @@ export default function GICCoursePage() {
                   </li>
                 ))}
               </ul>
+
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full rounded-lg bg-amber-500 py-3.5 text-center font-bold text-white hover:bg-amber-600"
+                href="/student-registration?mode=paid&course=GIC"
+                className="block w-full rounded-lg bg-amber-500 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-amber-600"
               >
                 Fill Registration Form
               </a>

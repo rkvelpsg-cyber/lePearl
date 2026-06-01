@@ -371,9 +371,7 @@ function InterviewContent() {
               turn every answer into something memorable?
             </p>
             <motion.a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-full shadow-xl transition-all"
@@ -438,9 +436,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full bg-white text-black py-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all text-center"
@@ -488,9 +484,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all text-center"
@@ -523,9 +517,7 @@ function InterviewContent() {
             Make sure your communication is ready to open every door.
           </p>
           <motion.a
-            href="/login-portal"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block bg-white text-black px-12 py-5 rounded-full text-xl font-bold shadow-2xl transition-all"
@@ -615,3 +607,5 @@ export default function AssistantProfessorInterviewPage() {
     </div>
   );
 }
+
+

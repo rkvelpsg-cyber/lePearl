@@ -230,6 +230,22 @@ function FeaturesSection() {
 }
 
 function ScheduleAndFeeSection() {
+  const oneTimeFeatures = [
+    "Full course access",
+    "Live classes + recordings",
+    "Weekly tests and assessments",
+    "PDF notes for every class",
+    "One-to-one doubt support",
+  ];
+
+  const installmentFeatures = [
+    "Full course access",
+    "Live classes + recordings",
+    "Weekly tests and assessments",
+    "Flexible payment schedule",
+    "One-to-one doubt support",
+  ];
+
   return (
     <section
       id="enrollment"
@@ -243,40 +259,98 @@ function ScheduleAndFeeSection() {
           <div className="mx-auto h-1 w-24 bg-gradient-to-r from-yellow-500 to-yellow-600" />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-md md:col-span-3">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-100">
-                <Calendar className="h-6 w-6 text-teal-800" />
-              </div>
-              <h3 className="text-xl font-bold text-teal-800">Schedule</h3>
+        <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-md">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-100">
+              <Calendar className="h-6 w-6 text-teal-800" />
             </div>
-            <p className="text-gray-700">As per the availability.</p>
+            <h3 className="text-xl font-bold text-teal-800">Schedule</h3>
+          </div>
+          <p className="text-gray-700">As per the availability.</p>
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="relative overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
+            <div className="absolute right-0 top-0 bg-yellow-500 px-4 py-1 text-sm font-bold text-teal-900">
+              FULL PAYMENT
+            </div>
+
+            <div className="mb-6">
+              <h3 className="mb-2 text-2xl font-bold text-teal-800">
+                One-Time Payment
+              </h3>
+              <div className="mb-1 flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-teal-800">
+                  Rs. 12,495
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <p className="mb-4 font-semibold text-teal-800">Includes:</p>
+              <ul className="space-y-3">
+                {oneTimeFeatures.map((feature) => (
+                  <li key={feature} className="flex items-center gap-3">
+                    <Check className="h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <a
+              href="/student-registration?mode=paid&course=SET"
+              className="block w-full rounded-lg bg-teal-800 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-teal-700"
+              style={{ color: "#ffffff" }}
+            >
+              Enroll Now
+            </a>
           </div>
 
-          <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-md">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-100">
-                <CreditCard className="h-6 w-6 text-teal-800" />
-              </div>
-              <h3 className="text-xl font-bold text-teal-800">One-Time</h3>
+          <div className="relative rounded-2xl border-4 border-yellow-400 bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-yellow-500 px-6 py-2 text-sm font-bold text-teal-900 shadow-lg">
+              FLEXIBLE
             </div>
-            <p className="text-lg font-semibold text-gray-800">
-              Full one-time payment: 12495/-
-            </p>
-          </div>
 
-          <div className="rounded-2xl border border-teal-100 bg-white p-6 shadow-md md:col-span-2">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-100">
-                <CreditCard className="h-6 w-6 text-teal-800" />
+            <div className="mb-6 mt-4">
+              <h3 className="mb-2 text-2xl font-bold text-teal-800">
+                Installments
+              </h3>
+              <div className="mb-1 flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-teal-800">
+                  5 installments of Rs. 2,995
+                </span>
               </div>
-              <h3 className="text-xl font-bold text-teal-800">Installments</h3>
             </div>
-            <p className="text-lg font-semibold text-gray-800">
-              Five equal instalments: 2995/-
-            </p>
+
+            <div className="mb-8">
+              <p className="mb-4 font-semibold text-teal-800">Includes:</p>
+              <ul className="space-y-3">
+                {installmentFeatures.map((feature) => (
+                  <li key={feature} className="flex items-center gap-3">
+                    <Check className="h-5 w-5 flex-shrink-0 text-green-600" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <a
+              href="/student-registration?mode=paid&course=SET"
+              className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-teal-900 transition-colors hover:bg-yellow-400"
+            >
+              Enroll Now
+            </a>
           </div>
+        </div>
+
+        <div className="mt-10 text-center">
+          <p className="text-gray-600">
+            Need help choosing?{" "}
+            <a href="#" className="font-semibold text-teal-700 underline">
+              Contact us
+            </a>
+          </p>
         </div>
       </div>
     </section>
@@ -304,6 +378,3 @@ export default function CoursesSetPage() {
     </div>
   );
 }
-
-
-

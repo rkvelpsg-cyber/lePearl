@@ -1,15 +1,18 @@
-import Image from "next/image";
-import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
-import { VideoPrefetcher } from "@/components/VideoPrefetcher";
+"use client";
 
-type TopButton = {
-  label: string;
-  sectionId: string;
-};
+import Image from "next/image";
+import {
+  ArrowLeft,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Youtube,
+} from "lucide-react";
+import { VideoPrefetcher } from "@/components/VideoPrefetcher";
 
 type CoursePageHeaderProps = {
   onEnroll: () => void;
-  topButtons?: TopButton[];
 };
 
 const socialLinks = [
@@ -40,50 +43,9 @@ const socialLinks = [
   },
 ];
 
-const defaultTopButtons: TopButton[] = [
-  { label: "Books", sectionId: "books" },
-  { label: "Testimonials", sectionId: "testimonials" },
-  { label: "Who Can Apply", sectionId: "who-can-apply" },
-  { label: "FAQs", sectionId: "faqs" },
-];
-
-function scrollToSection(sectionId: string) {
-  const target = document.getElementById(sectionId);
-  if (target) {
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
-
-  window.location.href = `/all-courses#${sectionId}`;
-}
-
-export function CoursePageHeader({
-  onEnroll,
-  topButtons,
-}: CoursePageHeaderProps) {
-  const links =
-    topButtons && topButtons.length > 0 ? topButtons : defaultTopButtons;
-
+export function CoursePageHeader({ onEnroll }: CoursePageHeaderProps) {
   return (
     <>
-      <aside className="fixed left-2 top-1/2 z-40 hidden -translate-y-1/2 rounded-xl border border-violet-200 bg-white/95 p-2 shadow-lg backdrop-blur lg:block">
-        <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-700">
-          Quick Links
-        </p>
-        <div className="mt-1 space-y-1">
-          {links.map(({ label, sectionId }) => (
-            <button
-              key={`side-${sectionId}`}
-              type="button"
-              onClick={() => scrollToSection(sectionId)}
-              className="block w-full rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-slate-700 transition hover:bg-violet-100 hover:text-violet-700"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </aside>
-
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm overflow-x-hidden">
         <VideoPrefetcher />
 
@@ -107,6 +69,14 @@ export function CoursePageHeader({
                 Excellence in English
               </p>
             </div>
+          </a>
+          <a
+            href="/"
+            className="inline-flex items-center gap-1 rounded-lg border border-violet-700 bg-violet-700 px-2 py-2 text-xs font-semibold text-white transition-colors hover:bg-violet-800 whitespace-nowrap flex-shrink-0"
+            style={{ color: "#ffffff" }}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
           </a>
           <div className="flex items-center gap-1">
             {socialLinks.map(({ href, label, Icon }) => (
@@ -163,22 +133,15 @@ export function CoursePageHeader({
           </a>
 
           <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-            {links.length > 0 ? (
-              <div className="hidden flex-wrap justify-center gap-2 lg:flex">
-                {links.map(({ label, sectionId }) => (
-                  <button
-                    key={sectionId}
-                    type="button"
-                    onClick={() => scrollToSection(sectionId)}
-                    className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 cursor-pointer whitespace-nowrap"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
             <div className="flex items-center justify-end gap-2">
+              <a
+                href="/"
+                className="rounded-lg border border-violet-700 bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-800 whitespace-nowrap inline-flex items-center gap-2"
+                style={{ color: "#ffffff" }}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home Page
+              </a>
               {socialLinks.map(({ href, label, Icon }) => (
                 <a
                   key={label}

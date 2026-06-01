@@ -79,8 +79,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-mppsc"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -90,8 +88,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-uphesc"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -101,8 +97,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-upgdc"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -112,8 +106,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-net-paper1"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -123,8 +115,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-net-paper2"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -134,8 +124,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-gic"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <Award className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -145,8 +133,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-ltgrade"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -156,8 +142,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/courses-set"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <FileText className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -167,8 +151,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/research-assistance"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -178,8 +160,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/interview-preparation/assistant-professor-1"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -189,8 +169,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/interview-preparation/du-interview"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -200,8 +178,6 @@ export function SiteFooter() {
               <li>
                 <a
                   href="/interview-preparation/phd-interview"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >
                   <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -262,6 +238,14 @@ export function SiteFooter() {
                   className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
                 >
                   Books
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/faculty-registration"
+                  className="inline-block text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white truncate w-full"
+                >
+                  Career
                 </a>
               </li>
               <li>
@@ -399,6 +383,15 @@ export function SiteFooter() {
               className="text-gray-200 transition-colors duration-200 hover:text-white whitespace-nowrap"
             >
               Terms &amp; Conditions
+            </a>
+            <span className="text-gray-400">|</span>
+            <a
+              href="/student-code-of-conduct"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-200 transition-colors duration-200 hover:text-white whitespace-nowrap"
+            >
+              Student Code of Conduct
             </a>
           </div>
         </div>

@@ -197,11 +197,176 @@ export default function TermsAndConditions() {
                 >
                   12. Refund Policy
                 </h2>
-                <p>
-                  Refund policies for courses and services are governed by
-                  separate agreements. Please refer to the specific course or
-                  service terms for refund eligibility and procedures.
-                </p>
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">
+                      Refund and Cancellation Policy
+                    </p>
+                    <p className="font-medium text-gray-700">
+                      LePearl Education
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Effective Date: May 30, 2026
+                    </p>
+                  </div>
+
+                  <p>
+                    At LePearl Education, we are committed to delivering
+                    high-quality, well-structured courses designed through a
+                    proven, science-backed four-stage learning methodology to
+                    help you succeed in competitive English Literature
+                    examinations.
+                  </p>
+
+                  <p>
+                    Please read this policy carefully before making any
+                    purchase.
+                  </p>
+
+                  <div>
+                    <h3 className="mb-2 text-xl font-semibold text-[#1E3A8A]">
+                      1. General Refund Policy
+                    </h3>
+                    <p>
+                      All course enrolments are non-refundable once the purchase
+                      is completed.
+                    </p>
+                    <p className="mt-2">
+                      Because our courses are delivered through a digital
+                      platform, you receive immediate access to exclusive study
+                      materials, video lectures, live sessions (if applicable),
+                      mock tests, and other premium resources upon successful
+                      enrolment. Due to the nature of digital content and the
+                      instant access it provides, we are unable to offer refunds
+                      or cancellations after enrolment.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-2 text-xl font-semibold text-[#1E3A8A]">
+                      2. Cancellation Policy
+                    </h3>
+                    <p>
+                      You may cancel your enrolment only before making the
+                      payment. Once the payment is processed and the course is
+                      activated, cancellation is not permitted.
+                    </p>
+                    <p className="mt-2">We strongly encourage you to:</p>
+                    <ul className="ml-6 mt-2 space-y-2 list-disc">
+                      <li>
+                        Carefully review the course curriculum, duration,
+                        features, and pricing
+                      </li>
+                      <li>
+                        Watch any free preview/demo lectures (if available)
+                      </li>
+                      <li>
+                        Assess your suitability for the course before purchasing
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-2 text-xl font-semibold text-[#1E3A8A]">
+                      3. Exceptional Circumstances
+                    </h3>
+                    <p>
+                      Refunds may be considered only in rare, exceptional cases,
+                      such as:
+                    </p>
+                    <ul className="ml-6 mt-2 space-y-2 list-disc">
+                      <li>
+                        Technical failure on our end is preventing access to the
+                        course for an extended period
+                      </li>
+                      <li>
+                        Accidental duplicate payment (subject to verification)
+                      </li>
+                      <li>
+                        Change of mind of the student due to some personal
+                        reasons
+                      </li>
+                      <li>Not satisfied with the quality of our services</li>
+                    </ul>
+                    <p className="mt-2">
+                      All refund requests must be submitted in writing within 7
+                      days of enrolment via email, along with supporting
+                      evidence. Each request will be reviewed on a case-by-case
+                      basis, and our decision will be final.
+                    </p>
+                    <p className="mt-2">
+                      Note: Refunds, even when approved, may be subject to
+                      deductions for administrative charges and any content
+                      already accessed.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-2 text-xl font-semibold text-[#1E3A8A]">
+                      4. Payment Disputes &amp; Chargebacks
+                    </h3>
+                    <p>
+                      Any attempt to initiate a chargeback, dispute, or reversal
+                      of payment through your bank or payment provider without
+                      contacting us first will be treated as a violation of this
+                      policy. In such cases, we reserve the right to block your
+                      account and pursue legal remedies permanently.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="mb-2 text-xl font-semibold text-[#1E3A8A]">
+                      5. How to Request a Refund (If Eligible)
+                    </h3>
+                    <p>
+                      To request a refund under exceptional circumstances,
+                      please email us at{" "}
+                      <a
+                        href="mailto:admin@lepearleducation.com"
+                        className="text-[#1E3A8A] underline hover:text-blue-700"
+                      >
+                        admin@lepearleducation.com
+                      </a>{" "}
+                      with the following details:
+                    </p>
+                    <ul className="ml-6 mt-2 space-y-2 list-disc">
+                      <li>Your registered email ID</li>
+                      <li>Order/Transaction ID</li>
+                      <li>Reason for refund with supporting documents</li>
+                    </ul>
+                    <p className="mt-2">
+                      We will respond to your request within 7-10 business days.
+                    </p>
+                  </div>
+
+                  <p>
+                    By enrolling in any course at LePearl Education, you
+                    acknowledge that you have read, understood, and agreed to
+                    this Refund and Cancellation Policy.
+                  </p>
+
+                  <p>
+                    We appreciate your understanding and thank you for choosing
+                    us for your English Literature exam preparation.
+                  </p>
+
+                  <div>
+                    <p className="font-medium text-gray-700">
+                      Lepearl Education
+                    </p>
+                    <p>
+                      Website:{" "}
+                      <a
+                        href="https://lepearleducation.com"
+                        className="text-[#1E3A8A] underline hover:text-blue-700"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        https://lepearleducation.com
+                      </a>
+                    </p>
+                  </div>
+                </div>
               </section>
 
               <section>

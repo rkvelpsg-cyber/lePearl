@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
@@ -458,9 +458,7 @@ function UPGDCPage() {
 
             <div className="mb-10 flex flex-wrap gap-4">
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=UP%20GDC"
                 className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Enroll Now
@@ -600,9 +598,7 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=UP%20GDC"
                 className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
                 style={{ color: "#ffffff" }}
               >
@@ -635,9 +631,7 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=UP%20GDC"
                 className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Fill Registration Form
@@ -669,9 +663,7 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=UP%20GDC"
                 className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
                 style={{ color: "#ffffff" }}
               >
@@ -703,9 +695,7 @@ function UPGDCPage() {
                 ))}
               </ul>
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=UP%20GDC"
                 className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
               >
                 Fill Registration Form

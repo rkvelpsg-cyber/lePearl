@@ -65,9 +65,7 @@ function Hero() {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-10">
             <a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=Research%20Assistance"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Explore Programs
@@ -201,9 +199,6 @@ function ResearchPaperContent() {
         research paper with expert feedback and a clear roadmap for successful
         journal submission.
       </p>
-      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-        Enrol Now - Limited seats | Fee- 2995/-
-      </div>
     </div>
   );
 }
@@ -278,10 +273,6 @@ function ThesisContent() {
         Submit a thesis that is academically sound, well-written, and ready for
         evaluation, while gaining lifelong academic writing confidence.
       </p>
-      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-        Join the Program - Start your thesis journey with clarity and expert
-        support at only 5995/-
-      </div>
     </div>
   );
 }
@@ -353,10 +344,6 @@ function PhdProposalContent() {
         A polished, approval-ready PhD proposal that clearly communicates your
         research vision and increases your chances of selection and funding.
       </p>
-      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-        Enrol Today - Turn your research dream into a funded reality at a
-        minimal cost of 1995/-
-      </div>
     </div>
   );
 }
@@ -431,10 +418,6 @@ function MlaApaContent() {
         Error-free, professionally formatted citations and references that meet
         university and journal standards.
       </p>
-      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-        Enrol Now - Never lose marks on formatting again with our cost-effective
-        course at just 1995/-
-      </div>
     </div>
   );
 }
@@ -498,10 +481,6 @@ function MentoringContent() {
         A high-quality, submission-ready research paper with expert validation
         and an increased publication success rate.
       </p>
-      <div className="rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
-        Book Your Personalised Mentoring Session | For one hour- 1000/- | For 30
-        minutes- 750/- | 10% discount for all the Pearlians.
-      </div>
     </div>
   );
 }
@@ -522,9 +501,21 @@ const tabBg: Record<TabId, string> = {
   mentoring: "bg-gradient-to-b from-cyan-50 via-cyan-50/70 to-white",
 };
 
-function ProgramTabsPanel() {
-  const [activeTab, setActiveTab] = useState<TabId>("research-paper");
+const tabFees: Record<TabId, string> = {
+  "research-paper": "Rs 2995/-",
+  thesis: "Rs 5995/-",
+  "phd-proposal": "Rs 1995/-",
+  "mla-apa": "Rs 1995/-",
+  mentoring: "For one hour- 1000/- | For 30 minutes- 750/-",
+};
 
+function ProgramTabsPanel({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
+}) {
   const contentMap: Record<TabId, React.ReactNode> = {
     "research-paper": <ResearchPaperContent />,
     thesis: <ThesisContent />,
@@ -547,7 +538,7 @@ function ProgramTabsPanel() {
               return (
                 <button
                   key={id}
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => onTabChange(id)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm font-medium transition-all duration-200 w-full group ${isActive ? "bg-teal-800 text-white shadow-md" : "text-gray-600 hover:bg-teal-50 hover:text-teal-800"}`}
                 >
                   <span
@@ -575,7 +566,7 @@ function ProgramTabsPanel() {
           return (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => onTabChange(id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isActive ? "bg-teal-800 text-white" : "bg-teal-50 text-teal-700"}`}
             >
               <Icon className="w-3 h-3 flex-shrink-0" />
@@ -596,6 +587,10 @@ function ProgramTabsPanel() {
           <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
         </div>
         {contentMap[activeTab]}
+
+        <div className="mx-auto mt-8 max-w-5xl rounded-xl bg-gradient-to-r from-teal-800 to-cyan-700 px-4 py-3.5 sm:py-4 text-center text-white font-semibold leading-relaxed text-sm sm:text-base shadow-lg ring-1 ring-white/20">
+          Current Fee: {tabFees[activeTab]}
+        </div>
       </div>
     </div>
   );
@@ -826,7 +821,75 @@ function Testimonials() {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Enrollment Section
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function EnrollmentSection() {
+type FeeCard = {
+  title: string;
+  price: string;
+  features: string[];
+  badge: string;
+  featured: boolean;
+};
+
+function EnrollmentSection({ activeTab }: { activeTab: TabId }) {
+  const feeCardsByTab: Record<TabId, FeeCard> = {
+    "research-paper": {
+      title: "Art of Research Paper Writing",
+      price: "Rs. 2,995/-",
+      features: [
+        "Structured from idea to publication",
+        "Live classes + practical writing sessions",
+        "One-to-one draft feedback",
+      ],
+      badge: "POPULAR",
+      featured: true,
+    },
+    thesis: {
+      title: "Art of Thesis Writing",
+      price: "Rs. 5,995/-",
+      features: [
+        "Chapter-wise thesis structuring",
+        "Literature review and methodology guidance",
+        "Viva-oriented writing support",
+      ],
+      badge: "ADVANCED",
+      featured: false,
+    },
+    "phd-proposal": {
+      title: "Art of PhD Proposal Making",
+      price: "Rs. 1,995/-",
+      features: [
+        "Proposal framework and objectives",
+        "Selection and funding focused strategy",
+        "Mock proposal review sessions",
+      ],
+      badge: "STARTER",
+      featured: false,
+    },
+    "mla-apa": {
+      title: "Learn the Art of Application of MLA and APA",
+      price: "Rs. 1,995/-",
+      features: [
+        "MLA and APA application with examples",
+        "Error-free references and citations",
+        "Hands-on citation correction practice",
+      ],
+      badge: "ESSENTIAL",
+      featured: false,
+    },
+    mentoring: {
+      title: "Guidance and Mentoring for Research Paper Writing",
+      price: "For one hour: 1000/- | For 30 minutes: 750/-",
+      features: [
+        "Personalized one-to-one mentoring",
+        "Draft review and live corrective feedback",
+        "Flexible slot-based guidance",
+      ],
+      badge: "MENTORING",
+      featured: false,
+    },
+  };
+
+  const card = feeCardsByTab[activeTab];
+
   return (
     <section
       id="enrollment"
@@ -838,85 +901,64 @@ function EnrollmentSection() {
             Ready to Master Academic Writing?
           </h2>
           <p className="text-cyan-100 text-lg max-w-2xl mx-auto">
-            Choose the program that matches your needs and start your research
-            journey with expert guidance
+            Choose the section that matches your need and enroll with the right
+            fee plan
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Quick Start */}
-          <div className="bg-white text-gray-900 rounded-2xl p-8 shadow-2xl hover:scale-105 transition-transform">
-            <h3 className="text-2xl font-bold text-teal-800 mb-2">
-              Quick Start Guide
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Explore all programs to find the perfect fit
-            </p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "Research Paper Writing",
-                "Thesis Writing",
-                "PhD Proposals",
-                "Citation Mastery",
-                "Personal Mentoring",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full bg-teal-800 hover:bg-teal-700 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
+        <div className="max-w-xl mx-auto">
+          <div
+            key={card.title}
+            className={`bg-white text-gray-900 rounded-2xl p-8 shadow-2xl hover:scale-105 transition-transform relative ${
+              card.featured ? "border-4 border-amber-400" : ""
+            }`}
+          >
+            <div
+              className={`absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg ${
+                card.featured
+                  ? "bg-amber-500 text-white"
+                  : "bg-teal-800 text-white"
+              }`}
             >
-              Explore Programs
-            </a>
-          </div>
-
-          {/* Schedule Consultation */}
-          <div className="bg-white text-gray-900 rounded-2xl p-8 shadow-2xl hover:scale-105 transition-transform relative border-4 border-amber-400">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
               <Sparkles className="w-4 h-4" />
-              RECOMMENDED
+              {card.badge}
             </div>
 
             <h3 className="text-2xl font-bold text-teal-800 mb-2 mt-4">
-              One-to-One Consultation
+              {card.title}
             </h3>
-            <p className="text-gray-600 mb-4">
-              Get personalized guidance for your research needs
-            </p>
+            <p className="text-gray-600 mb-4">Fee Plan</p>
+            <div className="mb-6 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-teal-900">
+                {card.price}
+              </span>
+            </div>
+
             <ul className="space-y-3 mb-8">
-              {[
-                "Personalized Assessment",
-                "Custom Program Selection",
-                "Flexible Scheduling",
-                "Expert Faculty Matching",
-                "Money-Back Guarantee",
-              ].map((item) => (
+              {card.features.map((item) => (
                 <li key={item} className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
+
             <a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
+              href="/student-registration?mode=paid&course=Research%20Assistance"
+              className={`block w-full py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center !text-white hover:!text-white ${
+                card.featured
+                  ? "bg-amber-500 hover:bg-amber-600"
+                  : "bg-teal-800 hover:bg-teal-700"
+              }`}
             >
-              Schedule Free Consultation
+              Enroll Now
             </a>
           </div>
         </div>
 
         <div className="text-center mt-10">
           <p className="text-cyan-100">
-            Questions?{" "}
+            Need help selecting the right section?{" "}
             <a
               href="#"
               className="text-amber-400 hover:text-amber-300 font-semibold underline"
@@ -931,6 +973,8 @@ function EnrollmentSection() {
 }
 
 export default function ResearchAssistancePage() {
+  const [activeTab, setActiveTab] = useState<TabId>("research-paper");
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -938,10 +982,10 @@ export default function ResearchAssistancePage() {
       <ProgramsOverview />
       <ProgramFeatures />
 
-      <ProgramTabsPanel />
+      <ProgramTabsPanel activeTab={activeTab} onTabChange={setActiveTab} />
 
       <Testimonials />
-      <EnrollmentSection />
+      <EnrollmentSection activeTab={activeTab} />
       <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>

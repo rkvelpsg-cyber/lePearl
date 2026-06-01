@@ -364,9 +364,7 @@ function InterviewContent() {
               shift begins.
             </p>
             <motion.a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20DU%20Interview"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="inline-block rounded-full bg-indigo-600 px-8 py-4 text-white shadow-xl transition-all hover:bg-indigo-700"
@@ -428,9 +426,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20DU%20Interview"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full rounded-full bg-white py-4 text-center font-bold text-black shadow-xl transition-all hover:shadow-2xl"
@@ -477,9 +473,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20DU%20Interview"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full rounded-full bg-indigo-600 py-4 text-center font-bold text-white shadow-xl transition-all hover:bg-indigo-700 hover:shadow-2xl"
@@ -511,9 +505,7 @@ function InterviewContent() {
             Make sure your communication is strong enough to open that door.
           </p>
           <motion.a
-            href="/login-portal"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20DU%20Interview"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block rounded-full bg-white px-12 py-5 text-xl font-bold text-black shadow-2xl transition-all"
@@ -606,3 +598,5 @@ export default function DUInterviewPage() {
     </div>
   );
 }
+
+

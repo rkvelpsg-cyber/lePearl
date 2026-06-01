@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { sendWhatsAppTextNotification } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
-const recipientEmail = "lepearledu@gmail.com";
+const recipientEmail = "admin@lepearleducation.com";
 
 type FacultyRegistrationPayload = {
   fullName: string;
@@ -32,7 +33,19 @@ function isValidEmail(value: string) {
 }
 
 function isValidPhone(value: string) {
-  return /^[+]?[(]?[0-9\s-]{10,20}$/.test(value);
+  return /^\d{10}$/.test(value);
+}
+
+function normalizePhone(value: string) {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
+function isMissingFacultyRegistrationsTableError(message: string) {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("could not find the table") &&
+    lower.includes("public.faculty_registrations")
+  );
 }
 
 function getSupabaseClient() {
@@ -96,7 +109,7 @@ function buildMail(payload: FacultyRegistrationPayload) {
     `Education: ${payload.education}`,
     `NET/JRF/PhD: ${payload.netCategory}`,
     `Address: ${payload.address}`,
-    `Guardian: ${payload.guardianName || "N/A"}`,
+    `Parent/Guardian: ${payload.guardianName || "N/A"}`,
     `Skills: ${payload.skills}`,
     `Teaching mode: ${payload.teachingMode}`,
     `Research experience: ${payload.researchExperience || "N/A"}`,
@@ -116,6 +129,52 @@ function buildMail(payload: FacultyRegistrationPayload) {
   return { subject, text, html };
 }
 
+function buildFacultyConfirmationEmail(payload: FacultyRegistrationPayload) {
+  const subject = "LePearl Faculty Registration Received";
+
+  const text = [
+    `Dear ${payload.fullName},`,
+    "",
+    "Your faculty registration has been received successfully.",
+    "Our admin team will review your profile and contact you shortly.",
+    "",
+    "Regards,",
+    "LePearl Education",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:680px;margin:0 auto;">
+      <p>Dear ${payload.fullName},</p>
+      <p>Your faculty registration has been received successfully.</p>
+      <p>Our admin team will review your profile and contact you shortly.</p>
+      <p>Regards,<br />LePearl Education</p>
+    </div>
+  `;
+
+  return { subject, text, html };
+}
+
+function buildFacultyApplicantWhatsAppMessage(
+  payload: FacultyRegistrationPayload,
+) {
+  const submittedAt = new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+
+  return [
+    `Dear ${payload.fullName},`,
+    "Your faculty registration has been received successfully.",
+    `Email: ${payload.email}`,
+    `Category: ${payload.netCategory}`,
+    `Teaching Mode: ${payload.teachingMode}`,
+    `Submitted: ${submittedAt}`,
+    "Our admin team will review your profile and contact you shortly.",
+    "LePearl Education",
+  ].join("\n");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Partial<FacultyRegistrationPayload>;
@@ -123,7 +182,7 @@ export async function POST(req: NextRequest) {
     const payload: FacultyRegistrationPayload = {
       fullName: sanitize(body.fullName),
       email: sanitize(body.email).toLowerCase(),
-      whatsapp: sanitize(body.whatsapp),
+      whatsapp: normalizePhone(sanitize(body.whatsapp)),
       education: sanitize(body.education),
       netCategory: sanitize(body.netCategory),
       address: sanitize(body.address),
@@ -161,13 +220,16 @@ export async function POST(req: NextRequest) {
 
     if (!isValidPhone(payload.whatsapp)) {
       return NextResponse.json(
-        { error: "Please enter a valid WhatsApp number." },
+        {
+          error: "Please enter a valid WhatsApp number (exactly 10 digits).",
+        },
         { status: 400 },
       );
     }
 
     let storageFailed = false;
     let storageError: string | null = null;
+    let usedLegacyStorage = false;
 
     const supabase = getSupabaseClient();
     if (supabase) {
@@ -191,9 +253,46 @@ export async function POST(req: NextRequest) {
         ]);
 
         if (error) {
-          storageFailed = true;
-          storageError = error.message;
-          console.error("Supabase faculty registration storage error:", error);
+          if (isMissingFacultyRegistrationsTableError(error.message)) {
+            const qualificationSummary = [
+              `Education: ${payload.education}`,
+              `Category: ${payload.netCategory}`,
+              `Mode: ${payload.teachingMode}`,
+            ].join(" | ");
+
+            const { error: legacyError } = await supabase
+              .from("student_registrations")
+              .insert([
+                {
+                  full_name: payload.fullName,
+                  qualification: qualificationSummary,
+                  course: "Faculty Registration",
+                  phone: payload.whatsapp,
+                  email: payload.email,
+                },
+              ]);
+
+            if (legacyError) {
+              storageFailed = true;
+              storageError = legacyError.message;
+              console.error(
+                "Legacy faculty storage fallback failed:",
+                legacyError,
+              );
+            } else {
+              usedLegacyStorage = true;
+              console.warn(
+                "faculty_registrations table is missing; used student_registrations fallback. Apply migration 20260517_create_faculty_registrations.sql.",
+              );
+            }
+          } else {
+            storageFailed = true;
+            storageError = error.message;
+            console.error(
+              "Supabase faculty registration storage error:",
+              error,
+            );
+          }
         }
       } catch (error) {
         storageFailed = true;
@@ -219,26 +318,75 @@ export async function POST(req: NextRequest) {
 
     const transporter = getTransporter();
     if (transporter) {
-      const emailContent = buildMail(payload);
-      const fromAddress =
-        process.env.REGISTRATION_EMAIL_FROM ??
-        process.env.GMAIL_USER ??
-        process.env.SMTP_USER ??
-        recipientEmail;
+      try {
+        const emailContent = buildMail(payload);
+        const applicantEmailContent = buildFacultyConfirmationEmail(payload);
+        const fromAddress =
+          process.env.REGISTRATION_EMAIL_FROM ??
+          process.env.GMAIL_USER ??
+          process.env.SMTP_USER ??
+          recipientEmail;
 
-      await transporter.sendMail({
-        from: `LePearl Education <${fromAddress}>`,
-        to: recipientEmail,
-        replyTo: payload.email,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html,
+        await transporter.sendMail({
+          from: `LePearl Education <${fromAddress}>`,
+          to: recipientEmail,
+          replyTo: payload.email,
+          subject: emailContent.subject,
+          text: emailContent.text,
+          html: emailContent.html,
+        });
+
+        await transporter.sendMail({
+          from: `LePearl Education <${fromAddress}>`,
+          to: payload.email,
+          subject: applicantEmailContent.subject,
+          text: applicantEmailContent.text,
+          html: applicantEmailContent.html,
+        });
+      } catch (error) {
+        console.warn(
+          "Faculty registration email send failed (non-critical):",
+          error instanceof Error ? error.message : error,
+        );
+      }
+    } else {
+      console.warn(
+        "Faculty registration email skipped: SMTP/Gmail environment variables are not configured.",
+      );
+    }
+
+    let whatsappNotification: { sent: boolean; reason?: string } | null = null;
+
+    try {
+      whatsappNotification = await sendWhatsAppTextNotification({
+        phone: payload.whatsapp,
+        text: buildFacultyApplicantWhatsAppMessage(payload),
+        event: "faculty_registration_submitted",
+        context: {
+          full_name: payload.fullName,
+          email: payload.email,
+        },
       });
+
+      if (!whatsappNotification.sent) {
+        console.warn(
+          "Faculty registration WhatsApp send failed (non-critical):",
+          whatsappNotification.reason || "Unknown error",
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "Faculty registration WhatsApp send failed (non-critical):",
+        error instanceof Error ? error.message : error,
+      );
     }
 
     return NextResponse.json({
-      message:
-        "Faculty registration submitted successfully. Admin will contact you after review.",
+      message: usedLegacyStorage
+        ? "Faculty registration submitted successfully. Admin will review your profile shortly."
+        : "Faculty registration submitted successfully. Admin will contact you after review.",
+      whatsappNotification,
+      usedLegacyStorage,
     });
   } catch (error) {
     console.error("Faculty registration submission failed", error);

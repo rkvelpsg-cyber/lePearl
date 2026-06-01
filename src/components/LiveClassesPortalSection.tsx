@@ -195,8 +195,6 @@ export function LiveClassesPortalSection() {
                   </p>
                   <a
                     href="/login-portal"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className={`mt-auto block w-full rounded-lg py-2.5 text-center text-sm font-semibold text-white transition ${
                       classItem.status === "live"
                         ? "bg-red-600 hover:bg-red-700"

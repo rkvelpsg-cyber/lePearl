@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Award,
@@ -41,9 +41,7 @@ function HeroSection() {
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row">
             <a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=Communication%20Skills"
               className="rounded-lg bg-amber-500 px-8 py-4 text-center text-lg font-bold text-white transition-all hover:scale-[1.02] hover:bg-amber-600"
             >
               Enroll Now
@@ -137,6 +135,7 @@ function LevelsSection() {
     {
       title: "Beginner Level",
       meta: "Duration: 1 Month | Total Hours: 25 Hours | Fee: \u20B93,995/-",
+      fee: "₹3,995",
       intro:
         "Perfect for those who want to build a strong foundation. This level focuses on removing basic errors and gaining confidence in everyday speaking.",
       points: [
@@ -146,10 +145,13 @@ function LevelsSection() {
         "Speaking practice with guided language training",
       ],
       icon: BookOpen,
+      ctaLabel: "Enroll Now",
+      badge: "FOUNDATION",
     },
     {
       title: "Intermediate Level",
       meta: "Duration: 1 Month | Total Hours: 25 Hours | Fee: \u20B94,995/-",
+      fee: "₹4,995",
       intro:
         "Move beyond basics and develop professional communication skills needed for interviews, classrooms, and workplace settings.",
       points: [
@@ -158,10 +160,14 @@ function LevelsSection() {
         "Professional and business-level communication training",
       ],
       icon: Users,
+      ctaLabel: "Enroll Now",
+      badge: "POPULAR",
+      featured: true,
     },
     {
       title: "Advanced Level",
       meta: "Duration: 1 Month | Total Hours: 25 Hours | Fee: \u20B95,995/-",
+      fee: "₹5,995",
       intro:
         "Designed for those aiming for leadership, teaching, or academic roles. Learn to communicate with authority and impact.",
       points: [
@@ -169,6 +175,8 @@ function LevelsSection() {
         "Public speaking for conferences and academic presentations",
       ],
       icon: Award,
+      ctaLabel: "Enroll Now",
+      badge: "ADVANCED",
     },
   ];
 
@@ -188,21 +196,43 @@ function LevelsSection() {
             return (
               <div
                 key={level.title}
-                className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-8 shadow-lg transition-all hover:-translate-y-1 hover:shadow-2xl"
+                className={`relative overflow-hidden rounded-2xl p-8 shadow-2xl transition-all hover:-translate-y-1 hover:shadow-2xl ${
+                  level.featured
+                    ? "border-4 border-amber-400 bg-white"
+                    : "border border-blue-100 bg-gradient-to-br from-blue-50 to-white"
+                }`}
               >
+                {level.badge ? (
+                  <div
+                    className={`absolute top-0 right-0 px-4 py-1 text-xs font-bold ${
+                      level.featured
+                        ? "bg-amber-500 text-white"
+                        : "bg-blue-900 text-white"
+                    }`}
+                  >
+                    {level.badge}
+                  </div>
+                ) : null}
+
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-blue-900">
                   <Icon className="h-7 w-7 text-amber-400" />
                 </div>
                 <h3 className="mb-2 text-2xl font-bold text-blue-900">
                   {level.title}
                 </h3>
-                <p className="mb-4 text-sm font-semibold text-amber-700">
+                <p className="mb-3 text-sm font-semibold text-amber-700">
                   {level.meta}
                 </p>
+                <div className="mb-4 flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-blue-900">
+                    {level.fee}
+                  </span>
+                  <span className="text-gray-500">/-</span>
+                </div>
                 <p className="mb-4 leading-relaxed text-gray-700">
                   {level.intro}
                 </p>
-                <ul className="space-y-2">
+                <ul className="mb-8 space-y-2">
                   {level.points.map((point) => (
                     <li
                       key={point}
@@ -213,6 +243,18 @@ function LevelsSection() {
                     </li>
                   ))}
                 </ul>
+
+                <a
+                  href="/student-registration?mode=paid&course=Communication%20Skills"
+                  className={`block w-full rounded-lg py-3 text-center text-base font-bold transition-colors ${
+                    level.featured
+                      ? "bg-amber-500 text-white hover:bg-amber-600"
+                      : "bg-blue-900 text-white hover:bg-blue-800"
+                  }`}
+                  style={{ color: "#ffffff" }}
+                >
+                  {level.ctaLabel}
+                </a>
               </div>
             );
           })}

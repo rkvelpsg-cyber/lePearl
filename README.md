@@ -57,6 +57,48 @@ REGISTRATION_EMAIL_FROM=optional-from-address
 
 Registration submissions are sent to `lepearledu@gmail.com`.
 
+## Faculty registration notification setup
+
+The faculty registration flow is available at `/faculty-registration` and submits through `/api/faculty-registration`.
+
+The admin notification recipient is `admin@lepearleducation.com`, but that is not the SMTP provider login. To actually send confirmations, configure one email provider and one WhatsApp provider in `.env.local`:
+
+```bash
+# Email provider options
+GMAIL_USER=your-gmail-address
+GMAIL_APP_PASSWORD=your-gmail-app-password
+REGISTRATION_EMAIL_FROM=optional-from-address
+
+# Or use a generic SMTP server
+SMTP_HOST=your-smtp-host
+SMTP_PORT=587
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+REGISTRATION_EMAIL_FROM=optional-from-address
+
+# WhatsApp provider options
+WHATSAPP_WEBHOOK_URL=your-whatsapp-webhook-url
+# Or use Twilio WhatsApp
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+```
+
+### Local webhook testing (optional)
+
+For local end-to-end testing without an external provider, this project includes a test receiver at `/api/whatsapp-webhook`.
+
+Set these in `.env.local`:
+
+```bash
+WHATSAPP_WEBHOOK_URL=http://localhost:3000/api/whatsapp-webhook
+WHATSAPP_WEBHOOK_AUTH_TOKEN=your-local-webhook-token
+```
+
+Then restart the dev server and submit the faculty registration form. If successful, the server log prints a `[whatsapp-webhook] payload received` entry.
+
+If these variables are not set, faculty registration will still save successfully, but email and WhatsApp confirmations will not be delivered.
+
 ## Redesign flow updates (May 2026)
 
 The following client-requested flow changes are now available:

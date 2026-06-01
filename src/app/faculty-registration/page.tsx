@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 type FacultyFormState = {
   fullName: string;
@@ -38,6 +40,14 @@ type SubmissionState =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
+function normalizeWhatsappInput(value: string) {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
+function isValidWhatsapp(value: string) {
+  return /^\d{10}$/.test(value);
+}
+
 export default function FacultyRegistrationPage() {
   const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,10 +68,18 @@ export default function FacultyRegistrationPage() {
     setSubmissionState({ type: "idle" });
 
     try {
+      const normalizedWhatsapp = normalizeWhatsappInput(formData.whatsapp);
+      if (!isValidWhatsapp(normalizedWhatsapp)) {
+        throw new Error("WhatsApp number must be exactly 10 digits.");
+      }
+
       const response = await fetch("/api/faculty-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          whatsapp: normalizedWhatsapp,
+        }),
       });
 
       const result = (await response.json()) as {
@@ -99,16 +117,38 @@ export default function FacultyRegistrationPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe,transparent_35%),radial-gradient(circle_at_bottom_right,#fce7f3,transparent_35%),#f8fafc] px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
-        <section className="px-6 pb-8 pt-10 text-center sm:px-10">
-          <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">
-            Become a Faculty at LePearl
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-            Faculty Registration Form
-          </h1>
-          <p className="mt-3 text-slate-600">
-            Submit your profile for academic review and onboarding.
-          </p>
+        <section className="px-6 pb-8 pt-8 sm:px-10">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/" aria-label="LePearl Home" className="flex-shrink-0">
+              <Image
+                src="/LePearl_Logo_Canva_1.png"
+                alt="LePearl logo"
+                width={120}
+                height={44}
+                className="h-10 w-auto sm:h-11"
+                priority
+              />
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-lg border border-violet-700 bg-violet-700 px-3 py-2 text-sm font-semibold text-white visited:text-white hover:bg-violet-800 hover:text-white focus:text-white active:text-white"
+              style={{ color: "#ffffff" }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home Page
+            </Link>
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">
+              Become a Faculty at LePearl
+            </p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
+              Faculty Registration Form
+            </h1>
+            <p className="mt-3 text-slate-600">
+              Submit your profile for academic review and onboarding.
+            </p>
+          </div>
         </section>
 
         <div className="h-[4px] w-full bg-violet-600" />
@@ -141,10 +181,22 @@ export default function FacultyRegistrationPage() {
               <input
                 required
                 value={formData.whatsapp}
-                onChange={(e) => updateField("whatsapp", e.target.value)}
+                onChange={(e) =>
+                  updateField(
+                    "whatsapp",
+                    normalizeWhatsappInput(e.target.value),
+                  )
+                }
                 className={inputClassName}
-                placeholder="+91 9876543210"
+                placeholder="9876543210"
+                inputMode="numeric"
+                maxLength={10}
+                pattern="^\d{10}$"
+                title="Enter exactly 10 digits"
               />
+              <p className="mt-1 text-xs font-normal text-slate-500">
+                Enter exactly 10 digits.
+              </p>
             </label>
             <label className="text-sm font-semibold text-slate-700">
               Education *
@@ -173,12 +225,12 @@ export default function FacultyRegistrationPage() {
               </select>
             </label>
             <label className="text-sm font-semibold text-slate-700">
-              Guardian Name
+              Parent/Guardian Name
               <input
                 value={formData.guardianName}
                 onChange={(e) => updateField("guardianName", e.target.value)}
                 className={inputClassName}
-                placeholder="Guardian/parent"
+                placeholder="Parent or guardian name"
               />
             </label>
             <label className="text-sm font-semibold text-slate-700 md:col-span-2">

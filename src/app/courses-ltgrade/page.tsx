@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import {
@@ -48,7 +48,7 @@ const methodologyPoints = [
   "We teach you how to structure answers, from impactful introductions to data-backed body paragraphs and balanced conclusions.",
   'Learn how to use "High-Yield Keywords" that UPPSC evaluators look for in LT Grade Mains scripts.',
   "Every mock answer you write is deeply evaluated with written annotations, pointing out exactly where you can gain an extra half-mark.",
-  "Real-time sessions where we pick a previous year’s question and build a model answer together on screen.",
+  "Real-time sessions where we pick a previous year's question and build a model answer together on screen.",
 ];
 
 const featurePoints = [
@@ -74,7 +74,7 @@ const featurePoints = [
     icon: MessageCircle,
     title: "Live Doubt Support",
     description:
-      "Don’t let doubts pile up; resolve them in every live class with subject experts.",
+      "Don't let doubts pile up; resolve them in every live class with subject experts.",
   },
   {
     icon: PenTool,
@@ -125,9 +125,7 @@ export default function LTGradeCoursePage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=LT%20Grade"
               className="rounded-lg bg-amber-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-amber-600"
             >
               Enroll Now
@@ -246,13 +244,16 @@ export default function LTGradeCoursePage() {
                 <Sparkles className="h-4 w-4" />
                 Single Payment Offer
               </div>
-              <p className="mb-6 text-lg text-gray-700">
-                Get complete course access with one-time payment. Contact us for
-                the latest offer details.
-              </p>
+              <div className="mb-6">
+                <h3 className="mb-1 text-2xl font-bold text-blue-900">
+                  One-Time Payment
+                </h3>
+                <p className="text-4xl font-bold text-blue-900">Rs. 5,995</p>
+                <p className="mt-1 text-gray-600">(Mains)</p>
+              </div>
               <ul className="mb-8 space-y-3">
                 {[
-                  "Full syllabus coverage (Prelims + Mains)",
+                  "Full syllabus coverage (Mains)",
                   "Answer writing mentorship",
                   "Mock tests + evaluation",
                   "Recorded + live classes",
@@ -264,9 +265,7 @@ export default function LTGradeCoursePage() {
                 ))}
               </ul>
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=LT%20Grade"
                 className="block w-full rounded-lg bg-blue-900 py-3.5 text-center font-bold text-white hover:bg-blue-800"
                 style={{ color: "#ffffff" }}
               >
@@ -296,9 +295,7 @@ export default function LTGradeCoursePage() {
                 ))}
               </ul>
               <a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=LT%20Grade"
                 className="block w-full rounded-lg bg-amber-500 py-3.5 text-center font-bold text-white hover:bg-amber-600"
               >
                 Fill Registration Form

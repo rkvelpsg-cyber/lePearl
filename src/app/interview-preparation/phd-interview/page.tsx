@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
@@ -104,8 +104,8 @@ function InterviewContent() {
             <p className="mb-6 text-lg leading-relaxed text-slate-700">
               Imagine walking into the PhD interview room at a university. The
               doctoral panel is seated. The questions begin. Your research
-              proposal and academic record got you here — but it is how you
-              communicate that decides whether you are selected… or fade away.
+              proposal and academic record got you here - but it is how you
+              communicate that decides whether you are selected... or fade away.
             </p>
             <p className="text-lg leading-relaxed text-slate-700">
               Will your words clearly convey the importance of your research?
@@ -156,7 +156,7 @@ function InterviewContent() {
               icon: <MessageCircle className="h-12 w-12" />,
               title: "Can you explain your research?",
               description:
-                "Panels want clarity — can you make your topic sound significant and accessible?",
+                "Panels want clarity - can you make your topic sound significant and accessible?",
               color: "from-blue-500 to-indigo-600",
             },
             {
@@ -212,7 +212,7 @@ function InterviewContent() {
         <SkillCard
           number="01"
           title="Verbal Mastery: Articulate Your Research with Precision"
-          description="Answer every question with natural confidence — clear, precise, and passionate. Structure your responses so the panel stays fully engaged, whether you are explaining your research gap, defending your methodology, or describing your contribution to the field. The ability to make complex ideas sound compelling is a rare skill that doctoral panels remember."
+          description="Answer every question with natural confidence - clear, precise, and passionate. Structure your responses so the panel stays fully engaged, whether you are explaining your research gap, defending your methodology, or describing your contribution to the field. The ability to make complex ideas sound compelling is a rare skill that doctoral panels remember."
           image="/research-assistance/bg-phd-proposal.jpg"
           gradient="from-blue-500 to-indigo-600"
         />
@@ -358,12 +358,10 @@ function InterviewContent() {
             <p className="mb-8 text-lg leading-relaxed text-slate-700">
               Ready to turn nervousness into confident, scholarly presence?
               Start practising now. With polished communication, you will not
-              just attend the PhD interview — you will own it.
+              just attend the PhD interview - you will own it.
             </p>
             <motion.a
-              href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Ph.D%20Interview"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="inline-block rounded-full bg-indigo-600 px-8 py-4 text-white shadow-xl transition-all hover:bg-indigo-700"
@@ -428,9 +426,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Ph.D%20Interview"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full rounded-full bg-white py-4 text-center font-bold shadow-xl transition-all hover:shadow-2xl"
@@ -477,9 +473,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/login-portal"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Ph.D%20Interview"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full rounded-full bg-indigo-600 py-4 text-center font-bold text-white shadow-xl transition-all hover:bg-indigo-700 hover:shadow-2xl"
@@ -511,9 +505,7 @@ function InterviewContent() {
             Make sure your communication is ready to open that door.
           </p>
           <motion.a
-            href="/login-portal"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Ph.D%20Interview"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block rounded-full bg-white px-12 py-5 text-xl font-bold shadow-2xl transition-all"

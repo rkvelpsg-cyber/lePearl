@@ -90,8 +90,6 @@ function MockTestCard({ category }: MockTestCardProps) {
         {category.loginUrl ? (
           <a
             href={category.loginUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             className="block w-full rounded-xl py-3 text-center font-semibold transition-all duration-300"
             style={{
               color: "#FFFFFF",
@@ -235,8 +233,6 @@ export function MockTestsSection() {
             </p>
             <a
               href="/login-portal"
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-block rounded-full px-8 py-3 font-semibold text-white transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
                 color: "#FFFFFF",

@@ -12,7 +12,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import {
+  coursePaymentPlans,
   defaultPaidRegistrationCourseFee,
+  isValidStudentRegistrationCourse,
   paidRegistrationCourseFees,
   StudentRegistrationPayload,
   studentRegistrationCourses,
@@ -32,11 +34,19 @@ type RazorpaySuccessResponse = {
   razorpay_signature: string;
 };
 
+type ResearchAssistanceFeeOptionId =
+  | "research-paper"
+  | "thesis"
+  | "phd-proposal"
+  | "mla-apa"
+  | "mentoring";
+
 type PaidEnrollmentFormState = {
   fullName: string;
   email: string;
   whatsapp: string;
   course: StudentRegistrationPayload["course"];
+  researchAssistanceFeeType: ResearchAssistanceFeeOptionId;
   username: string;
   password: string;
   registrationNo: string;
@@ -46,6 +56,7 @@ type PaidEnrollmentFormState = {
   isPearlian: boolean;
   pearlianEligible: boolean;
   includeBooksAddon: boolean;
+  paymentTenure: "full" | "instalment" | null;
 };
 
 type FreeRegistrationFormState = {
@@ -85,6 +96,7 @@ const initialPaidForm = (): PaidEnrollmentFormState => ({
   course:
     studentRegistrationCourses[0] ??
     ("" as StudentRegistrationPayload["course"]),
+  researchAssistanceFeeType: "research-paper",
   username: "",
   password: "",
   registrationNo: generateRegistrationNo(),
@@ -94,6 +106,7 @@ const initialPaidForm = (): PaidEnrollmentFormState => ({
   isPearlian: false,
   pearlianEligible: false,
   includeBooksAddon: false,
+  paymentTenure: null,
 });
 
 const initialFreeForm: FreeRegistrationFormState = {
@@ -111,11 +124,44 @@ type SubmissionState =
 
 const REGISTRATION_UNLOCK_KEY = "lepearl-registration-submitted";
 
-const booksAddonFee = 2499;
+const researchAssistanceFeeOptions: {
+  id: ResearchAssistanceFeeOptionId;
+  title: string;
+  amount: number;
+  note?: string;
+}[] = [
+  {
+    id: "research-paper",
+    title: "Art of Research Paper Writing",
+    amount: 2995,
+  },
+  {
+    id: "thesis",
+    title: "Art of Thesis Writing",
+    amount: 5995,
+  },
+  {
+    id: "phd-proposal",
+    title: "Art of PhD Proposal Making",
+    amount: 1995,
+  },
+  {
+    id: "mla-apa",
+    title: "Learn the Art of Application of MLA and APA",
+    amount: 1995,
+  },
+  {
+    id: "mentoring",
+    title: "Guidance and Mentoring for Research Paper Writing",
+    amount: 1000,
+    note: "30 minutes option is also available at Rs. 750",
+  },
+];
 
 export default function StudentRegistrationPage() {
   const router = useRouter();
   const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
+  const [courseBackHref, setCourseBackHref] = useState<string | null>(null);
   const [paidFormData, setPaidFormData] =
     useState<PaidEnrollmentFormState>(initialPaidForm());
   const [freeFormData, setFreeFormData] =
@@ -130,6 +176,12 @@ export default function StudentRegistrationPage() {
     useState<SubmissionState>({
       type: "idle",
     });
+  const [showFeePlanModal, setShowFeePlanModal] = useState(false);
+  const [modalPlanChoice, setModalPlanChoice] = useState<"full" | "instalment">(
+    "full",
+  );
+  const [modalResearchFeeChoice, setModalResearchFeeChoice] =
+    useState<ResearchAssistanceFeeOptionId>("research-paper");
   const safePaidFormData: PaidEnrollmentFormState = {
     ...initialPaidForm(),
     ...paidFormData,
@@ -139,20 +191,53 @@ export default function StudentRegistrationPage() {
     ...freeFormData,
   };
 
+  const isResearchAssistanceCourse =
+    safePaidFormData.course === "Research Assistance";
+  const selectedResearchAssistanceFee = researchAssistanceFeeOptions.find(
+    (option) => option.id === safePaidFormData.researchAssistanceFeeType,
+  );
+
+  const currentPlan = coursePaymentPlans[safePaidFormData.course];
+  const researchAssistanceBaseFee =
+    selectedResearchAssistanceFee?.amount ?? 2995;
   const baseCourseFee =
+    (isResearchAssistanceCourse
+      ? researchAssistanceBaseFee
+      : currentPlan?.fullAmount) ??
     paidRegistrationCourseFees[safePaidFormData.course] ??
     defaultPaidRegistrationCourseFee;
+  const hasPublishedFee = baseCourseFee > 0;
+  // Discounts apply only on full payment
   const pearlianDiscount =
-    safePaidFormData.isPearlian && safePaidFormData.pearlianEligible
+    !isResearchAssistanceCourse &&
+    safePaidFormData.paymentTenure === "full" &&
+    safePaidFormData.isPearlian &&
+    safePaidFormData.pearlianEligible
       ? Math.round(baseCourseFee * 0.1)
       : 0;
-  const booksFee = safePaidFormData.includeBooksAddon ? booksAddonFee : 0;
-  const finalPayable = Math.max(baseCourseFee - pearlianDiscount + booksFee, 0);
+  const additionalAccessDiscount =
+    !isResearchAssistanceCourse &&
+    safePaidFormData.paymentTenure === "full" &&
+    safePaidFormData.includeBooksAddon
+      ? Math.round(baseCourseFee * 0.1)
+      : 0;
+  const totalDiscount = pearlianDiscount + additionalAccessDiscount;
+  const booksFee = 0;
+  const firstInstalmentAmount = currentPlan?.instalments?.[0]?.amount ?? 0;
+  const instalmentTotal =
+    currentPlan?.instalments?.reduce((sum, item) => sum + item.amount, 0) ??
+    baseCourseFee;
+  const finalPayable =
+    safePaidFormData.paymentTenure === "instalment"
+      ? firstInstalmentAmount
+      : Math.max(baseCourseFee - totalDiscount, 0);
 
   const allConsentsChecked =
     safePaidFormData.acceptedTerms &&
     safePaidFormData.acceptedPrivacy &&
-    safePaidFormData.acceptedRefund;
+    safePaidFormData.acceptedRefund &&
+    safePaidFormData.paymentTenure !== null &&
+    hasPublishedFee;
 
   const passwordValidation = useMemo(() => {
     const v = safePaidFormData.password;
@@ -163,12 +248,73 @@ export default function StudentRegistrationPage() {
     return v.length >= 8 && hasUpper && hasLower && hasNumber && hasSpecial;
   }, [safePaidFormData.password]);
 
+  const isPaidWhatsappValid = /^\d{10}$/.test(safePaidFormData.whatsapp);
+
   useEffect(() => {
-    const modeParam = new URLSearchParams(window.location.search).get("mode");
+    const searchParams = new URLSearchParams(window.location.search);
+    const modeParam = searchParams.get("mode");
+    const courseParam = searchParams.get("course");
+    const hasPaidCourseFlow =
+      modeParam === "paid" &&
+      !!courseParam &&
+      isValidStudentRegistrationCourse(courseParam);
+
+    // Show "Back to Course Page" only when this page was opened from a course-route enrol flow.
+    if (hasPaidCourseFlow) {
+      try {
+        if (document.referrer) {
+          const refUrl = new URL(document.referrer);
+          const isSameOrigin = refUrl.origin === window.location.origin;
+          const refPath = refUrl.pathname;
+          const isCourseRoute =
+            /^\/courses-[a-z0-9-]+$/i.test(refPath) ||
+            refPath === "/all-courses" ||
+            refPath === "/research-assistance" ||
+            refPath === "/interview-preparation";
+
+          if (isSameOrigin && isCourseRoute) {
+            setCourseBackHref(`${refPath}${refUrl.search}${refUrl.hash}`);
+          }
+        }
+      } catch {
+        setCourseBackHref(null);
+      }
+    }
+
+    if (courseParam && isValidStudentRegistrationCourse(courseParam)) {
+      setPaidFormData((current) => ({
+        ...current,
+        course: courseParam,
+        researchAssistanceFeeType: "research-paper",
+        paymentTenure: null,
+      }));
+      // Auto-open fee plan modal when arriving from a course enrol flow
+      setModalPlanChoice("full");
+      setModalResearchFeeChoice("research-paper");
+      setShowFeePlanModal(true);
+    }
+
     if (modeParam === "free") {
       setActiveMode("free");
+    } else if (modeParam === "paid") {
+      setActiveMode("paid");
     }
   }, []);
+
+  function handleCourseChange(newCourse: StudentRegistrationPayload["course"]) {
+    setPaidFormData((current) => ({
+      ...current,
+      course: newCourse,
+      researchAssistanceFeeType:
+        newCourse === "Research Assistance"
+          ? "research-paper"
+          : current.researchAssistanceFeeType,
+      paymentTenure: null,
+    }));
+    setModalPlanChoice("full");
+    setModalResearchFeeChoice("research-paper");
+    setShowFeePlanModal(true);
+  }
 
   function updatePaidField<K extends keyof PaidEnrollmentFormState>(
     field: K,
@@ -186,7 +332,8 @@ export default function StudentRegistrationPage() {
 
   async function handlePaidSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!allConsentsChecked || !passwordValidation) return;
+    if (!allConsentsChecked || !passwordValidation || !isPaidWhatsappValid)
+      return;
 
     setIsSubmittingPaid(true);
     setPaidSubmissionState({ type: "idle" });
@@ -200,6 +347,10 @@ export default function StudentRegistrationPage() {
         email: safePaidFormData.email,
       };
 
+      const paymentDescription = isResearchAssistanceCourse
+        ? `Paid Enrolment - ${safePaidFormData.course} (${selectedResearchAssistanceFee?.title ?? "Selected Service"})`
+        : `Paid Enrolment - ${safePaidFormData.course}`;
+
       const orderResponse = await fetch(
         "/api/student-registration/create-payment-order",
         {
@@ -209,11 +360,14 @@ export default function StudentRegistrationPage() {
           },
           body: JSON.stringify({
             amount: finalPayable,
-            description: `Paid Enrolment - ${safePaidFormData.course}`,
+            description: paymentDescription,
             fullName: payload.fullName,
             email: payload.email,
             whatsapp: payload.phone,
             course: payload.course,
+            researchAssistanceFeeType: isResearchAssistanceCourse
+              ? safePaidFormData.researchAssistanceFeeType
+              : undefined,
             registrationNo: safePaidFormData.registrationNo,
           }),
         },
@@ -248,7 +402,7 @@ export default function StudentRegistrationPage() {
             amount: orderData.amount,
             currency: orderData.currency,
             name: "LePearl Education",
-            description: `Paid Enrolment - ${safePaidFormData.course}`,
+            description: paymentDescription,
             order_id: orderData.order_id,
             prefill: {
               name: payload.fullName,
@@ -282,8 +436,14 @@ export default function StudentRegistrationPage() {
           isPearlian: safePaidFormData.isPearlian,
           pearlianEligible: safePaidFormData.pearlianEligible,
           includeBooksAddon: safePaidFormData.includeBooksAddon,
+          researchAssistanceFeeType: isResearchAssistanceCourse
+            ? safePaidFormData.researchAssistanceFeeType
+            : undefined,
+          researchAssistanceFeeLabel: isResearchAssistanceCourse
+            ? selectedResearchAssistanceFee?.title
+            : undefined,
           baseCourseFee,
-          discountAmount: pearlianDiscount,
+          discountAmount: totalDiscount,
           booksFee,
           finalPayable,
           paymentMode: "razorpay",
@@ -336,11 +496,14 @@ export default function StudentRegistrationPage() {
     setFreeSubmissionState({ type: "idle" });
 
     try {
+      const selectedCourse = (safeFreeFormData.examPreparingFor ||
+        studentRegistrationCourses[0] ||
+        "MPPSC") as StudentRegistrationPayload["course"];
+
       const payload: StudentRegistrationPayload = {
         fullName: safeFreeFormData.fullName.trim(),
         qualification: safeFreeFormData.examPreparingFor,
-        course: (studentRegistrationCourses[0] ??
-          "MPPSC") as StudentRegistrationPayload["course"],
+        course: selectedCourse,
         phone: safeFreeFormData.whatsapp,
         email: safeFreeFormData.email,
       };
@@ -404,10 +567,19 @@ export default function StudentRegistrationPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e0e7ff,transparent_35%),radial-gradient(circle_at_bottom_right,#fbcfe8,transparent_35%),#f8fafc] px-3 py-4 sm:px-6 sm:py-8">
-      <header className="mx-auto mb-4 flex w-full max-w-5xl items-center justify-end">
+      <header className="mx-auto mb-4 flex w-full max-w-5xl items-center justify-end gap-2">
+        {courseBackHref && (
+          <Link
+            href={courseBackHref}
+            className="inline-flex items-center gap-2 rounded-full border border-violet-300 bg-violet-600 px-4 py-2 text-sm font-medium !text-white hover:!text-white focus:!text-white transition hover:bg-violet-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Course Page
+          </Link>
+        )}
         <Link
           href="/login-portal"
-          className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-white"
+          className="inline-flex items-center gap-2 rounded-full border border-teal-700 bg-teal-700 px-4 py-2 text-sm font-medium !text-white hover:!text-white focus:!text-white transition hover:bg-teal-800"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to login portal
@@ -501,11 +673,24 @@ export default function StudentRegistrationPage() {
                   required
                   value={safePaidFormData.whatsapp}
                   onChange={(event) =>
-                    updatePaidField("whatsapp", event.target.value)
+                    updatePaidField(
+                      "whatsapp",
+                      event.target.value.replace(/\D/g, "").slice(0, 10),
+                    )
                   }
                   className={inputClassName}
-                  placeholder="+91 9876543210"
+                  inputMode="numeric"
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  title="Please enter exactly 10 digits"
+                  placeholder="9876543210"
                 />
+                {!isPaidWhatsappValid &&
+                  safePaidFormData.whatsapp.length > 0 && (
+                    <p className="mt-2 text-xs text-rose-600">
+                      WhatsApp number must be exactly 10 digits.
+                    </p>
+                  )}
               </label>
               <label className="text-base font-semibold text-slate-700">
                 Course <span className="text-red-500">*</span>
@@ -513,8 +698,7 @@ export default function StudentRegistrationPage() {
                   required
                   value={safePaidFormData.course}
                   onChange={(event) =>
-                    updatePaidField(
-                      "course",
+                    handleCourseChange(
                       event.target
                         .value as StudentRegistrationPayload["course"],
                     )
@@ -573,77 +757,183 @@ export default function StudentRegistrationPage() {
             </section>
 
             <section className="rounded-xl border border-violet-100 bg-violet-50/60 p-5">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-violet-800">
-                <CreditCard className="h-5 w-5" /> Payment Details
-              </h2>
-              <p className="mt-2 text-sm text-violet-700/80">
-                Review the payment summary, optional books add-on, and Pearlian
-                discount before proceeding.
-              </p>
-              <div className="mt-4 grid gap-3 text-sm text-slate-700">
-                <div className="flex items-center justify-between">
-                  <span>Course Fee</span>
-                  <span className="font-semibold">Rs. {baseCourseFee}</span>
-                </div>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={safePaidFormData.includeBooksAddon}
-                    onChange={(event) =>
-                      updatePaidField("includeBooksAddon", event.target.checked)
-                    }
-                    className="h-4 w-4 cursor-pointer accent-violet-600"
-                  />
-                  Add Books Package (+ Rs. {booksAddonFee})
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={safePaidFormData.isPearlian}
-                    onChange={(event) =>
-                      updatePaidField("isPearlian", event.target.checked)
-                    }
-                    className="h-4 w-4 cursor-pointer accent-violet-600"
-                  />
-                  Already enrolled in a LePearl paid course? (Pearlian)
-                </label>
-                {safePaidFormData.isPearlian && (
-                  <label className="ml-6 flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={safePaidFormData.pearlianEligible}
-                      onChange={(event) =>
-                        updatePaidField(
-                          "pearlianEligible",
-                          event.target.checked,
-                        )
-                      }
-                      className="h-4 w-4 cursor-pointer accent-violet-600"
-                    />
-                    Confirm: not a mock-test-only account and eligible for 10%
-                    off
-                  </label>
-                )}
-                {pearlianDiscount > 0 && (
-                  <div className="flex items-center justify-between text-emerald-700">
-                    <span>Pearlian Discount (10%)</span>
-                    <span className="font-semibold">
-                      - Rs. {pearlianDiscount}
-                    </span>
-                  </div>
-                )}
-                {booksFee > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span>Books Add-on</span>
-                    <span className="font-semibold">+ Rs. {booksFee}</span>
-                  </div>
-                )}
-                <div className="h-px bg-violet-200" />
-                <div className="flex items-center justify-between text-base font-bold text-slate-900">
-                  <span>Final Payable</span>
-                  <span>Rs. {finalPayable}</span>
-                </div>
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-violet-800">
+                  <CreditCard className="h-5 w-5" /> Payment Details
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalPlanChoice(
+                      safePaidFormData.paymentTenure ?? "full",
+                    );
+                    setModalResearchFeeChoice(
+                      safePaidFormData.researchAssistanceFeeType,
+                    );
+                    setShowFeePlanModal(true);
+                  }}
+                  className="rounded-lg border border-violet-300 bg-white px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100"
+                >
+                  {safePaidFormData.paymentTenure === null
+                    ? "⚠ Select Fee Plan"
+                    : "Change Plan"}
+                </button>
               </div>
+
+              {safePaidFormData.paymentTenure === null ? (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                  Please select a payment plan by clicking{" "}
+                  <strong>Select Fee Plan</strong> above to view fee details and
+                  proceed.
+                </div>
+              ) : !hasPublishedFee ? (
+                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                  Fee details for this course are provided by the admissions
+                  team on request. Please contact support to proceed with
+                  enrolment.
+                </div>
+              ) : safePaidFormData.paymentTenure === "full" ? (
+                <>
+                  <p className="mt-2 text-sm text-violet-700/80">
+                    {isResearchAssistanceCourse
+                      ? "Selected fee type from Research Assistance course page."
+                      : "Full payment selected · Discounts eligible."}
+                  </p>
+                  <div className="mt-4 grid gap-3 text-sm text-slate-700">
+                    {isResearchAssistanceCourse && (
+                      <div className="flex items-center justify-between">
+                        <span>Selected Service</span>
+                        <span className="font-semibold text-violet-700">
+                          {selectedResearchAssistanceFee?.title}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span>Course Fee</span>
+                      <span className="font-semibold">Rs. {baseCourseFee}</span>
+                    </div>
+                    {!isResearchAssistanceCourse && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={safePaidFormData.includeBooksAddon}
+                          onChange={(event) =>
+                            updatePaidField(
+                              "includeBooksAddon",
+                              event.target.checked,
+                            )
+                          }
+                          className="h-4 w-4 cursor-pointer accent-violet-600"
+                        />
+                        Additional one-year availability of course credentials,
+                        like recorded classes and study material
+                      </label>
+                    )}
+                    {!isResearchAssistanceCourse && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={safePaidFormData.isPearlian}
+                          onChange={(event) =>
+                            updatePaidField("isPearlian", event.target.checked)
+                          }
+                          className="h-4 w-4 cursor-pointer accent-violet-600"
+                        />
+                        Already enrolled in a LePearl paid course? (Pearlian)
+                      </label>
+                    )}
+                    {!isResearchAssistanceCourse &&
+                      safePaidFormData.isPearlian && (
+                        <label className="ml-6 flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={safePaidFormData.pearlianEligible}
+                            onChange={(event) =>
+                              updatePaidField(
+                                "pearlianEligible",
+                                event.target.checked,
+                              )
+                            }
+                            className="h-4 w-4 cursor-pointer accent-violet-600"
+                          />
+                          Confirm: not a mock-test-only account and eligible for
+                          10% off
+                        </label>
+                      )}
+                    {!isResearchAssistanceCourse && pearlianDiscount > 0 && (
+                      <div className="flex items-center justify-between text-emerald-700">
+                        <span>Pearlian Discount (10%)</span>
+                        <span className="font-semibold">
+                          - Rs. {pearlianDiscount}
+                        </span>
+                      </div>
+                    )}
+                    {!isResearchAssistanceCourse &&
+                      additionalAccessDiscount > 0 && (
+                        <div className="flex items-center justify-between text-emerald-700">
+                          <span>Additional Access Discount (10%)</span>
+                          <span className="font-semibold">
+                            - Rs. {additionalAccessDiscount}
+                          </span>
+                        </div>
+                      )}
+                    <div className="h-px bg-violet-200" />
+                    <div className="flex items-center justify-between text-base font-bold text-slate-900">
+                      <span>Final Payable</span>
+                      <span>Rs. {finalPayable}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-violet-700/80">
+                    Instalment plan selected · Pay the 1st instalment now for
+                    instant access.
+                  </p>
+                  <div className="mt-4 space-y-2 text-sm">
+                    {currentPlan?.instalments?.map((inst, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-start justify-between rounded-lg px-4 py-2.5 ${
+                          idx === 0
+                            ? "border border-violet-300 bg-violet-100"
+                            : "border border-slate-200 bg-white text-slate-500"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2 font-medium text-slate-800">
+                            {inst.label}
+                            {idx === 0 && (
+                              <span className="rounded-full bg-violet-600 px-2 py-0.5 text-xs text-white">
+                                Pay Now
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-400">{inst.note}</p>
+                        </div>
+                        <span
+                          className={`font-semibold ${idx === 0 ? "text-violet-700" : "text-slate-500"}`}
+                        >
+                          Rs. {inst.amount}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700">
+                      <span>Total Course Fee</span>
+                      <span>Rs. {instalmentTotal}</span>
+                    </div>
+                    <p className="text-xs text-amber-600">
+                      * Pearlian and additional access discounts are available
+                      on full payment only.
+                    </p>
+                  </div>
+                  <div className="mt-4 h-px bg-violet-200" />
+                  <div className="mt-3 flex items-center justify-between text-base font-bold text-slate-900">
+                    <span>Paying Now (1st Instalment)</span>
+                    <span className="text-violet-700">Rs. {finalPayable}</span>
+                  </div>
+                </>
+              )}
             </section>
 
             <section className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-3">
@@ -665,7 +955,7 @@ export default function StudentRegistrationPage() {
                 I agree to{" "}
                 <Link
                   href="/terms-conditions"
-                  className="text-violet-700 underline"
+                  className="font-semibold text-blue-600 underline decoration-blue-600 underline-offset-2 hover:text-blue-700"
                 >
                   Terms & Conditions
                 </Link>
@@ -729,13 +1019,20 @@ export default function StudentRegistrationPage() {
             <button
               type="submit"
               disabled={
-                isSubmittingPaid || !allConsentsChecked || !passwordValidation
+                isSubmittingPaid ||
+                !allConsentsChecked ||
+                !passwordValidation ||
+                !isPaidWhatsappValid
               }
               className="w-full rounded-xl bg-[linear-gradient(90deg,#9333ea,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmittingPaid
                 ? "Opening secure payment..."
-                : "Proceed to Payment & Enrol"}
+                : !hasPublishedFee
+                  ? "Contact support for latest fee"
+                  : safePaidFormData.paymentTenure === null
+                    ? "Select a payment plan to continue"
+                    : "Proceed to Payment & Enrol"}
             </button>
           </form>
         ) : (
@@ -805,11 +1102,11 @@ export default function StudentRegistrationPage() {
                   className={inputClassName}
                 >
                   <option value="">Select one</option>
-                  <option value="Assistant Professor">
-                    Assistant Professor
-                  </option>
-                  <option value="NET">NET</option>
-                  <option value="Other">Other</option>
+                  {studentRegistrationCourses.map((course) => (
+                    <option key={course} value={course}>
+                      {course}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="text-base font-semibold text-slate-700 md:col-span-2">
@@ -866,6 +1163,215 @@ export default function StudentRegistrationPage() {
           © 2026 LePearl Education. All rights reserved.
         </footer>
       </div>
+      {/* ── Fee Plan Selection Modal (bottom sheet) ── */}
+      {showFeePlanModal && activeMode === "paid" && (
+        <>
+          {/* Backdrop – only dismissible if plan already chosen */}
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            onClick={() => {
+              if (safePaidFormData.paymentTenure !== null)
+                setShowFeePlanModal(false);
+            }}
+          />
+
+          {/* Bottom sheet */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-2xl bg-white shadow-2xl">
+            <div className="p-6">
+              <div className="mb-1 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900">
+                  Choose Payment Plan
+                </h2>
+                {safePaidFormData.paymentTenure !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFeePlanModal(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <p className="mb-5 text-sm text-slate-500">
+                Course:{" "}
+                <span className="font-semibold text-violet-700">
+                  {safePaidFormData.course}
+                </span>
+                {hasPublishedFee
+                  ? ` · Full Fee: Rs. ${baseCourseFee}`
+                  : " · Fee shared by admissions support"}
+              </p>
+
+              {isResearchAssistanceCourse ? (
+                <div className="space-y-3">
+                  {researchAssistanceFeeOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setModalResearchFeeChoice(option.id)}
+                      className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                        modalResearchFeeChoice === option.id
+                          ? "border-violet-600 bg-violet-50"
+                          : "border-slate-200 bg-white hover:border-violet-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900">
+                            {option.title}
+                          </p>
+                          {option.note && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {option.note}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-lg font-bold text-violet-700">
+                          Rs. {option.amount}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Full Payment */}
+                  <button
+                    type="button"
+                    onClick={() => setModalPlanChoice("full")}
+                    className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                      modalPlanChoice === "full"
+                        ? "border-violet-600 bg-violet-50"
+                        : "border-slate-200 bg-white hover:border-violet-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                            modalPlanChoice === "full"
+                              ? "border-violet-600"
+                              : "border-slate-400"
+                          }`}
+                        >
+                          {modalPlanChoice === "full" && (
+                            <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            Full Payment
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            One-time payment · Best value · Discounts eligible
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-slate-900">
+                          {hasPublishedFee
+                            ? `Rs. ${baseCourseFee}`
+                            : "Contact Support"}
+                        </p>
+                        {hasPublishedFee && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                            Save with discounts
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Instalment Plan – only shown if plan data has instalments */}
+                  {currentPlan?.instalments && (
+                    <button
+                      type="button"
+                      onClick={() => setModalPlanChoice("instalment")}
+                      className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                        modalPlanChoice === "instalment"
+                          ? "border-violet-600 bg-violet-50"
+                          : "border-slate-200 bg-white hover:border-violet-300"
+                      }`}
+                    >
+                      <div className="mb-3 flex items-center gap-3">
+                        <div
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                            modalPlanChoice === "instalment"
+                              ? "border-violet-600"
+                              : "border-slate-400"
+                          }`}
+                        >
+                          {modalPlanChoice === "instalment" && (
+                            <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            Pay in Instalments
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            Split across {currentPlan.instalments.length}{" "}
+                            payments
+                          </p>
+                        </div>
+                      </div>
+                      <div className="ml-8 space-y-1.5">
+                        {currentPlan.instalments.map((inst, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm"
+                          >
+                            <div>
+                              <span className="font-medium text-slate-700">
+                                {inst.label}
+                              </span>
+                              <span className="ml-2 text-xs text-slate-400">
+                                · {inst.note}
+                              </span>
+                            </div>
+                            <span
+                              className={`font-semibold ${
+                                idx === 0 ? "text-violet-700" : "text-slate-500"
+                              }`}
+                            >
+                              Rs. {inst.amount}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (isResearchAssistanceCourse) {
+                    updatePaidField(
+                      "researchAssistanceFeeType",
+                      modalResearchFeeChoice,
+                    );
+                    updatePaidField("paymentTenure", "full");
+                  } else {
+                    updatePaidField("paymentTenure", modalPlanChoice);
+                  }
+                  setShowFeePlanModal(false);
+                }}
+                className="mt-5 w-full rounded-xl bg-violet-600 py-3.5 text-base font-semibold text-white transition hover:bg-violet-700"
+              >
+                Confirm —{" "}
+                {isResearchAssistanceCourse
+                  ? "Selected Research Assistance Service"
+                  : modalPlanChoice === "full"
+                    ? "Full Payment"
+                    : "Instalment Plan"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }

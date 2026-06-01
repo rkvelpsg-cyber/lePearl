@@ -7,11 +7,15 @@ import {
   sanitizeRegistrationValue,
   StudentRegistrationPayload,
 } from "@/lib/studentRegistration";
-import { sendStudentPaymentWhatsAppNotification } from "@/lib/whatsapp";
+import {
+  sendStudentPaymentWhatsAppNotification,
+  sendWhatsAppTextNotification,
+} from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
-const recipientEmail = "lepearledu@gmail.com";
+const recipientEmail =
+  process.env.REGISTRATION_ADMIN_EMAIL ?? "admin@lepearleducation.com";
 
 type RegistrationMode = "paid" | "free";
 
@@ -345,6 +349,29 @@ function buildStudentConfirmationEmail(
   return { subject, text, html };
 }
 
+function buildStudentFreeWhatsAppMessage(
+  payload: StudentRegistrationPayload,
+  heardAboutUs?: string,
+) {
+  const submittedAt = new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+
+  return [
+    `Dear ${payload.fullName},`,
+    "Your free registration for PYQs and demo access has been received successfully.",
+    `Exam/Course: ${payload.course}`,
+    `Submitted: ${submittedAt}`,
+    heardAboutUs ? `Source: ${heardAboutUs}` : "",
+    "Our team will share relevant updates shortly.",
+    "LePearl Education",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RegistrationRequestBody;
@@ -648,6 +675,36 @@ export async function POST(req: NextRequest) {
         console.warn(
           "WhatsApp send failed (non-critical):",
           whatsappResult.reason ?? "Unknown error",
+        );
+      }
+    } else {
+      try {
+        const whatsappResult = await sendWhatsAppTextNotification({
+          phone: payload.phone,
+          text: buildStudentFreeWhatsAppMessage(
+            payload,
+            body.heardAboutUs
+              ? sanitizeRegistrationValue(body.heardAboutUs)
+              : "",
+          ),
+          event: "student_free_registration_submitted",
+          context: {
+            full_name: payload.fullName,
+            email: payload.email,
+            course: payload.course,
+          },
+        });
+
+        if (!whatsappResult.sent) {
+          console.warn(
+            "WhatsApp send failed (non-critical):",
+            whatsappResult.reason ?? "Unknown error",
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "WhatsApp send failed (non-critical):",
+          error instanceof Error ? error.message : error,
         );
       }
     }
