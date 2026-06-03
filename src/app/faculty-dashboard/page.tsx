@@ -106,6 +106,7 @@ type McqTestFaculty = {
   title: string;
   total_marks: number;
   negative_marking: number | null;
+  question_paper_file_url: string | null;
   time_limit_minutes: number;
   exam_type: string;
   test_type?: string; // 'mcq' or 'descriptive'
@@ -465,6 +466,11 @@ export default function FacultyDashboardPage() {
     text: string;
   } | null>(null);
   const [mcqSubmitting, setMcqSubmitting] = useState(false);
+  const [questionPaperUploading, setQuestionPaperUploading] = useState(false);
+  const [questionPaperMsg, setQuestionPaperMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
   const [mcqForm, setMcqForm] = useState({
     courseId: "",
     batchId: "",
@@ -719,7 +725,7 @@ export default function FacultyDashboardPage() {
         supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, negative_marking, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
           )
           .eq("created_by", uid)
           .order("created_at", { ascending: false }),
@@ -770,6 +776,7 @@ export default function FacultyDashboardPage() {
           ((legacyMcqData ?? []) as Record<string, unknown>[]).map((test) => ({
             ...test,
             negative_marking: 0,
+            question_paper_file_url: null,
           })) as unknown as McqTestFaculty[],
         );
       }
@@ -863,7 +870,7 @@ export default function FacultyDashboardPage() {
           const batchTestsRes = await supabase
             .from("mock_tests")
             .select(
-              "id, title, total_marks, negative_marking, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+              "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
             )
             .in("batch_id", batchIds)
             .order("created_at", { ascending: false });
@@ -887,6 +894,7 @@ export default function FacultyDashboardPage() {
               ).map((test) => ({
                 ...test,
                 negative_marking: 0,
+                question_paper_file_url: null,
               })) as unknown as McqTestFaculty[],
             );
           }
@@ -1614,6 +1622,112 @@ export default function FacultyDashboardPage() {
       });
     } finally {
       setMcqSubmitting(false);
+    }
+  }
+
+  async function handleDescriptiveQuestionPaperUpload(file: File | null) {
+    if (!file || !selectedTest || selectedTest.test_type !== "descriptive") {
+      return;
+    }
+
+    const fileName = file.name.toLowerCase();
+    const isAllowedFile =
+      file.type === "application/pdf" ||
+      file.type === "application/msword" ||
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      fileName.endsWith(".pdf") ||
+      fileName.endsWith(".doc") ||
+      fileName.endsWith(".docx");
+
+    if (!isAllowedFile) {
+      setQuestionPaperMsg({
+        type: "err",
+        text: "Please upload a PDF, DOC, or DOCX file.",
+      });
+      return;
+    }
+
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+
+    if (!accessToken) {
+      setQuestionPaperMsg({
+        type: "err",
+        text: "Session expired. Please login again.",
+      });
+      return;
+    }
+
+    setQuestionPaperUploading(true);
+    setQuestionPaperMsg(null);
+
+    try {
+      const payload = new FormData();
+      payload.append("file", file);
+      payload.append("mockTestId", String(selectedTest.id));
+      payload.append("scope", "question-paper");
+      payload.append("questionId", "paper");
+
+      const uploadResponse = await fetch("/api/descriptive-upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: payload,
+      });
+
+      const uploadJson = (await uploadResponse.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
+
+      if (!uploadResponse.ok || !uploadJson.publicUrl) {
+        throw new Error(uploadJson.error || "Upload failed");
+      }
+
+      const uploadedUrl = uploadJson.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("mock_tests")
+        .update({ question_paper_file_url: uploadedUrl })
+        .eq("id", selectedTest.id);
+
+      if (updateError) {
+        if (updateError.code === "42703") {
+          throw new Error(
+            "Database migration pending for question paper support. Please apply latest migrations.",
+          );
+        }
+        throw updateError;
+      }
+
+      setSelectedTest((current) =>
+        current ? { ...current, question_paper_file_url: uploadedUrl } : current,
+      );
+      setMcqTests((current) =>
+        current.map((test) =>
+          test.id === selectedTest.id
+            ? { ...test, question_paper_file_url: uploadedUrl }
+            : test,
+        ),
+      );
+
+      setQuestionPaperMsg({
+        type: "ok",
+        text: "Question paper uploaded successfully.",
+      });
+    } catch (error) {
+      setQuestionPaperMsg({
+        type: "err",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to upload question paper.",
+      });
+    } finally {
+      setQuestionPaperUploading(false);
     }
   }
 
@@ -3152,6 +3266,60 @@ export default function FacultyDashboardPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
+                    {selectedTest.test_type === "descriptive" && (
+                      <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                        <p className="text-sm font-semibold text-blue-900">
+                          Upload Descriptive Question Paper (PDF / DOC / DOCX)
+                        </p>
+                        <p className="mt-1 text-xs text-blue-700">
+                          Students will use this paper to write answers and
+                          upload a combined PDF answer sheet.
+                        </p>
+
+                        {selectedTest.question_paper_file_url && (
+                          <a
+                            href={selectedTest.question_paper_file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" /> View
+                            Current Question Paper
+                          </a>
+                        )}
+
+                        <div className="mt-3">
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            disabled={questionPaperUploading}
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                void handleDescriptiveQuestionPaperUpload(
+                                  e.target.files[0],
+                                );
+                                e.currentTarget.value = "";
+                              }
+                            }}
+                            className="text-xs"
+                          />
+                        </div>
+
+                        {questionPaperUploading && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-blue-700">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Uploading question paper...
+                          </div>
+                        )}
+                        {questionPaperMsg && (
+                          <p
+                            className={`mt-2 text-xs ${questionPaperMsg.type === "ok" ? "text-green-700" : "text-red-700"}`}
+                          >
+                            {questionPaperMsg.text}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {/* add question */}
                     {showQForm ? (
                       <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 mb-4 space-y-3">

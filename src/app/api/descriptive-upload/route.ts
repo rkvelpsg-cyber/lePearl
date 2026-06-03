@@ -69,6 +69,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (scope === "question-paper") {
+      const { data: profileRow, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        return NextResponse.json(
+          { error: "Unable to verify uploader role" },
+          { status: 403 },
+        );
+      }
+
+      const role = (profileRow as { role?: string } | null)?.role;
+      if (role !== "faculty" && role !== "admin") {
+        return NextResponse.json(
+          { error: "Only faculty/admin can upload question papers" },
+          { status: 403 },
+        );
+      }
+
+      const lowerName = file.name.toLowerCase();
+      const isAllowedQuestionPaper =
+        file.type === "application/pdf" ||
+        file.type === "application/msword" ||
+        file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        lowerName.endsWith(".pdf") ||
+        lowerName.endsWith(".doc") ||
+        lowerName.endsWith(".docx");
+
+      if (!isAllowedQuestionPaper) {
+        return NextResponse.json(
+          {
+            error:
+              "Question paper must be PDF, DOC, or DOCX format for upload",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const isPdf =
       file.type === "application/pdf" ||
       file.name.toLowerCase().endsWith(".pdf");

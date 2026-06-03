@@ -111,6 +111,7 @@ type McqTest = {
   title: string;
   total_marks: number;
   negative_marking: number | null;
+  question_paper_file_url: string | null;
   time_limit_minutes: number;
   exam_type: string;
   test_type?: string; // 'mcq' or 'descriptive'
@@ -728,7 +729,7 @@ export default function StudentDashboardPage() {
         const fullTestsRes = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, negative_marking, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, available_until, is_published, courses(title), batches(batch_name)",
+            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, available_until, is_published, courses(title), batches(batch_name)",
           )
           .eq("is_published", true)
           .order("scheduled_at", { ascending: true });
@@ -754,6 +755,7 @@ export default function StudentDashboardPage() {
             ...test,
             negative_marking: 0,
             available_until: null,
+            question_paper_file_url: null,
           }));
           testsError = fallbackTestsRes.error as {
             code?: string;
@@ -2211,6 +2213,27 @@ export default function StudentDashboardPage() {
                             {uploadMsg.text}
                           </div>
                         )}
+
+                        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
+                          <p className="text-sm font-semibold text-blue-900">
+                            Descriptive Question Paper
+                          </p>
+                          {selectedDescriptiveTest.question_paper_file_url ? (
+                            <a
+                              href={selectedDescriptiveTest.question_paper_file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" /> View /
+                              Download Question Paper
+                            </a>
+                          ) : (
+                            <p className="mt-1 text-xs text-blue-700">
+                              Question paper will be uploaded by faculty soon.
+                            </p>
+                          )}
+                        </div>
 
                         {descriptiveQuestions.length === 0 && (
                           <div className="border border-dashed border-gray-300 rounded-xl p-4 text-sm text-gray-600">
