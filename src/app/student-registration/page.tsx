@@ -336,8 +336,8 @@ function StudentRegistrationContent() {
     safePaidFormData.includeBooksAddon
       ? Math.round(baseCourseFee * 0.1)
       : 0;
-  const totalDiscount = pearlianDiscount + additionalAccessDiscount;
-  const booksFee = 0;
+  const totalDiscount = pearlianDiscount;
+  const booksFee = additionalAccessDiscount;
   const activeInstalments =
     isUPGDCCourse && selectedUPGDCFee?.tenure === "instalment"
       ? selectedUPGDCFee.instalments
@@ -349,7 +349,7 @@ function StudentRegistrationContent() {
   const finalPayable =
     safePaidFormData.paymentTenure === "instalment"
       ? firstInstalmentAmount
-      : Math.max(baseCourseFee - totalDiscount, 0);
+      : Math.max(baseCourseFee - totalDiscount + booksFee, 0);
 
   const allConsentsChecked =
     safePaidFormData.acceptedTerms &&
@@ -1114,10 +1114,10 @@ function StudentRegistrationContent() {
                     )}
                     {!isResearchAssistanceCourse &&
                       additionalAccessDiscount > 0 && (
-                        <div className="flex items-center justify-between text-emerald-700">
-                          <span>Additional Access Discount (10%)</span>
+                        <div className="flex items-center justify-between text-amber-700">
+                          <span>Additional One-Year Access Charge (10%)</span>
                           <span className="font-semibold">
-                            - Rs. {additionalAccessDiscount}
+                            + Rs. {additionalAccessDiscount}
                           </span>
                         </div>
                       )}
@@ -1167,8 +1167,8 @@ function StudentRegistrationContent() {
                       <span>Rs. {instalmentTotal}</span>
                     </div>
                     <p className="text-xs text-amber-600">
-                      * Pearlian and additional access discounts are available
-                      on full payment only.
+                      * Pearlian discount and additional one-year access charge
+                      apply on full payment only.
                     </p>
                   </div>
                   <div className="mt-4 h-px bg-violet-200" />
