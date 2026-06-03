@@ -55,20 +55,7 @@ function Hero() {
   };
 
   const downloadSyllabus = () => {
-    const files = [
-      { href: "/english syllabus MPPSC.pdf", download: "MPPSC_Syllabus1.pdf" },
-      { href: "/MPPSC_Syllabus2.pdf", download: "MPPSC_Syllabus2.pdf" },
-    ];
-    files.forEach(({ href, download }, i) => {
-      setTimeout(() => {
-        const a = document.createElement("a");
-        a.href = href;
-        a.download = download;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }, i * 800);
-    });
+    window.location.href = "/student-registration?mode=free";
   };
 
   return (

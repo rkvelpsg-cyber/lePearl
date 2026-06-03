@@ -54,6 +54,10 @@ function isValidPhone(value: string) {
   return /^[+]?[(]?[0-9\s-]{10,20}$/.test(value);
 }
 
+function isValidTenDigitPhone(value: string) {
+  return /^\d{10}$/.test(value);
+}
+
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -251,7 +255,10 @@ function buildModeAwareAdminEmail(
   }).format(new Date());
 
   const flowLabel = mode === "paid" ? "Paid Enrolment" : "Free Registration";
-  const subject = `[${flowLabel}] ${payload.fullName} - ${payload.email}`;
+  const subject =
+    mode === "free"
+      ? "Free Registration"
+      : `[${flowLabel}] ${payload.fullName} - ${payload.email}`;
 
   const lines = [
     `Flow: ${flowLabel}`,
@@ -368,9 +375,7 @@ function buildStudentConfirmationEmail(
   mode: RegistrationMode,
 ) {
   const subject =
-    mode === "paid"
-      ? "LePearl Paid Enrolment Received"
-      : "LePearl Free Registration Received";
+    mode === "paid" ? "LePearl Paid Enrolment Received" : "Free Registration";
 
   const coursesPageUrl = "https://www.lepearleducation.com/all-courses";
 
@@ -818,6 +823,16 @@ export async function POST(req: NextRequest) {
         { error: "Please select a valid course." },
         { status: 400 },
       );
+    }
+
+    if (mode === "free") {
+      payload.phone = payload.phone.replace(/\D/g, "");
+      if (!isValidTenDigitPhone(payload.phone)) {
+        return NextResponse.json(
+          { error: "WhatsApp number must be exactly 10 digits." },
+          { status: 400 },
+        );
+      }
     }
 
     if (!isValidPhone(payload.phone)) {

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import {
   Archive,
   BookOpen,
@@ -125,8 +124,6 @@ const categories: Category[] = [
 ];
 
 const filterChips = ["NET", "SET", "Assistant Professor", "Teaching Exams"];
-const REGISTRATION_UNLOCK_KEY = "lepearl-registration-submitted";
-
 export function PreviousPapersSection() {
   const router = useRouter();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
@@ -178,33 +175,6 @@ export function PreviousPapersSection() {
       .filter((category) => category.subItems.length > 0);
   }, [activeFilter, searchQuery]);
 
-  const buildPaperManifest = (categoryName: string, subItem: SubItem) => {
-    const latestYear = Number.parseInt(subItem.latestYear, 10);
-    const yearBuckets = Array.from(
-      { length: subItem.papersCount },
-      (_, index) => {
-        if (Number.isNaN(latestYear)) {
-          return subItem.latestYear;
-        }
-        return String(latestYear - Math.floor(index / 2));
-      },
-    );
-
-    const lines = [
-      "LePearl Education - Previous Year Question Papers",
-      `Category: ${categoryName}`,
-      `Exam: ${subItem.name}`,
-      `Total Papers: ${subItem.papersCount}`,
-      "",
-      "Included Papers:",
-      ...yearBuckets.map(
-        (year, index) => `${index + 1}. ${subItem.name} PYQ - ${year}`,
-      ),
-    ];
-
-    return lines.join("\n");
-  };
-
   const handleDownload = async (
     categoryName: string,
     subItem: SubItem,
@@ -214,114 +184,15 @@ export function PreviousPapersSection() {
       ? `${categoryName}-${subItem.name}-${selectedFile}`
       : `${categoryName}-${subItem.name}`;
     setDownloadingKey(actionKey);
-    setDownloadMessage(null);
-
-    try {
-      const formRegistrationSubmitted =
-        window.localStorage.getItem(REGISTRATION_UNLOCK_KEY) !== null;
-
-      if (!formRegistrationSubmitted) {
-        const supabase = createClient("student");
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          setDownloadMessage({
-            type: "err",
-            text: "Please complete student registration to download question papers.",
-          });
-          router.push("/student-registration?mode=free");
-          return;
-        }
-
-        const [{ data: profileRow }, { data: studentProfileRow }] =
-          await Promise.all([
-            supabase
-              .from("profiles")
-              .select("registration_no")
-              .eq("user_id", user.id)
-              .maybeSingle(),
-            supabase
-              .from("student_profiles")
-              .select("registration_no")
-              .eq("user_id", user.id)
-              .maybeSingle(),
-          ]);
-
-        const registrationNo =
-          profileRow?.registration_no ??
-          studentProfileRow?.registration_no ??
-          null;
-
-        if (!registrationNo) {
-          setDownloadMessage({
-            type: "err",
-            text: "Student registration is required before downloading papers.",
-          });
-          router.push("/student-registration?mode=free");
-          return;
-        }
-      }
-
-      const filesToDownload = selectedFile
-        ? [selectedFile]
-        : (subItem.paperFiles ?? []);
-
-      if (filesToDownload.length > 0) {
-        filesToDownload.forEach((fileName) => {
-          const anchor = document.createElement("a");
-          anchor.href = encodeURI(`/${fileName}`);
-          anchor.download = fileName;
-          document.body.appendChild(anchor);
-          anchor.click();
-          anchor.remove();
-        });
-
-        setDownloadMessage({
-          type: "ok",
-          text: selectedFile
-            ? `Download started for ${selectedFile}.`
-            : `Download started for ${subItem.name} papers.`,
-        });
-        window.setTimeout(() => {
-          setDownloadMessage(null);
-        }, 3000);
-        return;
-      }
-
-      const content = buildPaperManifest(categoryName, subItem);
-      const fileBlob = new Blob([content], {
-        type: "text/plain;charset=utf-8",
-      });
-      const blobUrl = window.URL.createObjectURL(fileBlob);
-      const anchor = document.createElement("a");
-      anchor.href = blobUrl;
-      anchor.download = `${subItem.name.replace(/\s+/g, "-").toLowerCase()}-previous-year-papers.txt`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(blobUrl);
-
-      setDownloadMessage({
-        type: "ok",
-        text: `Download started for ${subItem.name}.`,
-      });
-      window.setTimeout(() => {
-        setDownloadMessage(null);
-      }, 3000);
-    } catch (error) {
-      console.error("Failed to process paper download:", error);
-      setDownloadMessage({
-        type: "err",
-        text: "Unable to download papers right now. Please try again.",
-      });
-      window.setTimeout(() => {
-        setDownloadMessage(null);
-      }, 5000);
-    } finally {
+    setDownloadMessage({
+      type: "ok",
+      text: "Redirecting to Free Registration...",
+    });
+    router.push("/student-registration?mode=free");
+    window.setTimeout(() => {
       setDownloadingKey(null);
-    }
+      setDownloadMessage(null);
+    }, 400);
   };
 
   return (

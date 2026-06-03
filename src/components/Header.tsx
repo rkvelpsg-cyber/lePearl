@@ -179,7 +179,7 @@ export function Header() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <DrawerLink
-            href="#pyqs"
+            href="/student-registration?mode=free"
             label="PYQs"
             onClick={() => setMobileMenuOpen(false)}
           />
@@ -449,7 +449,10 @@ function DesktopHeader() {
             <a href="/research-assistance" style={desktopNavItemStyle}>
               Research Assistance
             </a>
-            <a href="#pyqs" style={desktopNavItemStyle}>
+            <a
+              href="/student-registration?mode=free"
+              style={desktopNavItemStyle}
+            >
               PYQs
             </a>
             <a

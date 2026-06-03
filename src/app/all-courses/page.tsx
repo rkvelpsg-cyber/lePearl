@@ -3,15 +3,12 @@
 import Link from "next/link";
 import {
   BookOpen,
-  Check,
   ClipboardCheck,
   FileText,
   GraduationCap,
   MessageCircle,
   PlayCircle,
-  Quote,
   Sparkles,
-  Star,
   Target,
   TrendingUp,
   Users,
@@ -119,6 +116,38 @@ const courses: CourseCard[] = [
     href: "/research-assistance",
     highlights: ["Research guidance", "Writing support", "Publication roadmap"],
   },
+  {
+    id: "assistant-professor-interview",
+    title: "Assistant Professor Interview",
+    track: "Interview Preparation",
+    duration: "4-6 Weeks",
+    href: "/interview-preparation/assistant-professor-1",
+    highlights: [
+      "Communication training",
+      "Mock panel interviews",
+      "Expert mentoring",
+    ],
+  },
+  {
+    id: "du-interview",
+    title: "Delhi University Interview",
+    track: "Interview Preparation",
+    duration: "4-6 Weeks",
+    href: "/interview-preparation/du-interview",
+    highlights: [
+      "Teaching-focused answers",
+      "Mock panel practice",
+      "Classroom presence",
+    ],
+  },
+  {
+    id: "phd-interview",
+    title: "PhD Interview Preparation",
+    track: "Interview Preparation",
+    duration: "4-6 Weeks",
+    href: "/interview-preparation/phd-interview",
+    highlights: ["Research clarity", "Viva confidence", "Selection mindset"],
+  },
 ];
 
 const overviewPoints = [
@@ -151,42 +180,6 @@ const features = [
     title: "Live Doubt Clinics",
     description: "Weekly doubt-solving sessions with faculty guidance.",
   },
-];
-
-const testimonials = [
-  {
-    id: "t1",
-    name: "NTA NET Qualifier",
-    quote:
-      "I used the all-courses page to compare options and picked the right track quickly.",
-  },
-  {
-    id: "t2",
-    name: "Assistant Professor Aspirant",
-    quote:
-      "The structured modules and mock analysis helped me stay consistent throughout prep.",
-  },
-  {
-    id: "t3",
-    name: "UPHESC Candidate",
-    quote:
-      "Faculty mentoring and regular follow-up made my preparation focused and practical.",
-  },
-];
-
-const oneTimeFeatures = [
-  "Full access to selected course",
-  "Study materials and PDFs",
-  "Mock tests and practice sets",
-  "Doubt sessions",
-];
-
-const installmentFeatures = [
-  "Full access to selected course",
-  "Study materials and PDFs",
-  "Mock tests and practice sets",
-  "Doubt sessions",
-  "Flexible payment schedule",
 ];
 
 function Header() {
@@ -351,7 +344,7 @@ function CoursesGrid() {
               <div className="mt-5 flex flex-wrap gap-2">
                 <Link
                   href={course.href}
-                  className="rounded-lg bg-blue-900 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-800"
+                  className="rounded-lg bg-blue-900 px-3 py-2 text-xs font-semibold !text-white hover:!text-white focus:!text-white transition-colors hover:bg-blue-800"
                 >
                   View Course
                 </Link>
@@ -370,188 +363,6 @@ function CoursesGrid() {
   );
 }
 
-function Testimonials() {
-  return (
-    <section
-      id="testimonials"
-      className="bg-gradient-to-b from-blue-50 to-white py-16 md:py-24"
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold text-blue-900 md:text-4xl">
-            Student Success Feedback
-          </h2>
-          <div className="mx-auto mt-4 h-1 w-24 bg-amber-500"></div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <article
-              key={testimonial.id}
-              className="relative rounded-2xl bg-white p-8 shadow-lg"
-            >
-              <Quote className="absolute right-6 top-6 h-10 w-10 text-amber-200" />
-              <h3 className="text-lg font-bold text-blue-900">
-                {testimonial.name}
-              </h3>
-              <div className="mb-4 mt-2 flex gap-1">
-                {[...Array(5)].map((_, idx) => (
-                  <Star
-                    key={`${testimonial.id}-${idx}`}
-                    className="h-4 w-4 fill-amber-400 text-amber-400"
-                  />
-                ))}
-              </div>
-              <p className="leading-relaxed text-gray-600">
-                &ldquo;{testimonial.quote}&rdquo;
-              </p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Pricing() {
-  return (
-    <section
-      id="enrollment"
-      className="bg-gradient-to-br from-blue-900 to-blue-800 py-16 text-white md:py-24"
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">
-            Join Your Target Course Today
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-lg text-blue-100">
-            Select your preferred payment route and complete your registration
-            in minutes.
-          </p>
-        </div>
-
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-          <div className="relative overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-105">
-            <div className="absolute right-0 top-0 bg-amber-500 px-4 py-1 text-sm font-bold text-white">
-              BEST VALUE
-            </div>
-
-            <div className="mb-6">
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                One-Time Payment
-              </h3>
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-blue-900">₹8,999</span>
-              </div>
-              <p className="text-gray-500 line-through">₹12,000</p>
-            </div>
-
-            <div className="mb-8">
-              <p className="mb-4 font-semibold text-blue-900">Includes:</p>
-              <ul className="space-y-3">
-                {oneTimeFeatures.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <Check className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <Link
-              href="/student-registration"
-              className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-blue-800"
-            >
-              Paid Enrollment
-            </Link>
-          </div>
-
-          <div className="relative rounded-2xl border-4 border-amber-400 bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-105">
-            <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-amber-500 px-6 py-2 text-sm font-bold text-white shadow-lg">
-              <Sparkles className="h-4 w-4" /> FLEXIBLE
-            </div>
-
-            <div className="mb-6 mt-4">
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                Installment Plan
-              </h3>
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-blue-900">
-                  2 Installments
-                </span>
-              </div>
-              <p className="text-gray-600">Total Cost: ₹11,000</p>
-            </div>
-
-            <div className="mb-8">
-              <p className="mb-4 font-semibold text-blue-900">Includes:</p>
-              <ul className="space-y-3">
-                {installmentFeatures.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <Check className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <Link
-              href="/student-registration"
-              className="block w-full rounded-lg bg-amber-500 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-amber-600"
-            >
-              Fill Registration Form
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-10 text-center text-blue-100">
-          Need help choosing? Contact us for personalized guidance.
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BooksAndFaq() {
-  return (
-    <section className="bg-white py-16 md:py-24">
-      <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
-        <section
-          id="books"
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <h2 className="text-xl font-bold text-slate-900">Books</h2>
-          <p className="mt-2 text-slate-600">
-            Add curated study books during paid enrollment and receive aligned
-            reading for your selected exam track.
-          </p>
-        </section>
-
-        <section
-          id="faqs"
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <h2 className="text-xl font-bold text-slate-900">FAQs</h2>
-          <div className="mt-3 space-y-3 text-sm text-slate-600">
-            <p>
-              <strong>Can I attend a demo before enrolling?</strong> Yes, use
-              free registration to access demo and PYQ resources.
-            </p>
-            <p>
-              <strong>Is discount available for existing students?</strong> Yes,
-              Pearlian students get 10% off on eligible paid enrollments.
-            </p>
-            <p>
-              <strong>Do I need to accept policy checkboxes?</strong> For paid
-              enrollment, terms, privacy, and refund consent are mandatory.
-            </p>
-          </div>
-        </section>
-      </div>
-    </section>
-  );
-}
-
 export default function AllCoursesPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -560,9 +371,6 @@ export default function AllCoursesPage() {
       <CourseOverview />
       <Features />
       <CoursesGrid />
-      <Testimonials />
-      <Pricing />
-      <BooksAndFaq />
       <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>

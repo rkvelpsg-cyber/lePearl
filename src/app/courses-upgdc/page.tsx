@@ -831,12 +831,7 @@ function UPGDCPage() {
   };
 
   const downloadSyllabus = () => {
-    const a = document.createElement("a");
-    a.href = "/GDC Syllabus-2025.pdf";
-    a.download = "GDC Syllabus-2025.pdf";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.location.href = "/student-registration?mode=free";
   };
 
   const nextTestimonial = () => {

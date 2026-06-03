@@ -92,12 +92,7 @@ export default function LTGradeCoursePage() {
   };
 
   const downloadSyllabus = () => {
-    const a = document.createElement("a");
-    a.href = "/LT Grade syllabus.pdf";
-    a.download = "LT Grade syllabus.pdf";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.location.href = "/student-registration?mode=free";
   };
 
   return (

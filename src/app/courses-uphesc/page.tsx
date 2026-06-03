@@ -51,20 +51,7 @@ function HeroSection() {
   };
 
   const downloadSyllabus = () => {
-    const files = [
-      { href: "/UPHESC_1.pdf", download: "UPHESC_1.pdf" },
-      { href: "/UPHESC_2.pdf", download: "UPHESC_2.pdf" },
-    ];
-    files.forEach(({ href, download }, i) => {
-      setTimeout(() => {
-        const a = document.createElement("a");
-        a.href = href;
-        a.download = download;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }, i * 800);
-    });
+    window.location.href = "/student-registration?mode=free";
   };
 
   return (

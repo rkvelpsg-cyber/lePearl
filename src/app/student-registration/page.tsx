@@ -19,6 +19,7 @@ import {
   StudentRegistrationPayload,
   studentRegistrationCourses,
 } from "@/lib/studentRegistration";
+import { markFreeResourceAccess } from "@/lib/freeResourceAccess";
 
 type RazorpayOrderResponse = {
   order_id: string;
@@ -132,7 +133,6 @@ type SubmissionState =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
-const REGISTRATION_UNLOCK_KEY = "lepearl-registration-submitted";
 const PAID_REGISTRATION_DRAFT_KEY = "lepearl-paid-registration-draft";
 const PAID_REGISTRATION_COURSE_BACK_KEY = "lepearl-paid-course-back-href";
 
@@ -368,6 +368,7 @@ function StudentRegistrationContent() {
   }, [safePaidFormData.password]);
 
   const isPaidWhatsappValid = /^\d{10}$/.test(safePaidFormData.whatsapp);
+  const isFreeWhatsappValid = /^\d{10}$/.test(safeFreeFormData.whatsapp);
 
   const paidRegistrationReturnTo = useMemo(() => {
     const query = searchParams.toString();
@@ -523,6 +524,15 @@ function StudentRegistrationContent() {
     field: K,
     value: FreeRegistrationFormState[K],
   ) {
+    if (field === "whatsapp" && typeof value === "string") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+      setFreeFormData((current) => ({
+        ...current,
+        [field]: digitsOnly as FreeRegistrationFormState[K],
+      }));
+      return;
+    }
+
     setFreeFormData((current) => ({ ...current, [field]: value }));
   }
 
@@ -717,6 +727,7 @@ function StudentRegistrationContent() {
 
   async function handleFreeSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isFreeWhatsappValid) return;
     setIsSubmittingFree(true);
     setFreeSubmissionState({ type: "idle" });
 
@@ -762,14 +773,11 @@ function StudentRegistrationContent() {
           result.message ??
           "Free registration submitted. Redirecting you to PYQ library...",
       });
-      window.localStorage.setItem(
-        REGISTRATION_UNLOCK_KEY,
-        JSON.stringify({
-          submittedAt: new Date().toISOString(),
-          email: payload.email,
-          phone: payload.phone,
-        }),
-      );
+      markFreeResourceAccess({
+        submittedAt: new Date().toISOString(),
+        email: payload.email,
+        phone: payload.phone,
+      });
       setFreeFormData(initialFreeForm);
       window.setTimeout(() => {
         router.push("/#pyqs");
@@ -1328,6 +1336,9 @@ function StudentRegistrationContent() {
                 WhatsApp Number <span className="text-red-500">*</span>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  maxLength={10}
                   required
                   value={safeFreeFormData.whatsapp}
                   onChange={(event) =>
@@ -1336,6 +1347,12 @@ function StudentRegistrationContent() {
                   className={inputClassName}
                   placeholder="+91 9876543210"
                 />
+                {!isFreeWhatsappValid &&
+                  safeFreeFormData.whatsapp.length > 0 && (
+                    <p className="mt-2 text-sm font-medium text-rose-600">
+                      WhatsApp number must be exactly 10 digits.
+                    </p>
+                  )}
               </label>
               <label className="text-base font-semibold text-slate-700">
                 Exam Preparing For <span className="text-red-500">*</span>
@@ -1395,7 +1412,7 @@ function StudentRegistrationContent() {
 
             <button
               type="submit"
-              disabled={isSubmittingFree}
+              disabled={isSubmittingFree || !isFreeWhatsappValid}
               className="w-full cursor-pointer rounded-xl bg-[linear-gradient(90deg,#0f766e,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmittingFree

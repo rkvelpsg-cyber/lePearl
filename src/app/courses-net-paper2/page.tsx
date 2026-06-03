@@ -47,6 +47,10 @@ function Hero() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleDownloadSyllabus = () => {
+    window.location.href = "/student-registration?mode=free";
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-r from-indigo-900 to-blue-800 text-white">
       <div className="absolute inset-0 opacity-20">
@@ -77,7 +81,11 @@ function Hero() {
             >
               Enroll Now
             </a>
-            <button className="flex items-center justify-center gap-2 rounded-lg border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition hover:bg-white/20">
+            <button
+              type="button"
+              onClick={handleDownloadSyllabus}
+              className="flex items-center justify-center gap-2 rounded-lg border-2 border-white/40 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+            >
               <Download className="h-5 w-5" />
               Download Syllabus
             </button>

@@ -92,12 +92,7 @@ export default function GICCoursePage() {
   };
 
   const downloadSyllabus = () => {
-    const a = document.createElement("a");
-    a.href = "/Literature_Notes.pdf";
-    a.download = "Literature_Notes.pdf";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    window.location.href = "/student-registration?mode=free";
   };
 
   return (
