@@ -1,7 +1,31 @@
 import { Header } from "@/components/Header";
 import { SiteFooter } from "@/components/SiteFooter";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
-export default function TermsAndConditions() {
+type TermsPageProps = {
+  searchParams?: {
+    returnTo?: string | string[];
+  };
+};
+
+export default function TermsAndConditions({ searchParams }: TermsPageProps) {
+  const rawReturnTo = Array.isArray(searchParams?.returnTo)
+    ? searchParams?.returnTo[0]
+    : searchParams?.returnTo;
+
+  let backToPaidRegistrationHref = "/student-registration?mode=paid";
+  if (rawReturnTo) {
+    try {
+      const decodedReturnTo = decodeURIComponent(rawReturnTo);
+      if (decodedReturnTo.startsWith("/student-registration")) {
+        backToPaidRegistrationHref = decodedReturnTo;
+      }
+    } catch {
+      backToPaidRegistrationHref = "/student-registration?mode=paid";
+    }
+  }
+
   return (
     <div style={{ position: "relative" }}>
       <div style={{ position: "relative", zIndex: 1 }}>
@@ -10,6 +34,16 @@ export default function TermsAndConditions() {
 
         <main className="min-h-screen bg-white">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+            <div className="mb-6 flex justify-end">
+              <Link
+                href={backToPaidRegistrationHref}
+                className="inline-flex items-center gap-2 rounded-full border border-violet-300 bg-violet-600 px-4 py-2 text-sm font-semibold !text-white hover:!text-white focus:!text-white transition hover:bg-violet-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Paid Registration
+              </Link>
+            </div>
+
             <h1 className="mb-8 text-4xl font-bold text-[#1E3A8A]">
               Terms & Conditions
             </h1>

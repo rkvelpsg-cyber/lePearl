@@ -141,6 +141,7 @@ type DescriptiveAnswer = {
   student_user_id: string;
   question_id: number;
   answer_file_url: string | null;
+  evaluated_answer_file_url: string | null;
   submitted_at: string | null;
   marks_obtained: number | null;
   faculty_notes: string | null;
@@ -255,6 +256,95 @@ const NEXT_STATUS: Record<string, string> = {
   reviewed: "completed",
   completed: "completed",
 };
+
+const QUESTION_LANGUAGE_OPTIONS = [
+  "English",
+  "Hindi",
+  "Telugu",
+  "Tamil",
+  "Odiya",
+  "Kannada",
+  "Devanagari",
+] as const;
+
+const MCQ_FORMAT_OPTIONS = [
+  { value: "standard", label: "Standard MCQ" },
+  { value: "assertion-reason", label: "Assertion - Reason" },
+  { value: "statement-codes", label: "Statements With Codes" },
+  { value: "match-list", label: "Match List-I / List-II" },
+  { value: "source-line", label: "Source Of Quoted Line" },
+  { value: "fill-blank", label: "Fill In The Blank" },
+  { value: "paragraph-question", label: "Paragraph and Question Based" },
+] as const;
+
+function getMcqFormatTemplate(format: string) {
+  switch (format) {
+    case "assertion-reason":
+      return {
+        questionText:
+          "Given below are two statements, one is labelled as Assertion (A) and the other is labelled as Reason (R).\nAssertion (A): ...\nReason (R): ...\nSelect the correct answer using the codes given below:",
+        optionA:
+          "Both (A) and (R) are true and (R) is the correct explanation of (A)",
+        optionB:
+          "Both (A) and (R) are true, but (R) is not the correct explanation of (A)",
+        optionC: "(A) is true, but (R) is false",
+        optionD: "(A) is false, but (R) is true",
+      };
+    case "statement-codes":
+      return {
+        questionText:
+          "Consider the following statements and select the correct answer using the codes given below.\n1. Statement one\n2. Statement two",
+        optionA: "Only 1 is correct",
+        optionB: "Only 2 is correct",
+        optionC: "Both 1 and 2 are correct",
+        optionD: "Neither 1 nor 2 is correct",
+      };
+    case "match-list":
+      return {
+        questionText:
+          "Match List-I with List-II and select the correct answer by using the codes given below.\nList-I: (a) ... (b) ... (c) ... (d) ...\nList-II: (1) ... (2) ... (3) ... (4) ...",
+        optionA: "a-1, b-2, c-3, d-4",
+        optionB: "a-4, b-3, c-2, d-1",
+        optionC: "a-2, b-1, c-4, d-3",
+        optionD: "a-3, b-4, c-1, d-2",
+      };
+    case "source-line":
+      return {
+        questionText:
+          'From where have the following lines been taken?\n"Quoted lines here..."',
+        optionA: "Author/Work A",
+        optionB: "Author/Work B",
+        optionC: "Author/Work C",
+        optionD: "Author/Work D",
+      };
+    case "fill-blank":
+      return {
+        questionText:
+          '________ are formed by the word formation rule "Add the suffix -er to a verb".',
+        optionA: "Option A",
+        optionB: "Option B",
+        optionC: "Option C",
+        optionD: "Option D",
+      };
+    case "paragraph-question":
+      return {
+        questionText:
+          "Read the following paragraph carefully and answer the question that follows.\n\nParagraph:\n[Enter a long passage here]\n\nQuestion:\n[Ask a question based on the paragraph]",
+        optionA: "Option A",
+        optionB: "Option B",
+        optionC: "Option C",
+        optionD: "Option D",
+      };
+    default:
+      return {
+        questionText: "",
+        optionA: "",
+        optionB: "",
+        optionC: "",
+        optionD: "",
+      };
+  }
+}
 
 function StatCard({
   label,
@@ -387,6 +477,8 @@ export default function FacultyDashboardPage() {
     totalMarks: "100",
   });
   const [qForm, setQForm] = useState({
+    language: "English",
+    questionFormat: "standard",
     questionText: "",
     optionA: "",
     optionB: "",
@@ -396,6 +488,7 @@ export default function FacultyDashboardPage() {
     marks: "1",
   });
   const [descriptiveQForm, setDescriptiveQForm] = useState({
+    language: "English",
     questionText: "",
     marks: "5",
     category: "",
@@ -421,6 +514,11 @@ export default function FacultyDashboardPage() {
   });
   const [evaluationUpdating, setEvaluationUpdating] = useState(false);
   const [evaluationMsg, setEvaluationMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [evaluatedSheetUploading, setEvaluatedSheetUploading] = useState(false);
+  const [evaluatedSheetMsg, setEvaluatedSheetMsg] = useState<{
     type: "ok" | "err";
     text: string;
   } | null>(null);
@@ -1479,6 +1577,8 @@ export default function FacultyDashboardPage() {
         });
         if (error) throw error;
         setQForm({
+          language: "English",
+          questionFormat: "standard",
           questionText: "",
           optionA: "",
           optionB: "",
@@ -1498,6 +1598,7 @@ export default function FacultyDashboardPage() {
         });
         if (error) throw error;
         setDescriptiveQForm({
+          language: "English",
           questionText: "",
           marks: "5",
           category: "",
@@ -1659,6 +1760,106 @@ export default function FacultyDashboardPage() {
       setStudentSubmissions(submissions);
     } catch (err) {
       console.error("Error loading submissions:", err);
+    }
+  }
+
+  async function handleEvaluatedSheetUpload(file: File | null) {
+    if (!file || !selectedSubmission || !selectedEvalTest) return;
+
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      setEvaluatedSheetMsg({
+        type: "err",
+        text: "Please upload only a PDF file.",
+      });
+      return;
+    }
+
+    const supabase = createClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      setEvaluatedSheetMsg({
+        type: "err",
+        text: "Session expired. Please sign in again.",
+      });
+      return;
+    }
+
+    setEvaluatedSheetUploading(true);
+    setEvaluatedSheetMsg(null);
+
+    try {
+      const payload = new FormData();
+      payload.append("file", file);
+      payload.append("mockTestId", String(selectedEvalTest.id));
+      payload.append("scope", "faculty-reviewed");
+      payload.append("questionId", String(selectedSubmission.question_id));
+
+      const uploadResponse = await fetch("/api/descriptive-upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: payload,
+      });
+
+      const uploadJson = (await uploadResponse.json()) as {
+        publicUrl?: string;
+        error?: string;
+      };
+
+      if (!uploadResponse.ok || !uploadJson.publicUrl) {
+        throw new Error(uploadJson.error || "Upload failed");
+      }
+
+      const uploadedUrl = uploadJson.publicUrl;
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("descriptive_student_answers")
+        .update({
+          evaluated_answer_file_url: uploadedUrl,
+          evaluated_at: nowIso,
+        })
+        .eq("id", selectedSubmission.id);
+
+      if (error) throw error;
+
+      setSelectedSubmission((prev) =>
+        prev
+          ? {
+              ...prev,
+              evaluated_answer_file_url: uploadedUrl,
+              evaluated_at: nowIso,
+            }
+          : prev,
+      );
+      setStudentSubmissions((prev) =>
+        prev.map((submission) =>
+          submission.id === selectedSubmission.id
+            ? {
+                ...submission,
+                evaluated_answer_file_url: uploadedUrl,
+                evaluated_at: nowIso,
+              }
+            : submission,
+        ),
+      );
+
+      setEvaluatedSheetMsg({
+        type: "ok",
+        text: "Corrected answer sheet uploaded successfully.",
+      });
+    } catch (err) {
+      setEvaluatedSheetMsg({
+        type: "err",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Failed to upload corrected answer sheet.",
+      });
+    } finally {
+      setEvaluatedSheetUploading(false);
     }
   }
 
@@ -2965,10 +3166,81 @@ export default function FacultyDashboardPage() {
                         {/* MCQ QUESTION FORM */}
                         {selectedTest?.test_type === "mcq" ? (
                           <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  Question Language
+                                </label>
+                                <select
+                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  value={qForm.language}
+                                  onChange={(e) =>
+                                    setQForm((p) => ({
+                                      ...p,
+                                      language: e.target.value,
+                                    }))
+                                  }
+                                >
+                                  {QUESTION_LANGUAGE_OPTIONS.map((language) => (
+                                    <option key={language} value={language}>
+                                      {language}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  MCQ Format
+                                </label>
+                                <div className="flex gap-2">
+                                  <select
+                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                    value={qForm.questionFormat}
+                                    onChange={(e) =>
+                                      setQForm((p) => ({
+                                        ...p,
+                                        questionFormat: e.target.value,
+                                      }))
+                                    }
+                                  >
+                                    {MCQ_FORMAT_OPTIONS.map((format) => (
+                                      <option
+                                        key={format.value}
+                                        value={format.value}
+                                      >
+                                        {format.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const template = getMcqFormatTemplate(
+                                        qForm.questionFormat,
+                                      );
+                                      setQForm((p) => ({
+                                        ...p,
+                                        questionText:
+                                          p.questionText ||
+                                          template.questionText,
+                                        optionA: p.optionA || template.optionA,
+                                        optionB: p.optionB || template.optionB,
+                                        optionC: p.optionC || template.optionC,
+                                        optionD: p.optionD || template.optionD,
+                                      }));
+                                    }}
+                                    className="px-3 py-2 rounded-xl bg-purple-100 text-purple-700 text-xs font-semibold hover:bg-purple-200"
+                                  >
+                                    Apply
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
                             <textarea
                               className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                              rows={2}
-                              placeholder="Question text"
+                              rows={4}
+                              placeholder="Question text (supports English, Hindi, Telugu, Tamil, Odiya, Kannada, and Devanagari scripts)"
                               value={qForm.questionText}
                               onChange={(e) =>
                                 setQForm((p) => ({
@@ -2979,9 +3251,10 @@ export default function FacultyDashboardPage() {
                             />
                             <div className="grid grid-cols-2 gap-2">
                               {(["A", "B", "C", "D"] as const).map((opt) => (
-                                <input
+                                <textarea
                                   key={opt}
-                                  className="border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  rows={2}
+                                  className="border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none"
                                   placeholder={`Option ${opt}`}
                                   value={
                                     qForm[
@@ -3044,10 +3317,33 @@ export default function FacultyDashboardPage() {
                         ) : (
                           <>
                             {/* DESCRIPTIVE QUESTION FORM */}
-                            <input
-                              type="text"
-                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                              placeholder="Enter a single-sentence question"
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                  Question Language
+                                </label>
+                                <select
+                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                  value={descriptiveQForm.language}
+                                  onChange={(e) =>
+                                    setDescriptiveQForm((p) => ({
+                                      ...p,
+                                      language: e.target.value,
+                                    }))
+                                  }
+                                >
+                                  {QUESTION_LANGUAGE_OPTIONS.map((language) => (
+                                    <option key={language} value={language}>
+                                      {language}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                            <textarea
+                              rows={4}
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                              placeholder="Enter descriptive question (supports multilingual text and multi-line format)"
                               value={descriptiveQForm.questionText}
                               onChange={(e) =>
                                 setDescriptiveQForm((p) => ({
@@ -3385,6 +3681,7 @@ export default function FacultyDashboardPage() {
                                     s.marks_obtained?.toString() || "",
                                   facultyNotes: s.faculty_notes || "",
                                 });
+                                setEvaluatedSheetMsg(null);
                               }}
                               className={`w-full text-left p-4 border rounded-xl transition-colors ${
                                 s.marks_obtained !== null
@@ -3452,6 +3749,7 @@ export default function FacultyDashboardPage() {
                             marksObtained: "",
                             facultyNotes: "",
                           });
+                          setEvaluatedSheetMsg(null);
                         }}
                         className="text-gray-400 hover:text-gray-600"
                       >
@@ -3494,8 +3792,59 @@ export default function FacultyDashboardPage() {
                           <ExternalLink className="w-4 h-4" /> View Submission
                           File
                         </a>
+                        {selectedSubmission.evaluated_answer_file_url && (
+                          <a
+                            href={selectedSubmission.evaluated_answer_file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 text-sm text-emerald-700 hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-4 h-4" /> View Corrected
+                            Sheet
+                          </a>
+                        )}
                       </div>
                     )}
+
+                    <div className="border border-emerald-200 rounded-xl p-4 mb-4 bg-emerald-50">
+                      <p className="text-sm font-semibold text-gray-900 mb-1">
+                        Upload Corrected Answer Sheet (PDF)
+                      </p>
+                      <p className="text-xs text-gray-700 mb-3">
+                        Open the student PDF in your preferred online PDF pen
+                        tool, annotate it, then upload the corrected version
+                        here.
+                      </p>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        disabled={evaluatedSheetUploading}
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            void handleEvaluatedSheetUpload(e.target.files[0]);
+                            e.currentTarget.value = "";
+                          }
+                        }}
+                        className="text-xs"
+                      />
+                      {evaluatedSheetUploading && (
+                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-700">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Uploading corrected sheet...
+                        </div>
+                      )}
+                      {evaluatedSheetMsg && (
+                        <p
+                          className={`mt-2 text-xs ${
+                            evaluatedSheetMsg.type === "ok"
+                              ? "text-emerald-700"
+                              : "text-red-700"
+                          }`}
+                        >
+                          {evaluatedSheetMsg.text}
+                        </p>
+                      )}
+                    </div>
 
                     <div className="space-y-4">
                       <div>
@@ -3598,6 +3947,7 @@ export default function FacultyDashboardPage() {
                               marksObtained: "",
                               facultyNotes: "",
                             });
+                            setEvaluatedSheetMsg(null);
                           }}
                           className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-semibold rounded-xl transition-colors"
                         >

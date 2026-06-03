@@ -84,8 +84,8 @@ type AttendanceRow = {
   batch_name: string;
 };
 type PaymentRow = {
-  id: number;
-  student_user_id: string;
+  id: number | string;
+  student_user_id: string | null;
   amount: number;
   status: string;
   payment_date: string | null;
@@ -162,6 +162,7 @@ type RegistrationRow = {
   email: string;
   registration_no: string | null;
   username: string | null;
+  submitted_password: string | null;
   accepted_terms: boolean;
   accepted_privacy: boolean;
   accepted_refund: boolean;
@@ -172,6 +173,11 @@ type RegistrationRow = {
   discount_amount: number | null;
   books_fee: number | null;
   final_payable: number | null;
+  payment_amount: number | null;
+  payment_status: string | null;
+  razorpay_payment_id: string | null;
+  payment_tenure: "full" | "instalment" | null;
+  selected_fee_label: string | null;
   created_at: string;
   status: string;
 };
@@ -228,6 +234,23 @@ function fmtDate(s: string | null) {
 }
 function fmtCurrency(n: number) {
   return `\u20B9${n.toLocaleString("en-IN")}`;
+}
+
+function getDefaultFacultyByCourse(courseName: string) {
+  const normalized = courseName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  if (normalized.includes("upgdc")) return "Dr. Prem Shankar Pandey";
+  if (
+    normalized.includes("netpaper1") ||
+    normalized.includes("netpaper2") ||
+    normalized.includes("ltgrade")
+  ) {
+    return "Ms Sadhana";
+  }
+  if (normalized.includes("mppsc")) return "Ms Neelu Patel";
+  if (normalized.includes("gic")) return "Dr Babli Mallick";
+
+  return "";
 }
 
 function StatCard({
@@ -374,7 +397,7 @@ export default function AdminDashboardPage() {
     studentEmail: "",
     studentPhone: "",
     username: "",
-    defaultPassword: "LePearl@123",
+    defaultPassword: "",
   });
 
   /* registrations filters */
@@ -571,7 +594,7 @@ export default function AdminDashboardPage() {
         supabase
           .from("student_registrations")
           .select(
-            "id, mode, full_name, qualification, course, phone, email, registration_no, username, accepted_terms, accepted_privacy, accepted_refund, is_pearlian, pearlian_eligible, include_books_addon, base_course_fee, discount_amount, books_fee, final_payable, created_at, status",
+            "id, mode, full_name, qualification, course, phone, email, registration_no, username, submitted_password, accepted_terms, accepted_privacy, accepted_refund, is_pearlian, pearlian_eligible, include_books_addon, base_course_fee, discount_amount, books_fee, final_payable, payment_amount, payment_status, razorpay_payment_id, payment_tenure, selected_fee_label, created_at, status",
           )
           .order("created_at", { ascending: false }),
         supabase
@@ -594,6 +617,8 @@ export default function AdminDashboardPage() {
           .limit(100),
       ]);
 
+      const studentUserIdByEmail = new Map<string, string>();
+
       /* students */
       if (studentsRes.error) {
         console.error("Failed to load enrolled students:", studentsRes.error);
@@ -615,14 +640,12 @@ export default function AdminDashboardPage() {
           { data: batchesLookupData, error: batchesLookupError },
           { data: studentProfilesData },
         ] = await Promise.all([
-          studentIds.length > 0
-            ? supabase
-                .from("profiles")
-                .select(
-                  "user_id, full_name, phone, email, username, registration_no",
-                )
-                .in("user_id", studentIds)
-            : Promise.resolve({ data: [], error: null }),
+          supabase
+            .from("profiles")
+            .select(
+              "user_id, full_name, phone, email, username, registration_no, created_at",
+            )
+            .eq("role", "student"),
           batchIds.length > 0
             ? supabase
                 .from("batches")
@@ -663,9 +686,15 @@ export default function AdminDashboardPage() {
                 email: string | null;
                 username: string | null;
                 registration_no: string | null;
+                created_at: string;
               }[]
             | null
         )?.forEach((p) => {
+          const normalizedEmail = (p.email ?? "").trim().toLowerCase();
+          if (normalizedEmail) {
+            studentUserIdByEmail.set(normalizedEmail, p.user_id);
+          }
+
           namesById.set(p.user_id, {
             full_name: p.full_name,
             phone: p.phone,
@@ -761,6 +790,37 @@ export default function AdminDashboardPage() {
         });
 
         const rows = Array.from(mapByStudent.values());
+
+        // Include student profiles even if they do not yet have a visible
+        // enrollment row, so newly paid-registered students appear in Students.
+        (
+          profileNamesData as unknown as
+            | {
+                user_id: string;
+                full_name: string;
+                phone: string | null;
+                email: string | null;
+                username: string | null;
+                registration_no: string | null;
+                created_at: string;
+              }[]
+            | null
+        )?.forEach((p) => {
+          if (mapByStudent.has(p.user_id)) return;
+          rows.push({
+            user_id: p.user_id,
+            email: p.email,
+            username: p.username,
+            registration_no:
+              p.registration_no || registrationNoById.get(p.user_id) || null,
+            enrollment_no: null,
+            full_name: p.full_name,
+            phone: p.phone,
+            created_at: p.created_at,
+            enrollments: [],
+          });
+        });
+
         setStudents(rows);
         setTotalStudents(rows.length);
         setAllStudentsSimple(
@@ -910,22 +970,27 @@ export default function AdminDashboardPage() {
 
       /* payments */
       let paidByStudentId = new Map<string, number>();
-      if (paymentsRes.data) {
+      if (paymentsRes.data || registrationsRes.data) {
         let rev = 0;
-        const rows: PaymentRow[] = (
-          paymentsRes.data as unknown as {
-            id: number;
-            student_user_id: string;
-            amount: number;
-            status: string;
-            payment_date: string | null;
-            payment_mode: string | null;
-            razorpay_payment_id: string | null;
-            description: string | null;
-            student_profiles: { profiles: { full_name: string } | null } | null;
-            courses: { title: string } | null;
-          }[]
-        ).map((p) => {
+        const basePaymentRows =
+          (paymentsRes.data as unknown as
+            | {
+                id: number;
+                student_user_id: string;
+                amount: number;
+                status: string;
+                payment_date: string | null;
+                payment_mode: string | null;
+                razorpay_payment_id: string | null;
+                description: string | null;
+                student_profiles: {
+                  profiles: { full_name: string } | null;
+                } | null;
+                courses: { title: string } | null;
+              }[]
+            | null) ?? [];
+
+        const dbRows: PaymentRow[] = basePaymentRows.map((p) => {
           const normalizedStatus = (p.status || "").toLowerCase();
           if (normalizedStatus === "paid" || normalizedStatus === "completed") {
             rev += p.amount ?? 0;
@@ -948,8 +1013,72 @@ export default function AdminDashboardPage() {
             course_title: unwrapOne(p.courses)?.title ?? "-",
           };
         });
+
+        const existingTxnIds = new Set(
+          dbRows
+            .map((r) => (r.razorpay_payment_id ?? "").trim().toLowerCase())
+            .filter(Boolean),
+        );
+
+        const registrationRows =
+          (registrationsRes.data as unknown as RegistrationRow[] | null) ?? [];
+
+        const syntheticRows: PaymentRow[] = registrationRows
+          .filter((r) => {
+            const paidLike =
+              r.mode === "paid" ||
+              r.status === "completed" ||
+              (r.payment_status ?? "").toLowerCase() === "successful";
+            const amount = Number(r.payment_amount ?? r.final_payable ?? 0);
+            if (!paidLike || amount <= 0) return false;
+
+            const txn = r.razorpay_payment_id;
+            const normalizedTxn = (txn ?? "").trim().toLowerCase();
+            if (normalizedTxn && existingTxnIds.has(normalizedTxn))
+              return false;
+
+            return true;
+          })
+          .map((r) => {
+            const amount = Number(r.payment_amount ?? r.final_payable ?? 0);
+            const normalizedEmail = r.email.trim().toLowerCase();
+            const userId = studentUserIdByEmail.get(normalizedEmail) ?? null;
+
+            rev += amount;
+            if (userId) {
+              paidByStudentId.set(
+                userId,
+                (paidByStudentId.get(userId) ?? 0) + amount,
+              );
+            }
+
+            return {
+              id: `registration-${r.id}`,
+              student_user_id: userId,
+              amount,
+              status: "paid",
+              payment_date: r.created_at,
+              payment_mode: "razorpay",
+              razorpay_payment_id: r.razorpay_payment_id ?? null,
+              description: r.selected_fee_label
+                ? `Registration payment - ${r.selected_fee_label}`
+                : `Registration payment - ${r.course}`,
+              student_name: r.full_name,
+              course_title: r.course,
+            };
+          });
+
+        const rows = [...dbRows, ...syntheticRows].sort((a, b) => {
+          const aTs = a.payment_date ? new Date(a.payment_date).getTime() : 0;
+          const bTs = b.payment_date ? new Date(b.payment_date).getTime() : 0;
+          return bTs - aTs;
+        });
+
         setPayments(rows);
         setTotalRevenue(rev);
+      } else {
+        setPayments([]);
+        setTotalRevenue(0);
       }
 
       if (feePlansRes.error) {
@@ -1089,6 +1218,26 @@ export default function AdminDashboardPage() {
       /* registrations */
       if (registrationsRes.data) {
         setRegistrations(registrationsRes.data as RegistrationRow[]);
+      } else if (
+        registrationsRes.error &&
+        String((registrationsRes.error as { code?: string }).code || "") ===
+          "42703"
+      ) {
+        const { data: legacyRegistrations } = await supabase
+          .from("student_registrations")
+          .select(
+            "id, mode, full_name, qualification, course, phone, email, registration_no, username, accepted_terms, accepted_privacy, accepted_refund, is_pearlian, pearlian_eligible, include_books_addon, base_course_fee, discount_amount, books_fee, final_payable, payment_amount, payment_status, razorpay_payment_id, payment_tenure, selected_fee_label, created_at, status",
+          )
+          .order("created_at", { ascending: false });
+
+        if (legacyRegistrations) {
+          setRegistrations(
+            (legacyRegistrations as RegistrationRow[]).map((r) => ({
+              ...r,
+              submitted_password: null,
+            })),
+          );
+        }
       }
 
       if (facultyRegistrationsRes.data) {
@@ -1825,7 +1974,7 @@ export default function AdminDashboardPage() {
         studentEmail: "",
         studentPhone: "",
         username: "",
-        defaultPassword: "LePearl@123",
+        defaultPassword: "",
       });
 
       await load();
@@ -4414,6 +4563,9 @@ export default function AdminDashboardPage() {
                               Payment
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
+                              Plan
+                            </th>
+                            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
                               Consents
                             </th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600">
@@ -4456,14 +4608,41 @@ export default function AdminDashboardPage() {
                               <tr
                                 key={r.id}
                                 onClick={() => {
+                                  const normalizedEmail = r.email
+                                    .trim()
+                                    .toLowerCase();
+                                  const byEmail = students.find(
+                                    (s) =>
+                                      (s.email ?? "").trim().toLowerCase() ===
+                                      normalizedEmail,
+                                  );
+                                  const byUsername = r.username
+                                    ? students.find(
+                                        (s) =>
+                                          (s.username ?? "")
+                                            .trim()
+                                            .toLowerCase() ===
+                                          r.username!.trim().toLowerCase(),
+                                      )
+                                    : null;
+
                                   setCredentialForm((p) => ({
                                     ...p,
                                     registrationId: r.id,
-                                    registrationNumber: r.registration_no || "",
+                                    registrationNumber:
+                                      r.registration_no ||
+                                      byEmail?.registration_no ||
+                                      byUsername?.registration_no ||
+                                      "",
                                     studentName: r.full_name,
                                     studentEmail: r.email,
                                     studentPhone: r.phone,
                                     courseName: r.course,
+                                    facultyName:
+                                      p.facultyName ||
+                                      getDefaultFacultyByCourse(r.course),
+                                    defaultPassword:
+                                      r.submitted_password?.trim() || "",
                                     username:
                                       r.username ||
                                       r.email
@@ -4481,8 +4660,24 @@ export default function AdminDashboardPage() {
                               >
                                 <td className="px-4 py-3">
                                   <Badge
-                                    text={r.mode === "free" ? "Free" : "Paid"}
-                                    color={r.mode === "free" ? "blue" : "green"}
+                                    text={
+                                      r.mode === "free"
+                                        ? "Free"
+                                        : r.mode === "paid" ||
+                                            r.status === "completed" ||
+                                            r.payment_status === "successful"
+                                          ? "Paid"
+                                          : "Free"
+                                    }
+                                    color={
+                                      r.mode === "free"
+                                        ? "blue"
+                                        : r.mode === "paid" ||
+                                            r.status === "completed" ||
+                                            r.payment_status === "successful"
+                                          ? "green"
+                                          : "blue"
+                                    }
                                   />
                                 </td>
                                 <td className="px-4 py-3 font-medium text-gray-900">
@@ -4502,8 +4697,71 @@ export default function AdminDashboardPage() {
                                   {r.course}
                                 </td>
                                 <td className="px-4 py-3 text-xs text-gray-600">
-                                  {r.mode === "paid" && r.final_payable != null
-                                    ? `Rs. ${r.final_payable.toLocaleString("en-IN")}`
+                                  {(() => {
+                                    const isPaidLike =
+                                      r.mode === "paid" ||
+                                      r.status === "completed" ||
+                                      r.payment_status === "successful";
+
+                                    const normalizedEmail = r.email
+                                      .trim()
+                                      .toLowerCase();
+                                    const matchedStudent = students.find(
+                                      (s) =>
+                                        (s.email ?? "").trim().toLowerCase() ===
+                                        normalizedEmail,
+                                    );
+
+                                    const paidByStudent = matchedStudent
+                                      ? payments
+                                          .filter(
+                                            (p) =>
+                                              p.student_user_id ===
+                                                matchedStudent.user_id &&
+                                              p.status === "paid",
+                                          )
+                                          .reduce((sum, p) => sum + p.amount, 0)
+                                      : 0;
+
+                                    const similarPlanAmount =
+                                      r.selected_fee_label
+                                        ? registrations.find(
+                                            (other) =>
+                                              other.id !== r.id &&
+                                              other.course === r.course &&
+                                              other.selected_fee_label ===
+                                                r.selected_fee_label &&
+                                              (other.payment_amount != null ||
+                                                other.final_payable != null),
+                                          )
+                                        : null;
+
+                                    const displayAmount =
+                                      r.payment_amount ??
+                                      r.final_payable ??
+                                      (similarPlanAmount
+                                        ? (similarPlanAmount.payment_amount ??
+                                          similarPlanAmount.final_payable)
+                                        : null) ??
+                                      (paidByStudent > 0
+                                        ? paidByStudent
+                                        : null);
+
+                                    return isPaidLike && displayAmount != null
+                                      ? `Rs. ${displayAmount.toLocaleString("en-IN")}`
+                                      : "-";
+                                  })()}
+                                </td>
+                                <td className="px-4 py-3 text-xs text-gray-600">
+                                  {r.mode === "paid" ||
+                                  r.status === "completed" ||
+                                  r.payment_status === "successful"
+                                    ? (r.selected_fee_label ??
+                                      (r.payment_tenure === "full"
+                                        ? "Full Payment"
+                                        : r.payment_tenure === "instalment"
+                                          ? "Instalment"
+                                          : "Paid"))
                                     : "-"}
                                 </td>
                                 <td className="px-4 py-3 text-xs text-gray-600">
@@ -4511,9 +4769,15 @@ export default function AdminDashboardPage() {
                                   r.accepted_privacy &&
                                   r.accepted_refund
                                     ? "3/3"
-                                    : r.mode === "free"
-                                      ? "N/A"
-                                      : "Incomplete"}
+                                    : (r.mode === "paid" ||
+                                          r.status === "completed" ||
+                                          r.payment_status === "successful") &&
+                                        ((r.payment_amount ?? 0) > 0 ||
+                                          r.status === "completed")
+                                      ? "3/3"
+                                      : r.mode === "free"
+                                        ? "N/A"
+                                        : "Incomplete"}
                                 </td>
                                 <td className="px-4 py-3 text-gray-600 text-xs">
                                   {r.phone}
@@ -4625,6 +4889,9 @@ export default function AdminDashboardPage() {
                             setCredentialForm((p) => ({
                               ...p,
                               courseName: e.target.value,
+                              facultyName:
+                                p.facultyName ||
+                                getDefaultFacultyByCourse(e.target.value),
                             }))
                           }
                         >
@@ -4651,7 +4918,7 @@ export default function AdminDashboardPage() {
                                 registrationNumber: e.target.value,
                               }))
                             }
-                            placeholder="LP-REG-2026-001"
+                            placeholder="Registration number"
                           />
                         </div>
 
@@ -4767,7 +5034,7 @@ export default function AdminDashboardPage() {
                                 defaultPassword: e.target.value,
                               }))
                             }
-                            placeholder="LePearl@123"
+                            placeholder="Enter student password"
                           />
                         </div>
                       </div>
@@ -4809,7 +5076,7 @@ export default function AdminDashboardPage() {
                               studentEmail: "",
                               studentPhone: "",
                               username: "",
-                              defaultPassword: "LePearl@123",
+                              defaultPassword: "",
                             });
                             setCredentialMsg(null);
                           }}

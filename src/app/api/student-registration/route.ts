@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { createServerClient } from "@/lib/supabase/server";
 import {
   isValidStudentRegistrationCourse,
   sanitizeRegistrationValue,
@@ -24,6 +25,7 @@ type RegistrationRequestBody = Partial<StudentRegistrationPayload> & {
   registrationNo?: string;
   username?: string;
   password?: string;
+  paymentTenure?: "full" | "instalment" | null;
   paymentMode?: string;
   paymentAmount?: number;
   razorpayOrderId?: string;
@@ -39,6 +41,8 @@ type RegistrationRequestBody = Partial<StudentRegistrationPayload> & {
   discountAmount?: number;
   booksFee?: number;
   finalPayable?: number;
+  researchAssistanceFeeLabel?: string;
+  upgdcFeeLabel?: string;
   heardAboutUs?: string;
 };
 
@@ -121,6 +125,51 @@ function verifyRazorpaySignature(params: {
     .digest("hex");
 
   return expectedSignature === params.signature;
+}
+
+function normalizeForMatch(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function normalizeCode(value: string) {
+  const cleaned = value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 18);
+
+  if (cleaned.length > 0) {
+    return cleaned;
+  }
+
+  return `COURSE-${Date.now()}`;
+}
+
+function getDefaultFacultyForCourse(course: string) {
+  const normalized = normalizeForMatch(course);
+
+  if (normalized.includes("upgdc")) {
+    return "Dr. Prem Shankar Pandey";
+  }
+
+  if (
+    normalized.includes("netpaper1") ||
+    normalized.includes("netpaper2") ||
+    normalized.includes("netpaper2english") ||
+    normalized.includes("ltgrade")
+  ) {
+    return "Ms Sadhana";
+  }
+
+  if (normalized.includes("mppsc")) {
+    return "Ms Neelu Patel";
+  }
+
+  if (normalized.includes("gic")) {
+    return "Dr Babli Mallick";
+  }
+
+  return null;
 }
 
 function buildEmailContent(payload: StudentRegistrationPayload) {
@@ -216,8 +265,10 @@ function buildModeAwareAdminEmail(
   if (mode === "paid") {
     lines.push(
       `Registration No: ${body.registrationNo ?? "N/A"}`,
-      `Username: ${body.username ?? "N/A"}`,
+      `User ID / Username: ${body.username ?? "N/A"}`,
       `Temporary Password: ${body.password ?? "N/A"}`,
+      `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? "N/A"}`,
+      `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
       `Accepted Terms: ${body.acceptedTerms ? "Yes" : "No"}`,
       `Accepted Privacy: ${body.acceptedPrivacy ? "Yes" : "No"}`,
       `Accepted Refund: ${body.acceptedRefund ? "Yes" : "No"}`,
@@ -269,8 +320,10 @@ function buildStudentPaidPaymentEmail(
     "",
     `Course: ${payload.course}`,
     `Registration No: ${body.registrationNo ?? "N/A"}`,
-    `Username: ${body.username ?? "N/A"}`,
+    `User ID / Username: ${body.username ?? "N/A"}`,
     `Temporary Password: ${body.password ?? "N/A"}`,
+    `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? "N/A"}`,
+    `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
     `Amount Paid: Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}`,
     `Payment Mode: ${body.paymentMode ?? "razorpay"}`,
     `Transaction ID: ${body.razorpayPaymentId ?? "N/A"}`,
@@ -291,8 +344,10 @@ function buildStudentPaidPaymentEmail(
         <tbody>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Course</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${payload.course}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Registration No</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.registrationNo ?? "N/A"}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Username</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.username ?? "N/A"}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">User ID / Username</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.username ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Temporary Password</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.password ?? "N/A"}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Selected Fee Plan</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? "N/A"}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Payment Tenure</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.paymentTenure ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Amount Paid</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Payment Mode</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.paymentMode ?? "razorpay"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Transaction ID</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.razorpayPaymentId ?? "N/A"}</td></tr>
@@ -370,6 +425,259 @@ function buildStudentFreeWhatsAppMessage(
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+async function ensurePaidStudentAccount(params: {
+  payload: StudentRegistrationPayload;
+  body: RegistrationRequestBody;
+}) {
+  const { payload, body } = params;
+
+  const username = sanitizeRegistrationValue(body.username ?? "").toLowerCase();
+  const password = body.password?.trim() ?? "";
+  const registrationNo = sanitizeRegistrationValue(body.registrationNo ?? "");
+
+  if (!payload.email || !username || !password || !registrationNo) {
+    return { ensured: false, reason: "Missing login account fields" };
+  }
+
+  const service = createServerClient();
+
+  const { data: existingProfileByEmail } = await service
+    .from("profiles")
+    .select("user_id, username")
+    .eq("role", "student")
+    .ilike("email", payload.email)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let studentUserId = existingProfileByEmail?.user_id ?? null;
+
+  const { data: existingUsername } = await service
+    .from("profiles")
+    .select("user_id")
+    .eq("role", "student")
+    .ilike("username", username)
+    .maybeSingle();
+
+  if (
+    existingUsername?.user_id &&
+    (!studentUserId || existingUsername.user_id !== studentUserId)
+  ) {
+    return { ensured: false, reason: "Username already exists" };
+  }
+
+  if (!studentUserId) {
+    const { data: createdAuthUser, error: createUserError } =
+      await service.auth.admin.createUser({
+        email: payload.email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: payload.fullName,
+          username,
+        },
+      });
+
+    if (createUserError || !createdAuthUser.user) {
+      return {
+        ensured: false,
+        reason: createUserError?.message || "Failed to create auth user",
+      };
+    }
+
+    studentUserId = createdAuthUser.user.id;
+
+    const { error: profileInsertError } = await service
+      .from("profiles")
+      .insert({
+        user_id: studentUserId,
+        role: "student",
+        full_name: payload.fullName,
+        registration_no: registrationNo,
+        email: payload.email,
+        phone: payload.phone,
+        is_active: true,
+        username,
+      });
+
+    if (profileInsertError) {
+      return { ensured: false, reason: profileInsertError.message };
+    }
+  } else {
+    const { error: profileUpdateError } = await service
+      .from("profiles")
+      .update({
+        full_name: payload.fullName,
+        registration_no: registrationNo,
+        email: payload.email,
+        phone: payload.phone,
+        username,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", studentUserId)
+      .eq("role", "student");
+
+    if (profileUpdateError) {
+      return { ensured: false, reason: profileUpdateError.message };
+    }
+  }
+
+  const { error: authUpdateError } = await service.auth.admin.updateUserById(
+    studentUserId,
+    {
+      password,
+      user_metadata: {
+        full_name: payload.fullName,
+        username,
+      },
+    },
+  );
+
+  if (authUpdateError) {
+    return { ensured: false, reason: authUpdateError.message };
+  }
+
+  const { error: studentProfileUpsertError } = await service
+    .from("student_profiles")
+    .upsert(
+      {
+        user_id: studentUserId,
+        registration_no: registrationNo,
+        target_exam: payload.course,
+        joined_on: new Date().toISOString().slice(0, 10),
+        must_reset_password: true,
+      },
+      { onConflict: "user_id" },
+    );
+
+  if (studentProfileUpsertError) {
+    return { ensured: false, reason: studentProfileUpsertError.message };
+  }
+
+  const defaultFacultyName = getDefaultFacultyForCourse(payload.course);
+  if (defaultFacultyName) {
+    const { data: facultyProfiles, error: facultyError } = await service
+      .from("profiles")
+      .select("user_id, full_name")
+      .eq("role", "faculty");
+
+    if (facultyError) {
+      return { ensured: false, reason: facultyError.message };
+    }
+
+    const faculty = (facultyProfiles ?? []).find(
+      (row) =>
+        normalizeForMatch(row.full_name) ===
+        normalizeForMatch(defaultFacultyName),
+    );
+
+    if (!faculty?.user_id) {
+      return {
+        ensured: false,
+        reason: `Default faculty '${defaultFacultyName}' not found in profiles`,
+      };
+    }
+
+    const { data: courseRows, error: courseError } = await service
+      .from("courses")
+      .select("id, title, code");
+
+    if (courseError) {
+      return { ensured: false, reason: courseError.message };
+    }
+
+    const requestedCourse = normalizeForMatch(payload.course);
+    let matchedCourse = (courseRows ?? []).find((row) => {
+      const current = normalizeForMatch(row.title);
+      return (
+        current === requestedCourse ||
+        current.includes(requestedCourse) ||
+        requestedCourse.includes(current)
+      );
+    });
+
+    if (!matchedCourse) {
+      const courseCode = `${normalizeCode(payload.course)}-${Date.now().toString().slice(-5)}`;
+      const { data: createdCourse, error: createCourseError } = await service
+        .from("courses")
+        .insert({
+          code: courseCode,
+          title: payload.course,
+          is_active: true,
+        })
+        .select("id, title, code")
+        .single();
+
+      if (createCourseError || !createdCourse) {
+        return {
+          ensured: false,
+          reason: createCourseError?.message || "Failed to create course",
+        };
+      }
+
+      matchedCourse = createdCourse;
+    }
+
+    const { data: existingBatch, error: batchFetchError } = await service
+      .from("batches")
+      .select("id")
+      .eq("course_id", matchedCourse.id)
+      .eq("faculty_user_id", faculty.user_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (batchFetchError) {
+      return { ensured: false, reason: batchFetchError.message };
+    }
+
+    let batchId = existingBatch?.id ?? null;
+
+    if (!batchId) {
+      const facultyLastName = faculty.full_name
+        .split(" ")
+        .filter(Boolean)
+        .slice(-1)[0];
+      const batchName = `${normalizeCode(payload.course).slice(0, 10)}-${facultyLastName || "FAC"}-A`;
+
+      const { data: createdBatch, error: batchCreateError } = await service
+        .from("batches")
+        .insert({
+          course_id: matchedCourse.id,
+          batch_name: batchName,
+          faculty_user_id: faculty.user_id,
+          start_date: new Date().toISOString().slice(0, 10),
+        })
+        .select("id")
+        .single();
+
+      if (batchCreateError || !createdBatch) {
+        return {
+          ensured: false,
+          reason: batchCreateError?.message || "Failed to create batch",
+        };
+      }
+
+      batchId = createdBatch.id;
+    }
+
+    const { error: enrollmentError } = await service.from("enrollments").upsert(
+      {
+        student_user_id: studentUserId,
+        batch_id: batchId,
+        status: "active",
+      },
+      { onConflict: "student_user_id,batch_id" },
+    );
+
+    if (enrollmentError) {
+      return { ensured: false, reason: enrollmentError.message };
+    }
+  }
+
+  return { ensured: true, reason: null };
 }
 
 export async function POST(req: NextRequest) {
@@ -506,6 +814,7 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseClient();
     if (supabase) {
       const registrationRow = {
+        status: mode === "paid" ? "completed" : "pending",
         mode,
         full_name: payload.fullName,
         qualification: payload.qualification,
@@ -520,6 +829,8 @@ export async function POST(req: NextRequest) {
           mode === "paid"
             ? sanitizeRegistrationValue(body.username ?? "").toLowerCase()
             : null,
+        submitted_password:
+          mode === "paid" ? body.password?.trim() || null : null,
         accepted_terms: mode === "paid" ? Boolean(body.acceptedTerms) : false,
         accepted_privacy:
           mode === "paid" ? Boolean(body.acceptedPrivacy) : false,
@@ -533,11 +844,21 @@ export async function POST(req: NextRequest) {
         discount_amount: toNullableNumber(body.discountAmount),
         books_fee: toNullableNumber(body.booksFee),
         final_payable: toNullableNumber(body.finalPayable),
+        payment_tenure:
+          mode === "paid"
+            ? sanitizeRegistrationValue(body.paymentTenure ?? "") || null
+            : null,
+        selected_fee_label:
+          mode === "paid"
+            ? sanitizeRegistrationValue(
+                body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? "",
+              ) || null
+            : null,
         payment_mode:
           mode === "paid"
             ? sanitizeRegistrationValue(body.paymentMode ?? "razorpay")
             : null,
-        payment_status: mode === "paid" ? "verified" : null,
+        payment_status: mode === "paid" ? "successful" : null,
         payment_amount:
           mode === "paid" ? toNullableNumber(body.paymentAmount) : null,
         razorpay_order_id:
@@ -566,28 +887,75 @@ export async function POST(req: NextRequest) {
 
         if (error) {
           if (isMissingColumnError(error.message)) {
+            const {
+              submitted_password: _ignoredSubmittedPassword,
+              ...legacyCompatibleRow
+            } = registrationRow;
+
             const { error: legacyError } = await supabase
               .from("student_registrations")
-              .insert([
-                {
-                  full_name: payload.fullName,
-                  qualification: payload.qualification,
-                  course: payload.course,
-                  phone: payload.phone,
-                  email: payload.email,
-                },
-              ]);
+              .insert([legacyCompatibleRow]);
 
             if (legacyError) {
-              storageFailed = true;
-              storageError = legacyError.message;
-              console.error(
-                "Supabase legacy storage fallback failed:",
-                legacyError,
-              );
+              const { error: minimalLegacyError } = await supabase
+                .from("student_registrations")
+                .insert([
+                  {
+                    status: mode === "paid" ? "completed" : "pending",
+                    mode,
+                    full_name: payload.fullName,
+                    qualification: payload.qualification,
+                    course: payload.course,
+                    phone: payload.phone,
+                    email: payload.email,
+                    registration_no:
+                      mode === "paid"
+                        ? sanitizeRegistrationValue(
+                            body.registrationNo ?? "",
+                          ) || null
+                        : null,
+                    username:
+                      mode === "paid"
+                        ? sanitizeRegistrationValue(
+                            body.username ?? "",
+                          ).toLowerCase() || null
+                        : null,
+                    payment_amount:
+                      mode === "paid"
+                        ? toNullableNumber(body.paymentAmount)
+                        : null,
+                    payment_status: mode === "paid" ? "successful" : null,
+                    payment_tenure:
+                      mode === "paid"
+                        ? sanitizeRegistrationValue(body.paymentTenure ?? "") ||
+                          null
+                        : null,
+                    selected_fee_label:
+                      mode === "paid"
+                        ? sanitizeRegistrationValue(
+                            body.researchAssistanceFeeLabel ??
+                              body.upgdcFeeLabel ??
+                              "",
+                          ) || null
+                        : null,
+                  },
+                ]);
+
+              if (minimalLegacyError) {
+                storageFailed = true;
+                storageError = minimalLegacyError.message;
+                console.error(
+                  "Supabase legacy storage fallback failed:",
+                  minimalLegacyError,
+                );
+              } else {
+                console.warn(
+                  "student_registrations schema is outdated; used minimal legacy insert fallback. Apply latest migrations.",
+                );
+              }
             } else {
               console.warn(
-                "student_registrations schema is outdated; used legacy insert fallback. Apply latest migrations.",
+                "student_registrations schema is outdated; used compatible legacy insert fallback. Apply latest migrations.",
               );
             }
           } else {
@@ -617,6 +985,39 @@ export async function POST(req: NextRequest) {
         },
         { status: 500 },
       );
+    }
+
+    if (mode === "paid") {
+      try {
+        const ensureResult = await ensurePaidStudentAccount({ payload, body });
+        if (!ensureResult.ensured) {
+          const reason = ensureResult.reason ?? "Account provisioning failed";
+          const normalizedReason = reason.toLowerCase();
+          return NextResponse.json(
+            {
+              error:
+                normalizedReason.includes("username already exists") ||
+                normalizedReason.includes("already registered")
+                  ? "This username/email is already in use. Please try another username or contact support."
+                  : `Paid registration completed but login account setup failed: ${reason}`,
+            },
+            {
+              status:
+                normalizedReason.includes("username already exists") ||
+                normalizedReason.includes("already registered")
+                  ? 409
+                  : 500,
+            },
+          );
+        }
+      } catch (error) {
+        return NextResponse.json(
+          {
+            error: `Paid registration completed but login account setup failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+          },
+          { status: 500 },
+        );
+      }
     }
 
     // SECONDARY: Try to send email (best-effort, don't fail if this doesn't work)
@@ -712,7 +1113,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       message:
         mode === "paid"
-          ? "Paid enrolment submitted successfully. Please proceed with onboarding from your student dashboard once credentials are shared."
+          ? "Payment successful. Paid registration completed. Confirmation email sent to student and admin."
           : "Free registration submitted successfully. You can now access PYQs and demo resources.",
     });
   } catch (error) {

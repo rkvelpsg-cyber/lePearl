@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -41,12 +41,21 @@ type ResearchAssistanceFeeOptionId =
   | "mla-apa"
   | "mentoring";
 
+type UPGDCFeeOptionId =
+  | "combined-full"
+  | "combined-instalment"
+  | "prelims-full"
+  | "prelims-instalment"
+  | "mains-without-material"
+  | "mains-with-material";
+
 type PaidEnrollmentFormState = {
   fullName: string;
   email: string;
   whatsapp: string;
   course: StudentRegistrationPayload["course"];
   researchAssistanceFeeType: ResearchAssistanceFeeOptionId;
+  upgdcFeeOption: UPGDCFeeOptionId;
   username: string;
   password: string;
   registrationNo: string;
@@ -97,6 +106,7 @@ const initialPaidForm = (): PaidEnrollmentFormState => ({
     studentRegistrationCourses[0] ??
     ("" as StudentRegistrationPayload["course"]),
   researchAssistanceFeeType: "research-paper",
+  upgdcFeeOption: "combined-full",
   username: "",
   password: "",
   registrationNo: generateRegistrationNo(),
@@ -123,6 +133,8 @@ type SubmissionState =
   | { type: "error"; message: string };
 
 const REGISTRATION_UNLOCK_KEY = "lepearl-registration-submitted";
+const PAID_REGISTRATION_DRAFT_KEY = "lepearl-paid-registration-draft";
+const PAID_REGISTRATION_COURSE_BACK_KEY = "lepearl-paid-course-back-href";
 
 const researchAssistanceFeeOptions: {
   id: ResearchAssistanceFeeOptionId;
@@ -158,10 +170,103 @@ const researchAssistanceFeeOptions: {
   },
 ];
 
-export default function StudentRegistrationPage() {
+const upgdcFeeOptions: {
+  id: UPGDCFeeOptionId;
+  title: string;
+  totalAmount: number;
+  tenure: "full" | "instalment";
+  note: string;
+  instalments?: { label: string; amount: number; note: string }[];
+}[] = [
+  {
+    id: "combined-full",
+    title: "One-time payment for both Prelims + Mains",
+    totalAmount: 13995,
+    tenure: "full",
+    note: "Best value · Discounts eligible",
+  },
+  {
+    id: "combined-instalment",
+    title: "Instalments for both Prelims + Mains",
+    totalAmount: 14985,
+    tenure: "instalment",
+    note: "Pay Rs. 4,995 now · split across 3 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 4995,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 4995,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 4995,
+        note: "Due 60 days after enrolment",
+      },
+    ],
+  },
+  {
+    id: "prelims-full",
+    title: "Full fee of Only Prelims",
+    totalAmount: 10995,
+    tenure: "full",
+    note: "One-time payment for Prelims track",
+  },
+  {
+    id: "prelims-instalment",
+    title: "Instalments for Only Prelims",
+    totalAmount: 11985,
+    tenure: "instalment",
+    note: "Pay Rs. 3,995 now · split across 3 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 3995,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 3995,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 3995,
+        note: "Due 60 days after enrolment",
+      },
+    ],
+  },
+  {
+    id: "mains-without-material",
+    title: "GDC Mains (Without Study Material)",
+    totalAmount: 5,
+    tenure: "full",
+    note: "Mains-only access without study material",
+  },
+  {
+    id: "mains-with-material",
+    title: "GDC Mains (With Study Material)",
+    totalAmount: 15995,
+    tenure: "full",
+    note: "Mains-only access with study material",
+  },
+];
+
+function isUPGDCFeeOptionId(value: string | null): value is UPGDCFeeOptionId {
+  return !!value && upgdcFeeOptions.some((option) => option.id === value);
+}
+
+function StudentRegistrationContent() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
   const [courseBackHref, setCourseBackHref] = useState<string | null>(null);
+  const [hasLoadedPaidDraft, setHasLoadedPaidDraft] = useState(false);
   const [paidFormData, setPaidFormData] =
     useState<PaidEnrollmentFormState>(initialPaidForm());
   const [freeFormData, setFreeFormData] =
@@ -180,6 +285,8 @@ export default function StudentRegistrationPage() {
   const [modalPlanChoice, setModalPlanChoice] = useState<"full" | "instalment">(
     "full",
   );
+  const [modalUPGDCFeeChoice, setModalUPGDCFeeChoice] =
+    useState<UPGDCFeeOptionId>("combined-full");
   const [modalResearchFeeChoice, setModalResearchFeeChoice] =
     useState<ResearchAssistanceFeeOptionId>("research-paper");
   const safePaidFormData: PaidEnrollmentFormState = {
@@ -193,17 +300,24 @@ export default function StudentRegistrationPage() {
 
   const isResearchAssistanceCourse =
     safePaidFormData.course === "Research Assistance";
+  const isUPGDCCourse = safePaidFormData.course === "UP GDC";
   const selectedResearchAssistanceFee = researchAssistanceFeeOptions.find(
     (option) => option.id === safePaidFormData.researchAssistanceFeeType,
+  );
+  const selectedUPGDCFee = upgdcFeeOptions.find(
+    (option) => option.id === safePaidFormData.upgdcFeeOption,
   );
 
   const currentPlan = coursePaymentPlans[safePaidFormData.course];
   const researchAssistanceBaseFee =
     selectedResearchAssistanceFee?.amount ?? 2995;
+  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 13995;
   const baseCourseFee =
     (isResearchAssistanceCourse
       ? researchAssistanceBaseFee
-      : currentPlan?.fullAmount) ??
+      : isUPGDCCourse
+        ? upgdcBaseFee
+        : currentPlan?.fullAmount) ??
     paidRegistrationCourseFees[safePaidFormData.course] ??
     defaultPaidRegistrationCourseFee;
   const hasPublishedFee = baseCourseFee > 0;
@@ -223,9 +337,13 @@ export default function StudentRegistrationPage() {
       : 0;
   const totalDiscount = pearlianDiscount + additionalAccessDiscount;
   const booksFee = 0;
-  const firstInstalmentAmount = currentPlan?.instalments?.[0]?.amount ?? 0;
+  const activeInstalments =
+    isUPGDCCourse && selectedUPGDCFee?.tenure === "instalment"
+      ? selectedUPGDCFee.instalments
+      : currentPlan?.instalments;
+  const firstInstalmentAmount = activeInstalments?.[0]?.amount ?? 0;
   const instalmentTotal =
-    currentPlan?.instalments?.reduce((sum, item) => sum + item.amount, 0) ??
+    activeInstalments?.reduce((sum, item) => sum + item.amount, 0) ??
     baseCourseFee;
   const finalPayable =
     safePaidFormData.paymentTenure === "instalment"
@@ -250,10 +368,47 @@ export default function StudentRegistrationPage() {
 
   const isPaidWhatsappValid = /^\d{10}$/.test(safePaidFormData.whatsapp);
 
+  const paidRegistrationReturnTo = useMemo(() => {
+    const query = searchParams.toString();
+    return `${pathname}${query ? `?${query}` : ""}`;
+  }, [pathname, searchParams]);
+  const encodedPaidRegistrationReturnTo = encodeURIComponent(
+    paidRegistrationReturnTo,
+  );
+
   useEffect(() => {
+    try {
+      const persistedPaidDraft = window.sessionStorage.getItem(
+        PAID_REGISTRATION_DRAFT_KEY,
+      );
+      if (persistedPaidDraft) {
+        const parsedDraft = JSON.parse(
+          persistedPaidDraft,
+        ) as Partial<PaidEnrollmentFormState>;
+        if (parsedDraft && typeof parsedDraft === "object") {
+          setPaidFormData((current) => ({
+            ...current,
+            ...parsedDraft,
+            // Never restore passwords from storage.
+            password: "",
+          }));
+        }
+      }
+
+      const persistedCourseBackHref = window.sessionStorage.getItem(
+        PAID_REGISTRATION_COURSE_BACK_KEY,
+      );
+      if (persistedCourseBackHref) {
+        setCourseBackHref(persistedCourseBackHref);
+      }
+    } catch {
+      // Ignore invalid draft payload and continue with fresh state.
+    }
+
     const searchParams = new URLSearchParams(window.location.search);
     const modeParam = searchParams.get("mode");
     const courseParam = searchParams.get("course");
+    const upgdcFeeOptionParam = searchParams.get("upgdcFeeOption");
     const hasPaidCourseFlow =
       modeParam === "paid" &&
       !!courseParam &&
@@ -273,25 +428,50 @@ export default function StudentRegistrationPage() {
             refPath === "/interview-preparation";
 
           if (isSameOrigin && isCourseRoute) {
-            setCourseBackHref(`${refPath}${refUrl.search}${refUrl.hash}`);
+            const resolvedCourseBackHref = `${refPath}${refUrl.search}${refUrl.hash}`;
+            setCourseBackHref(resolvedCourseBackHref);
+            window.sessionStorage.setItem(
+              PAID_REGISTRATION_COURSE_BACK_KEY,
+              resolvedCourseBackHref,
+            );
           }
         }
       } catch {
-        setCourseBackHref(null);
+        // Keep previously restored course back link if any.
       }
+    } else {
+      // Non course-flow: clear stale course back links.
+      setCourseBackHref(null);
+      window.sessionStorage.removeItem(PAID_REGISTRATION_COURSE_BACK_KEY);
     }
 
     if (courseParam && isValidStudentRegistrationCourse(courseParam)) {
+      const hasUPGDCSelectionFromCoursePage =
+        courseParam === "UP GDC" && isUPGDCFeeOptionId(upgdcFeeOptionParam);
+      const resolvedUPGDCOption: UPGDCFeeOptionId =
+        hasUPGDCSelectionFromCoursePage && upgdcFeeOptionParam
+          ? upgdcFeeOptionParam
+          : "combined-full";
+      const resolvedUPGDCTenure =
+        upgdcFeeOptions.find((option) => option.id === resolvedUPGDCOption)
+          ?.tenure ?? "full";
+
       setPaidFormData((current) => ({
         ...current,
         course: courseParam,
         researchAssistanceFeeType: "research-paper",
-        paymentTenure: null,
+        upgdcFeeOption: resolvedUPGDCOption,
+        paymentTenure: hasUPGDCSelectionFromCoursePage
+          ? resolvedUPGDCTenure
+          : null,
       }));
-      // Auto-open fee plan modal when arriving from a course enrol flow
-      setModalPlanChoice("full");
+
+      // Auto-open fee plan modal when arriving from course pages, except when
+      // UP GDC has an explicit fee option selected from the course card.
+      setModalPlanChoice(resolvedUPGDCTenure);
+      setModalUPGDCFeeChoice(resolvedUPGDCOption);
       setModalResearchFeeChoice("research-paper");
-      setShowFeePlanModal(true);
+      setShowFeePlanModal(!hasUPGDCSelectionFromCoursePage);
     }
 
     if (modeParam === "free") {
@@ -299,7 +479,19 @@ export default function StudentRegistrationPage() {
     } else if (modeParam === "paid") {
       setActiveMode("paid");
     }
+
+    setHasLoadedPaidDraft(true);
   }, []);
+
+  useEffect(() => {
+    if (!hasLoadedPaidDraft) return;
+    const { password: _ignoredPassword, ...paidDraftToPersist } =
+      safePaidFormData;
+    window.sessionStorage.setItem(
+      PAID_REGISTRATION_DRAFT_KEY,
+      JSON.stringify(paidDraftToPersist),
+    );
+  }, [safePaidFormData, hasLoadedPaidDraft]);
 
   function handleCourseChange(newCourse: StudentRegistrationPayload["course"]) {
     setPaidFormData((current) => ({
@@ -309,9 +501,12 @@ export default function StudentRegistrationPage() {
         newCourse === "Research Assistance"
           ? "research-paper"
           : current.researchAssistanceFeeType,
+      upgdcFeeOption:
+        newCourse === "UP GDC" ? "combined-full" : current.upgdcFeeOption,
       paymentTenure: null,
     }));
     setModalPlanChoice("full");
+    setModalUPGDCFeeChoice("combined-full");
     setModalResearchFeeChoice("research-paper");
     setShowFeePlanModal(true);
   }
@@ -349,7 +544,9 @@ export default function StudentRegistrationPage() {
 
       const paymentDescription = isResearchAssistanceCourse
         ? `Paid Enrolment - ${safePaidFormData.course} (${selectedResearchAssistanceFee?.title ?? "Selected Service"})`
-        : `Paid Enrolment - ${safePaidFormData.course}`;
+        : isUPGDCCourse
+          ? `Paid Enrolment - ${safePaidFormData.course} (${selectedUPGDCFee?.title ?? "Selected Plan"})`
+          : `Paid Enrolment - ${safePaidFormData.course}`;
 
       const orderResponse = await fetch(
         "/api/student-registration/create-payment-order",
@@ -367,6 +564,9 @@ export default function StudentRegistrationPage() {
             course: payload.course,
             researchAssistanceFeeType: isResearchAssistanceCourse
               ? safePaidFormData.researchAssistanceFeeType
+              : undefined,
+            upgdcFeeOption: isUPGDCCourse
+              ? safePaidFormData.upgdcFeeOption
               : undefined,
             registrationNo: safePaidFormData.registrationNo,
           }),
@@ -430,6 +630,8 @@ export default function StudentRegistrationPage() {
           mode: "paid",
           registrationNo: safePaidFormData.registrationNo,
           username: safePaidFormData.username,
+          password: safePaidFormData.password,
+          paymentTenure: safePaidFormData.paymentTenure,
           acceptedTerms: safePaidFormData.acceptedTerms,
           acceptedPrivacy: safePaidFormData.acceptedPrivacy,
           acceptedRefund: safePaidFormData.acceptedRefund,
@@ -442,6 +644,10 @@ export default function StudentRegistrationPage() {
           researchAssistanceFeeLabel: isResearchAssistanceCourse
             ? selectedResearchAssistanceFee?.title
             : undefined,
+          upgdcFeeOption: isUPGDCCourse
+            ? safePaidFormData.upgdcFeeOption
+            : undefined,
+          upgdcFeeLabel: isUPGDCCourse ? selectedUPGDCFee?.title : undefined,
           baseCourseFee,
           discountAmount: totalDiscount,
           booksFee,
@@ -469,12 +675,11 @@ export default function StudentRegistrationPage() {
         type: "success",
         message:
           result.message ??
-          "Paid enrolment completed successfully. Redirecting to dashboard...",
+          "Payment successful. Your paid registration is completed. Confirmation details have been sent to your email, and our admin team has received your registration.",
       });
+      window.sessionStorage.removeItem(PAID_REGISTRATION_DRAFT_KEY);
+      window.sessionStorage.removeItem(PAID_REGISTRATION_COURSE_BACK_KEY);
       setPaidFormData(initialPaidForm());
-      window.setTimeout(() => {
-        router.push("/login-portal");
-      }, 1400);
     } catch (error) {
       setPaidSubmissionState({
         type: "error",
@@ -571,7 +776,7 @@ export default function StudentRegistrationPage() {
         {courseBackHref && (
           <Link
             href={courseBackHref}
-            className="inline-flex items-center gap-2 rounded-full border border-violet-300 bg-violet-600 px-4 py-2 text-sm font-medium !text-white hover:!text-white focus:!text-white transition hover:bg-violet-700"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-violet-300 bg-violet-600 px-4 py-2 text-sm font-medium !text-white hover:!text-white focus:!text-white transition hover:bg-violet-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Course Page
@@ -579,7 +784,7 @@ export default function StudentRegistrationPage() {
         )}
         <Link
           href="/login-portal"
-          className="inline-flex items-center gap-2 rounded-full border border-teal-700 bg-teal-700 px-4 py-2 text-sm font-medium !text-white hover:!text-white focus:!text-white transition hover:bg-teal-800"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-teal-700 bg-teal-700 px-4 py-2 text-sm font-medium !text-white hover:!text-white focus:!text-white transition hover:bg-teal-800"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to login portal
@@ -767,6 +972,7 @@ export default function StudentRegistrationPage() {
                     setModalPlanChoice(
                       safePaidFormData.paymentTenure ?? "full",
                     );
+                    setModalUPGDCFeeChoice(safePaidFormData.upgdcFeeOption);
                     setModalResearchFeeChoice(
                       safePaidFormData.researchAssistanceFeeType,
                     );
@@ -797,7 +1003,9 @@ export default function StudentRegistrationPage() {
                   <p className="mt-2 text-sm text-violet-700/80">
                     {isResearchAssistanceCourse
                       ? "Selected fee type from Research Assistance course page."
-                      : "Full payment selected · Discounts eligible."}
+                      : isUPGDCCourse
+                        ? "Selected UP GDC plan from course page."
+                        : "Full payment selected · Discounts eligible."}
                   </p>
                   <div className="mt-4 grid gap-3 text-sm text-slate-700">
                     {isResearchAssistanceCourse && (
@@ -805,6 +1013,14 @@ export default function StudentRegistrationPage() {
                         <span>Selected Service</span>
                         <span className="font-semibold text-violet-700">
                           {selectedResearchAssistanceFee?.title}
+                        </span>
+                      </div>
+                    )}
+                    {isUPGDCCourse && (
+                      <div className="flex items-center justify-between">
+                        <span>Selected Plan</span>
+                        <span className="font-semibold text-violet-700">
+                          {selectedUPGDCFee?.title}
                         </span>
                       </div>
                     )}
@@ -891,9 +1107,9 @@ export default function StudentRegistrationPage() {
                     instant access.
                   </p>
                   <div className="mt-4 space-y-2 text-sm">
-                    {currentPlan?.instalments?.map((inst, idx) => (
+                    {activeInstalments?.map((inst, idx) => (
                       <div
-                        key={idx}
+                        key={`${inst.label}-${idx}`}
                         className={`flex items-start justify-between rounded-lg px-4 py-2.5 ${
                           idx === 0
                             ? "border border-violet-300 bg-violet-100"
@@ -954,8 +1170,8 @@ export default function StudentRegistrationPage() {
                 />
                 I agree to{" "}
                 <Link
-                  href="/terms-conditions"
-                  className="font-semibold text-blue-600 underline decoration-blue-600 underline-offset-2 hover:text-blue-700"
+                  href={`/terms-conditions?returnTo=${encodedPaidRegistrationReturnTo}`}
+                  className="font-semibold !text-blue-600 visited:!text-blue-600 !underline decoration-blue-600 underline-offset-2 hover:!text-blue-700"
                 >
                   Terms & Conditions
                 </Link>
@@ -972,8 +1188,8 @@ export default function StudentRegistrationPage() {
                 />
                 I agree to{" "}
                 <Link
-                  href="/privacy-policy"
-                  className="text-violet-700 underline"
+                  href={`/privacy-policy?returnTo=${encodedPaidRegistrationReturnTo}`}
+                  className="font-semibold !text-blue-600 visited:!text-blue-600 !underline decoration-blue-600 underline-offset-2 hover:!text-blue-700"
                 >
                   Privacy Policy
                 </Link>
@@ -990,8 +1206,8 @@ export default function StudentRegistrationPage() {
                 />
                 I have read and accept{" "}
                 <Link
-                  href="/terms-conditions#refund-policy"
-                  className="text-violet-700 underline"
+                  href={`/terms-conditions?returnTo=${encodedPaidRegistrationReturnTo}#refund-policy`}
+                  className="font-semibold !text-blue-600 visited:!text-blue-600 !underline decoration-blue-600 underline-offset-2 hover:!text-blue-700"
                 >
                   Refund Rules
                 </Link>
@@ -1024,7 +1240,7 @@ export default function StudentRegistrationPage() {
                 !passwordValidation ||
                 !isPaidWhatsappValid
               }
-              className="w-full rounded-xl bg-[linear-gradient(90deg,#9333ea,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full cursor-pointer rounded-xl bg-[linear-gradient(90deg,#9333ea,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmittingPaid
                 ? "Opening secure payment..."
@@ -1150,7 +1366,7 @@ export default function StudentRegistrationPage() {
             <button
               type="submit"
               disabled={isSubmittingFree}
-              className="w-full rounded-xl bg-[linear-gradient(90deg,#0f766e,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full cursor-pointer rounded-xl bg-[linear-gradient(90deg,#0f766e,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmittingFree
                 ? "Submitting free registration..."
@@ -1163,7 +1379,7 @@ export default function StudentRegistrationPage() {
           © 2026 LePearl Education. All rights reserved.
         </footer>
       </div>
-      {/* ── Fee Plan Selection Modal (bottom sheet) ── */}
+      {/* ── Fee Plan Selection Modal (centered dialog) ── */}
       {showFeePlanModal && activeMode === "paid" && (
         <>
           {/* Backdrop – only dismissible if plan already chosen */}
@@ -1175,203 +1391,318 @@ export default function StudentRegistrationPage() {
             }}
           />
 
-          {/* Bottom sheet */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-2xl bg-white shadow-2xl">
-            <div className="p-6">
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">
-                  Choose Payment Plan
-                </h2>
-                {safePaidFormData.paymentTenure !== null && (
-                  <button
-                    type="button"
-                    onClick={() => setShowFeePlanModal(false)}
-                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              <p className="mb-5 text-sm text-slate-500">
-                Course:{" "}
-                <span className="font-semibold text-violet-700">
-                  {safePaidFormData.course}
-                </span>
-                {hasPublishedFee
-                  ? ` · Full Fee: Rs. ${baseCourseFee}`
-                  : " · Fee shared by admissions support"}
-              </p>
-
-              {isResearchAssistanceCourse ? (
-                <div className="space-y-3">
-                  {researchAssistanceFeeOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setModalResearchFeeChoice(option.id)}
-                      className={`w-full rounded-xl border-2 p-4 text-left transition ${
-                        modalResearchFeeChoice === option.id
-                          ? "border-violet-600 bg-violet-50"
-                          : "border-slate-200 bg-white hover:border-violet-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900">
-                            {option.title}
-                          </p>
-                          {option.note && (
-                            <p className="mt-1 text-xs text-slate-500">
-                              {option.note}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-lg font-bold text-violet-700">
-                          Rs. {option.amount}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {/* Full Payment */}
-                  <button
-                    type="button"
-                    onClick={() => setModalPlanChoice("full")}
-                    className={`w-full rounded-xl border-2 p-4 text-left transition ${
-                      modalPlanChoice === "full"
-                        ? "border-violet-600 bg-violet-50"
-                        : "border-slate-200 bg-white hover:border-violet-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                            modalPlanChoice === "full"
-                              ? "border-violet-600"
-                              : "border-slate-400"
-                          }`}
-                        >
-                          {modalPlanChoice === "full" && (
-                            <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            Full Payment
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            One-time payment · Best value · Discounts eligible
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-slate-900">
-                          {hasPublishedFee
-                            ? `Rs. ${baseCourseFee}`
-                            : "Contact Support"}
-                        </p>
-                        {hasPublishedFee && (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                            Save with discounts
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Instalment Plan – only shown if plan data has instalments */}
-                  {currentPlan?.instalments && (
+          {/* Centered dialog */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+              <div className="p-6">
+                <div className="mb-1 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Choose Payment Plan
+                  </h2>
+                  {safePaidFormData.paymentTenure !== null && (
                     <button
                       type="button"
-                      onClick={() => setModalPlanChoice("instalment")}
-                      className={`w-full rounded-xl border-2 p-4 text-left transition ${
-                        modalPlanChoice === "instalment"
-                          ? "border-violet-600 bg-violet-50"
-                          : "border-slate-200 bg-white hover:border-violet-300"
-                      }`}
+                      onClick={() => setShowFeePlanModal(false)}
+                      className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="Close"
                     >
-                      <div className="mb-3 flex items-center gap-3">
-                        <div
-                          className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                            modalPlanChoice === "instalment"
-                              ? "border-violet-600"
-                              : "border-slate-400"
-                          }`}
-                        >
-                          {modalPlanChoice === "instalment" && (
-                            <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            Pay in Instalments
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            Split across {currentPlan.instalments.length}{" "}
-                            payments
-                          </p>
-                        </div>
-                      </div>
-                      <div className="ml-8 space-y-1.5">
-                        {currentPlan.instalments.map((inst, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm"
-                          >
-                            <div>
-                              <span className="font-medium text-slate-700">
-                                {inst.label}
-                              </span>
-                              <span className="ml-2 text-xs text-slate-400">
-                                · {inst.note}
-                              </span>
-                            </div>
-                            <span
-                              className={`font-semibold ${
-                                idx === 0 ? "text-violet-700" : "text-slate-500"
-                              }`}
-                            >
-                              Rs. {inst.amount}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      ✕
                     </button>
                   )}
                 </div>
-              )}
+                <p className="mb-5 text-sm text-slate-500">
+                  Course:{" "}
+                  <span className="font-semibold text-violet-700">
+                    {safePaidFormData.course}
+                  </span>
+                  {hasPublishedFee
+                    ? ` · Full Fee: Rs. ${baseCourseFee}`
+                    : " · Fee shared by admissions support"}
+                </p>
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (isResearchAssistanceCourse) {
-                    updatePaidField(
-                      "researchAssistanceFeeType",
-                      modalResearchFeeChoice,
-                    );
-                    updatePaidField("paymentTenure", "full");
-                  } else {
-                    updatePaidField("paymentTenure", modalPlanChoice);
-                  }
-                  setShowFeePlanModal(false);
-                }}
-                className="mt-5 w-full rounded-xl bg-violet-600 py-3.5 text-base font-semibold text-white transition hover:bg-violet-700"
-              >
-                Confirm —{" "}
-                {isResearchAssistanceCourse
-                  ? "Selected Research Assistance Service"
-                  : modalPlanChoice === "full"
-                    ? "Full Payment"
-                    : "Instalment Plan"}
-              </button>
+                {isResearchAssistanceCourse ? (
+                  <div className="space-y-3">
+                    {researchAssistanceFeeOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setModalResearchFeeChoice(option.id)}
+                        className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                          modalResearchFeeChoice === option.id
+                            ? "border-violet-600 bg-violet-50"
+                            : "border-slate-200 bg-white hover:border-violet-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900">
+                              {option.title}
+                            </p>
+                            {option.note && (
+                              <p className="mt-1 text-xs text-slate-500">
+                                {option.note}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-lg font-bold text-violet-700">
+                            Rs. {option.amount}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : isUPGDCCourse ? (
+                  <div className="space-y-3">
+                    {upgdcFeeOptions.map((option) => {
+                      const isSelected = modalUPGDCFeeChoice === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setModalUPGDCFeeChoice(option.id)}
+                          className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                            isSelected
+                              ? "border-violet-600 bg-violet-50"
+                              : "border-slate-200 bg-white hover:border-violet-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div
+                                className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                                  isSelected
+                                    ? "border-violet-600"
+                                    : "border-slate-400"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900">
+                                  {option.title}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {option.note}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs. {option.totalAmount}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {option.tenure === "instalment"
+                                  ? "Instalment"
+                                  : "Full Payment"}
+                              </p>
+                            </div>
+                          </div>
+                          {option.instalments && (
+                            <div className="ml-8 mt-3 space-y-1.5">
+                              {option.instalments.map((inst, idx) => (
+                                <div
+                                  key={`${option.id}-${inst.label}-${idx}`}
+                                  className="flex items-center justify-between rounded-lg bg-white/80 px-3 py-1.5 text-sm"
+                                >
+                                  <div>
+                                    <span className="font-medium text-slate-700">
+                                      {inst.label}
+                                    </span>
+                                    <span className="ml-2 text-xs text-slate-400">
+                                      · {inst.note}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`font-semibold ${
+                                      idx === 0
+                                        ? "text-violet-700"
+                                        : "text-slate-500"
+                                    }`}
+                                  >
+                                    Rs. {inst.amount}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Full Payment */}
+                    <button
+                      type="button"
+                      onClick={() => setModalPlanChoice("full")}
+                      className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                        modalPlanChoice === "full"
+                          ? "border-violet-600 bg-violet-50"
+                          : "border-slate-200 bg-white hover:border-violet-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                              modalPlanChoice === "full"
+                                ? "border-violet-600"
+                                : "border-slate-400"
+                            }`}
+                          >
+                            {modalPlanChoice === "full" && (
+                              <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              Full Payment
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              One-time payment · Best value · Discounts eligible
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-slate-900">
+                            {hasPublishedFee
+                              ? `Rs. ${baseCourseFee}`
+                              : "Contact Support"}
+                          </p>
+                          {hasPublishedFee && (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                              Save with discounts
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Instalment Plan – only shown if plan data has instalments */}
+                    {currentPlan?.instalments && (
+                      <button
+                        type="button"
+                        onClick={() => setModalPlanChoice("instalment")}
+                        className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                          modalPlanChoice === "instalment"
+                            ? "border-violet-600 bg-violet-50"
+                            : "border-slate-200 bg-white hover:border-violet-300"
+                        }`}
+                      >
+                        <div className="mb-3 flex items-center gap-3">
+                          <div
+                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                              modalPlanChoice === "instalment"
+                                ? "border-violet-600"
+                                : "border-slate-400"
+                            }`}
+                          >
+                            {modalPlanChoice === "instalment" && (
+                              <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">
+                              Pay in Instalments
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              Split across {currentPlan.instalments.length}{" "}
+                              payments
+                            </p>
+                          </div>
+                        </div>
+                        <div className="ml-8 space-y-1.5">
+                          {currentPlan.instalments.map((inst, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm"
+                            >
+                              <div>
+                                <span className="font-medium text-slate-700">
+                                  {inst.label}
+                                </span>
+                                <span className="ml-2 text-xs text-slate-400">
+                                  · {inst.note}
+                                </span>
+                              </div>
+                              <span
+                                className={`font-semibold ${
+                                  idx === 0
+                                    ? "text-violet-700"
+                                    : "text-slate-500"
+                                }`}
+                              >
+                                Rs. {inst.amount}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isResearchAssistanceCourse) {
+                      updatePaidField(
+                        "researchAssistanceFeeType",
+                        modalResearchFeeChoice,
+                      );
+                      updatePaidField("paymentTenure", "full");
+                    } else if (isUPGDCCourse) {
+                      const selectedOption = upgdcFeeOptions.find(
+                        (option) => option.id === modalUPGDCFeeChoice,
+                      );
+                      updatePaidField("upgdcFeeOption", modalUPGDCFeeChoice);
+                      updatePaidField(
+                        "paymentTenure",
+                        selectedOption?.tenure ?? "full",
+                      );
+                    } else {
+                      updatePaidField("paymentTenure", modalPlanChoice);
+                    }
+                    setShowFeePlanModal(false);
+                  }}
+                  className="mt-5 w-full rounded-xl bg-violet-600 py-3.5 text-base font-semibold text-white transition hover:bg-violet-700"
+                >
+                  Confirm —{" "}
+                  {isResearchAssistanceCourse
+                    ? "Selected Research Assistance Service"
+                    : isUPGDCCourse
+                      ? `Selected - ${
+                          upgdcFeeOptions.find(
+                            (option) => option.id === modalUPGDCFeeChoice,
+                          )?.title ?? "UP GDC Plan"
+                        }`
+                      : modalPlanChoice === "full"
+                        ? "Full Payment"
+                        : "Instalment Plan"}
+                </button>
+              </div>
             </div>
           </div>
         </>
       )}
     </main>
+  );
+}
+
+export default function StudentRegistrationPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-950 px-4 py-12 text-slate-100">
+          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
+            Loading registration form...
+          </div>
+        </main>
+      }
+    >
+      <StudentRegistrationContent />
+    </Suspense>
   );
 }

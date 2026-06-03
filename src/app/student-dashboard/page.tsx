@@ -43,8 +43,27 @@ type Section =
   | "lectures"
   | "fees"
   | "tasks";
-type Profile = { full_name: string; phone: string | null };
+type Profile = {
+  full_name: string;
+  phone: string | null;
+  email?: string | null;
+};
 type StudentProfile = { registration_no: string; target_exam: string | null };
+type PaidRegistrationSummary = {
+  id: string;
+  course: string;
+  registration_no: string | null;
+  username: string | null;
+  payment_tenure: "full" | "instalment" | null;
+  selected_fee_label: string | null;
+  final_payable: number | null;
+  payment_amount: number | null;
+  payment_mode: string | null;
+  payment_status: string | null;
+  razorpay_payment_id: string | null;
+  status: string;
+  created_at: string;
+};
 type CourseProgress = {
   course_id: number;
   instructor_name: string | null;
@@ -54,7 +73,7 @@ type CourseProgress = {
   courses: { title: string } | null;
 };
 type Payment = {
-  id: number;
+  id: number | string;
   amount: number;
   payment_date: string;
   payment_mode: string | null;
@@ -115,6 +134,7 @@ type DescriptiveAnswer = {
   mock_test_id: number;
   question_id: number;
   answer_file_url: string | null;
+  evaluated_answer_file_url: string | null;
   submitted_at: string | null;
   marks_obtained: number | null;
   faculty_notes: string | null;
@@ -222,6 +242,50 @@ function isUpcomingSession(sessionDate: string, startTime: string | null) {
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const sessionMinutes = h * 60 + m;
   return sessionMinutes > nowMinutes;
+}
+
+function mergePaymentHistory(
+  paymentRows: Payment[],
+  registration: PaidRegistrationSummary | null,
+) {
+  if (!registration) return paymentRows;
+
+  const registrationAmount =
+    Number(registration.payment_amount ?? registration.final_payable ?? 0) || 0;
+  if (registrationAmount <= 0) return paymentRows;
+
+  const registrationTxnId =
+    registration.razorpay_payment_id?.trim().toLowerCase() ?? null;
+  const hasMatchingTxn = registrationTxnId
+    ? paymentRows.some(
+        (row) =>
+          (row.razorpay_payment_id?.trim().toLowerCase() ?? null) ===
+          registrationTxnId,
+      )
+    : false;
+
+  if (hasMatchingTxn) return paymentRows;
+
+  const syntheticRegistrationPayment: Payment = {
+    id: `registration-${registration.id}`,
+    amount: registrationAmount,
+    payment_date: registration.created_at,
+    payment_mode: registration.payment_mode ?? "razorpay",
+    status:
+      registration.payment_status === "successful" ||
+      registration.status === "completed"
+        ? "paid"
+        : registration.payment_status || registration.status,
+    razorpay_payment_id: registration.razorpay_payment_id,
+    description: registration.selected_fee_label
+      ? `Registration payment - ${registration.selected_fee_label}`
+      : `Registration payment - ${registration.course}`,
+  };
+
+  return [syntheticRegistrationPayment, ...paymentRows].sort(
+    (a, b) =>
+      new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime(),
+  );
 }
 
 /* â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -347,6 +411,8 @@ export default function StudentDashboardPage() {
   const [lectures, setLectures] = useState<RecordedLecture[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [feePlan, setFeePlan] = useState<FeePlan | null>(null);
+  const [paidRegistration, setPaidRegistration] =
+    useState<PaidRegistrationSummary | null>(null);
   const [facultyTasks, setFacultyTasks] = useState<StudentTask[]>([]);
   const [mockStat, setMockStat] = useState({ scored: 0, total: 0 });
 
@@ -423,7 +489,7 @@ export default function StudentDashboardPage() {
       const [profileRes, spRes, enrollRes] = await Promise.all([
         supabase
           .from("profiles")
-          .select("full_name, phone, role")
+          .select("full_name, phone, role, email")
           .eq("user_id", uid)
           .single(),
         supabase
@@ -456,11 +522,21 @@ export default function StudentDashboardPage() {
       } | null;
       if (firstBatch?.batch_name) setBatchLabel(firstBatch.batch_name);
 
+      const profileEmail =
+        (profileRes.data as { email?: string | null } | null)?.email
+          ?.trim()
+          .toLowerCase() ?? null;
+      const registrationNo =
+        (
+          spRes.data as { registration_no?: string | null } | null
+        )?.registration_no?.trim() ?? null;
+
       /* stage 2 */
       const [
         coursesRes,
         paymentsRes,
         feePlanRes,
+        paidRegistrationRes,
         classesRes,
         attendRes,
         mockRes,
@@ -485,6 +561,22 @@ export default function StudentDashboardPage() {
           .select("total_fee, next_due_amount, next_due_date")
           .eq("student_user_id", uid)
           .single(),
+        profileEmail || registrationNo
+          ? supabase
+              .from("student_registrations")
+              .select(
+                "id, course, registration_no, username, final_payable, payment_amount, payment_mode, payment_tenure, selected_fee_label, payment_status, razorpay_payment_id, status, created_at",
+              )
+              .eq("mode", "paid")
+              .match(
+                profileEmail
+                  ? { email: profileEmail }
+                  : { registration_no: registrationNo },
+              )
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
         ids.length > 0
           ? supabase
               .from("class_sessions")
@@ -555,9 +647,13 @@ export default function StudentDashboardPage() {
         );
       }
 
-      if (paymentsRes.data)
-        setPayments(paymentsRes.data as unknown as Payment[]);
+      const paymentRows =
+        (paymentsRes.data as unknown as Payment[] | null) ?? [];
+      const registrationSummary =
+        (paidRegistrationRes.data as PaidRegistrationSummary | null) ?? null;
+      setPayments(mergePaymentHistory(paymentRows, registrationSummary));
       if (feePlanRes.data) setFeePlan(feePlanRes.data as FeePlan);
+      if (registrationSummary) setPaidRegistration(registrationSummary);
       if (classesRes.data)
         setClassSessions(classesRes.data as unknown as ClassSession[]);
       if (attendRes.data)
@@ -1301,8 +1397,16 @@ export default function StudentDashboardPage() {
         .select(
           "id, amount, payment_date, payment_mode, status, razorpay_payment_id, description",
         )
+        .eq("student_user_id", userId)
         .order("payment_date", { ascending: false });
-      if (newPayments) setPayments(newPayments as unknown as Payment[]);
+      if (newPayments) {
+        setPayments(
+          mergePaymentHistory(
+            newPayments as unknown as Payment[],
+            paidRegistration,
+          ),
+        );
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Payment failed";
       if (msg !== "DISMISSED") {
@@ -1319,6 +1423,20 @@ export default function StudentDashboardPage() {
   const paidAmount = payments
     .filter((p) => p.status === "paid")
     .reduce((s, p) => s + p.amount, 0);
+  const totalCourseFee = feePlan?.total_fee ?? paidRegistration?.final_payable;
+  const pendingAmount = Math.max((totalCourseFee ?? 0) - paidAmount, 0);
+  const selectedPlanLabel = paidRegistration?.selected_fee_label
+    ? paidRegistration.selected_fee_label
+    : paidRegistration?.payment_tenure === "instalment"
+      ? "Instalment Plan"
+      : paidRegistration?.payment_tenure === "full"
+        ? "Full Payment"
+        : "Not Recorded";
+  const selectedTenureLabel = paidRegistration?.payment_tenure
+    ? paidRegistration.payment_tenure === "full"
+      ? "Full Payment"
+      : "Instalment"
+    : "N/A";
   const overallProgress =
     courses.length > 0
       ? Math.round(
@@ -1469,9 +1587,9 @@ export default function StudentDashboardPage() {
 
       {/* â”€â”€ MCQ TEST OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTest && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto p-4">
-          <div className="bg-white rounded-2xl w-full max-w-3xl my-4 shadow-2xl">
-            <div className="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-6 py-4 flex items-center justify-between z-10">
+        <div className="fixed inset-0 z-50 bg-black/60">
+          <div className="h-screen w-screen bg-white flex flex-col shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-4 sm:px-6 flex items-center justify-between z-10">
               <div>
                 <h2 className="font-bold text-gray-900 text-lg">
                   {activeTest.test.title}
@@ -1514,7 +1632,7 @@ export default function StudentDashboardPage() {
             </div>
 
             {testSubmitted ? (
-              <div className="p-8 text-center">
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8 text-center">
                 <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 bg-green-100 text-green-700">
                   <CheckCircle className="w-12 h-12" />
                 </div>
@@ -1572,7 +1690,7 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                 {activeTest.questions.map((q, idx) => (
                   <div
                     key={q.id}
@@ -2154,6 +2272,17 @@ export default function StudentDashboardPage() {
                                       Submission
                                     </a>
                                   )}
+                                  {answer.evaluated_answer_file_url && (
+                                    <a
+                                      href={answer.evaluated_answer_file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-2 text-xs text-emerald-700 hover:underline flex items-center gap-1"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                      View Evaluated Sheet
+                                    </a>
+                                  )}
                                   {answer.faculty_notes && (
                                     <p className="text-xs text-gray-700 mt-2">
                                       <span className="font-semibold">
@@ -2722,7 +2851,7 @@ export default function StudentDashboardPage() {
                           Total Course Fee
                         </p>
                         <p className="text-2xl font-bold text-gray-900 mt-1">
-                          {fmtCurrency(feePlan.total_fee)}
+                          {fmtCurrency(totalCourseFee ?? feePlan.total_fee)}
                         </p>
                       </div>
                       <div className="bg-white rounded-2xl shadow-sm p-5">
@@ -2732,15 +2861,56 @@ export default function StudentDashboardPage() {
                         </p>
                       </div>
                       <div className="bg-white rounded-2xl shadow-sm p-5">
-                        <p className="text-xs text-gray-500">Next Due Amount</p>
+                        <p className="text-xs text-gray-500">Pending Fee</p>
                         <p className="text-2xl font-bold text-red-600 mt-1">
-                          {fmtCurrency(feePlan.next_due_amount)}
+                          {fmtCurrency(pendingAmount)}
                         </p>
-                        {feePlan.next_due_date && (
+                        {feePlan.next_due_date && pendingAmount > 0 && (
                           <p className="text-xs text-gray-400 mt-1">
                             Due: {fmtDate(feePlan.next_due_date)}
                           </p>
                         )}
+                      </div>
+                    </div>
+                  )}
+                  {paidRegistration && (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="bg-white rounded-2xl shadow-sm p-5">
+                        <p className="text-xs text-gray-500">
+                          Selected Payment Plan
+                        </p>
+                        <p className="text-lg font-bold text-gray-900 mt-1">
+                          {selectedPlanLabel}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Tenure: {selectedTenureLabel}
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-2xl shadow-sm p-5">
+                        <p className="text-xs text-gray-500">
+                          Registration Number
+                        </p>
+                        <p className="text-lg font-bold text-gray-900 mt-1 break-all">
+                          {paidRegistration.registration_no ??
+                            studentProfile?.registration_no ??
+                            "Pending"}
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-2xl shadow-sm p-5">
+                        <p className="text-xs text-gray-500">Payment Mode</p>
+                        <p className="text-lg font-bold text-gray-900 mt-1 capitalize">
+                          {paidRegistration.payment_mode ?? "razorpay"}
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-2xl shadow-sm p-5">
+                        <p className="text-xs text-gray-500">
+                          Registration Status
+                        </p>
+                        <p className="text-lg font-bold text-emerald-600 mt-1 capitalize">
+                          {paidRegistration.payment_status ??
+                            paidRegistration.status ??
+                            "pending"}
+                        </p>
                       </div>
                     </div>
                   )}

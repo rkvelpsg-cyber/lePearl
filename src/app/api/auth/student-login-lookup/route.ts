@@ -42,6 +42,21 @@ export async function POST(req: NextRequest) {
     if (profileError) throw profileError;
 
     if (!profile?.user_id) {
+      const { data: registration } = await service
+        .from("student_registrations")
+        .select("email")
+        .eq("mode", "paid")
+        .eq("status", "completed")
+        .ilike("username", loginId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const regEmail = registration?.email?.trim().toLowerCase() ?? "";
+      if (isValidEmail(regEmail)) {
+        return NextResponse.json({ email: regEmail });
+      }
+
       return NextResponse.json(
         { error: "Invalid username or email." },
         { status: 404 },

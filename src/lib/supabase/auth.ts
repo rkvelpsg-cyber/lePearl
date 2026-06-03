@@ -1,4 +1,12 @@
-import { createClient, type AuthScope } from "./client";
+import { createClient, clearScopedAuthStorage, type AuthScope } from "./client";
+
+function isRefreshTokenStorageError(message: string) {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("invalid refresh token") ||
+    normalized.includes("refresh token not found")
+  );
+}
 
 export async function getUserRole(scope: AuthScope = "default") {
   const supabase = createClient(scope);
@@ -28,15 +36,29 @@ export async function signInWithEmail(
   password: string,
   scope: AuthScope = "default",
 ) {
-  const supabase = createClient(scope);
+  let supabase = createClient(scope);
 
   try {
     const normalizedEmail = email.trim().toLowerCase();
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    let { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password: password.trim(),
     });
+
+    if (error && isRefreshTokenStorageError(error.message)) {
+      // Recover from stale scoped session state in localStorage.
+      clearScopedAuthStorage(scope);
+      supabase = createClient(scope);
+
+      const retry = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: password.trim(),
+      });
+
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
 

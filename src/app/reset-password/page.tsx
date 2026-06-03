@@ -103,6 +103,29 @@ function ResetPasswordInner() {
         }
       }
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        try {
+          const notifyRes = await fetch("/api/auth/password-reset-notify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ role }),
+          });
+
+          if (!notifyRes.ok) {
+            console.warn("Password reset notification could not be sent.");
+          }
+        } catch (notifyError) {
+          console.warn("Password reset notification failed:", notifyError);
+        }
+      }
+
       setMsg({
         type: "ok",
         text: firstLoginFlow

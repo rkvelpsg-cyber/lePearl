@@ -76,6 +76,118 @@ const tabBg: Record<TabId, string> = {
   mains: "bg-gradient-to-b from-yellow-50 via-yellow-50/70 to-white",
 };
 
+const mainsFeePlans = [
+  {
+    title: "GDC Mains (Without Study Material)",
+    amount: "Rs.5",
+    badge: "BEST VALUE",
+    cta: "Enroll Now",
+    ctaClass:
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
+    cardClass:
+      "relative overflow-hidden rounded-2xl border-2 border-blue-900 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for GDC Mains",
+      "Structured answer writing program",
+      "Live doubt clearing sessions",
+      "Mock answer practice with evaluation",
+      "Mentor-driven progress tracking",
+      "One year access to videos and PDFs",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=mains-without-material",
+  },
+  {
+    title: "GDC Mains (With Study Material)",
+    amount: "Rs.15,995",
+    cta: "Fill Registration Form",
+    ctaClass:
+      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+    cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for GDC Mains",
+      "Printed/compiled study material support",
+      "Live doubt clearing sessions",
+      "Mock answer practice with evaluation",
+      "Mentor-driven progress tracking",
+      "One year access to videos and PDFs",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=mains-with-material",
+  },
+];
+
+const prelimsFeePlans = [
+  {
+    title: "Full fee of Only Prelims",
+    amount: "Rs.10,995",
+    cta: "Enroll Now",
+    ctaClass:
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
+    cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for Prelims only",
+      "All study materials included",
+      "50+ mock tests",
+      "Live doubt clearing sessions",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=prelims-full",
+  },
+  {
+    title: "Instalments for Only Prelims",
+    amount: "Rs.3,995 x 3",
+    cta: "Fill Registration Form",
+    ctaClass:
+      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+    cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for Prelims only",
+      "All study materials included",
+      "50+ mock tests",
+      "Flexible payment terms",
+      "Live doubt clearing sessions",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=prelims-instalment",
+  },
+];
+
+const generalStudiesFeePlans = [
+  {
+    title: "One-time payment for both Prelims + Mains",
+    amount: "Rs.13,995",
+    badge: "BEST VALUE",
+    cta: "Enroll Now",
+    ctaClass:
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
+    cardClass:
+      "relative overflow-hidden rounded-2xl border-2 border-blue-900 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for Prelims + Mains",
+      "All study materials included",
+      "50+ mock tests",
+      "Live doubt clearing sessions",
+      "Answer writing practice",
+      "One year access to videos and PDFs",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=combined-full",
+  },
+  {
+    title: "Instalments for both Prelims + Mains",
+    amount: "Rs.4,995 x 3",
+    cta: "Fill Registration Form",
+    ctaClass:
+      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+    cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for Prelims + Mains",
+      "All study materials included",
+      "50+ mock tests",
+      "Flexible payment terms",
+      "Live doubt clearing sessions",
+      "Answer writing practice",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=combined-instalment",
+  },
+];
+
 function ProgramTabsPanel() {
   const [activeTab, setActiveTab] = useState<TabId>("general-studies");
 
@@ -395,6 +507,157 @@ function ProgramTabsPanel() {
               <div className="mx-auto mt-4 h-1 w-24 bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
             </div>
             {contentMap[activeTab]}
+
+            {activeTab === "general-studies" && (
+              <div className="mx-auto mt-8 w-full max-w-5xl">
+                <div className="grid gap-8 md:grid-cols-2">
+                  {generalStudiesFeePlans.map((plan) => (
+                    <div key={plan.title} className={plan.cardClass}>
+                      {plan.badge && (
+                        <div className="absolute right-0 top-0 bg-yellow-500 px-4 py-1 text-sm font-bold text-blue-900">
+                          {plan.badge}
+                        </div>
+                      )}
+
+                      <h4 className="mb-2 text-2xl font-bold text-blue-900 sm:text-5xl">
+                        {plan.title}
+                      </h4>
+
+                      <div className="mb-6">
+                        <span className="text-4xl font-bold text-blue-900 sm:text-6xl">
+                          {plan.amount}
+                        </span>
+                      </div>
+
+                      <ul className="mb-8 space-y-3">
+                        {plan.features.map((item) => (
+                          <li key={item} className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-700">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <a
+                        href={plan.href}
+                        className={plan.ctaClass}
+                        style={
+                          plan.cta === "Enroll Now"
+                            ? { color: "#ffffff" }
+                            : undefined
+                        }
+                      >
+                        {plan.cta}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "prelims" && (
+              <div className="mx-auto mt-8 w-full max-w-5xl">
+                <div className="mb-6 text-center">
+                  <h3 className="text-2xl font-bold text-blue-900">
+                    Prelims Fee Details
+                  </h3>
+                </div>
+
+                <div className="grid gap-8 md:grid-cols-2">
+                  {prelimsFeePlans.map((plan) => (
+                    <div key={plan.title} className={plan.cardClass}>
+                      <h4 className="mb-2 text-2xl font-bold text-blue-900 sm:text-5xl">
+                        {plan.title}
+                      </h4>
+
+                      <div className="mb-6">
+                        <span className="text-4xl font-bold text-blue-900 sm:text-6xl">
+                          {plan.amount}
+                        </span>
+                      </div>
+
+                      <ul className="mb-8 space-y-3">
+                        {plan.features.map((item) => (
+                          <li key={item} className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-700">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <a
+                        href={plan.href}
+                        className={plan.ctaClass}
+                        style={
+                          plan.cta === "Enroll Now"
+                            ? { color: "#ffffff" }
+                            : undefined
+                        }
+                      >
+                        {plan.cta}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "mains" && (
+              <div className="mx-auto mt-8 w-full max-w-5xl">
+                <div className="mb-6 text-center">
+                  <h3 className="text-2xl font-bold text-blue-900">
+                    Mains Fee Details
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600 sm:text-base">
+                    Choose the payment plan that works best for you and start
+                    your preparation today.
+                  </p>
+                </div>
+
+                <div className="grid gap-8 md:grid-cols-2">
+                  {mainsFeePlans.map((plan) => (
+                    <div key={plan.title} className={plan.cardClass}>
+                      {plan.badge && (
+                        <div className="absolute right-0 top-0 bg-yellow-500 px-4 py-1 text-sm font-bold text-blue-900">
+                          {plan.badge}
+                        </div>
+                      )}
+
+                      <h4 className="mb-2 text-2xl font-bold text-blue-900 sm:text-4xl">
+                        {plan.title}
+                      </h4>
+
+                      <div className="mb-6">
+                        <span className="text-4xl font-bold text-blue-900 sm:text-6xl">
+                          {plan.amount}
+                        </span>
+                      </div>
+
+                      <ul className="mb-8 space-y-3">
+                        {plan.features.map((item) => (
+                          <li key={item} className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-700">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <a
+                        href={plan.href}
+                        className={plan.ctaClass}
+                        style={
+                          plan.cta === "Enroll Now"
+                            ? { color: "#ffffff" }
+                            : undefined
+                        }
+                      >
+                        {plan.cta}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -551,162 +814,6 @@ function UPGDCPage() {
                 aria-label={`Go to testimonial ${index + 1}`}
               />
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="enrollment"
-        className="bg-gradient-to-br from-blue-50 to-white py-20"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-4 text-center text-3xl font-bold text-blue-900 sm:text-4xl">
-            Enroll Today and Begin Your Journey to Become a Government College
-            Professor
-          </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-center text-gray-600">
-            Choose the payment plan that works best for you and start your
-            preparation today.
-          </p>
-
-          <div className="mx-auto mb-12 grid max-w-4xl gap-8 md:grid-cols-2">
-            <div className="relative overflow-hidden rounded-2xl border-2 border-blue-900 bg-white p-8 shadow-xl">
-              <div className="absolute right-0 top-0 bg-yellow-500 px-4 py-1 text-sm font-bold text-blue-900">
-                BEST VALUE
-              </div>
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                One-time payment for both Prelims + Mains
-              </h3>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-blue-900">
-                  Rs.13,995
-                </span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {[
-                  "Full course access for Prelims + Mains",
-                  "All study materials included",
-                  "50+ mock tests",
-                  "Live doubt clearing sessions",
-                  "Answer writing practice",
-                  "One year access to videos and PDFs",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="/student-registration?mode=paid&course=UP%20GDC"
-                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
-                style={{ color: "#ffffff" }}
-              >
-                Enroll Now
-              </a>
-            </div>
-
-            <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                Instalments for both Prelims + Mains
-              </h3>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-blue-900">
-                  Rs.4,995 × 3
-                </span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {[
-                  "Full course access for Prelims + Mains",
-                  "All study materials included",
-                  "50+ mock tests",
-                  "Flexible payment terms",
-                  "Live doubt clearing sessions",
-                  "Answer writing practice",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="/student-registration?mode=paid&course=UP%20GDC"
-                className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
-              >
-                Fill Registration Form
-              </a>
-            </div>
-          </div>
-
-          <div className="mx-auto mb-12 grid max-w-4xl gap-8 md:grid-cols-2">
-            <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                Full fee of Only Prelims
-              </h3>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-blue-900">
-                  Rs.10,995
-                </span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {[
-                  "Full course access for Prelims only",
-                  "All study materials included",
-                  "50+ mock tests",
-                  "Live doubt clearing sessions",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="/student-registration?mode=paid&course=UP%20GDC"
-                className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
-                style={{ color: "#ffffff" }}
-              >
-                Enroll Now
-              </a>
-            </div>
-
-            <div className="rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl">
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                Instalments for Only Prelims
-              </h3>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-blue-900">
-                  Rs.3,995 × 3
-                </span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {[
-                  "Full course access for Prelims only",
-                  "All study materials included",
-                  "50+ mock tests",
-                  "Flexible payment terms",
-                  "Live doubt clearing sessions",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span className="text-gray-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="/student-registration?mode=paid&course=UP%20GDC"
-                className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl"
-              >
-                Fill Registration Form
-              </a>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="inline-block rounded-lg bg-yellow-500 px-6 py-3 text-blue-900">
-              <p className="font-bold">10% discount for all the Perlians</p>
-            </div>
           </div>
         </div>
       </section>

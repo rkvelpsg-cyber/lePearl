@@ -20,3 +20,10 @@ export const createClient = (scope: AuthScope = "default") => {
     options,
   );
 };
+
+export function clearScopedAuthStorage(scope: AuthScope = "default") {
+  if (typeof window === "undefined") return;
+  if (scope === "default") return;
+
+  window.localStorage.removeItem(storageKeyByScope[scope]);
+}
