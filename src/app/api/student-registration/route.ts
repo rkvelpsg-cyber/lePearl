@@ -722,7 +722,9 @@ export async function POST(req: NextRequest) {
 
     const normalizedPaymentMode =
       mode === "paid"
-        ? sanitizeRegistrationValue(body.paymentMode ?? "razorpay").toLowerCase()
+        ? sanitizeRegistrationValue(
+            body.paymentMode ?? "razorpay",
+          ).toLowerCase()
         : null;
     const isRazorpayPayment =
       mode === "paid" &&

@@ -190,6 +190,11 @@ const generalStudiesFeePlans = [
 
 function ProgramTabsPanel() {
   const [activeTab, setActiveTab] = useState<TabId>("general-studies");
+  const scrollToMainsFees = () => {
+    document
+      .getElementById("upgdc-mains-fee-details")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const contentMap: Record<TabId, React.ReactNode> = {
     "general-studies": (
@@ -415,31 +420,179 @@ function ProgramTabsPanel() {
     ),
     mains: (
       <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-md sm:p-8">
-        <h3 className="mb-3 text-xl font-bold text-blue-900">
-          Answer Writing for Descriptive Examination
-        </h3>
-        <p className="mb-6 text-lg font-semibold text-blue-800">
-          Master the Art of Descriptive Writing: From Draft to Distinction
-        </p>
+        <div className="mb-8 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-900 to-indigo-800 p-6 text-white shadow-lg sm:p-8">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-blue-100">
+            UP GDC English Mains 2026
+          </p>
+          <h3 className="mb-3 text-2xl font-bold sm:text-3xl">
+            Master Advanced Academic Writing &amp; Secure Your Selection
+          </h3>
+          <p className="max-w-3xl text-sm leading-7 text-blue-100 sm:text-base">
+            Maximize your chances in the Mains exam with our highly structured,
+            rigorous 3-month intensive program. Go beyond standard preparation
+            and learn exactly how to format, articulate, and present your
+            answers to top the merit list.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={scrollToMainsFees}
+              className="rounded-lg bg-yellow-500 px-6 py-3 text-sm font-bold text-blue-900 shadow-lg transition hover:bg-yellow-400"
+            >
+              Enroll Now for GDC Mains Batch
+            </button>
+            <a
+              href="https://wa.me/919994990639?text=Hello%2C%20I%20want%20details%20about%20the%20UP%20GDC%20English%20Mains%202026%20batch."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+            >
+              Have Questions? Chat with Dr Prem Shankar Pandey
+            </a>
+          </div>
+        </div>
 
-        <h4 className="mb-3 text-lg font-bold text-blue-900">
-          The Methodology:
-        </h4>
-        <div className="mb-8 space-y-3">
+        <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
-            "Unlike bulk coaching, each student is assigned a mentor who tracks their progress through every answer script.",
-            "We teach you how to structure answers, from impactful introductions to data-backed body paragraphs and balanced conclusions.",
-            'Learn how to use "High-Yield Keywords" that UPPSC evaluators look for in GDC Mains scripts.',
-            "Every mock answer you write is deeply evaluated with written annotations, pointing out exactly where you can gain an extra half-mark.",
-            "Real-time sessions where we pick a previous year's question and build a model answer together on screen.",
+            { label: "Duration", value: "3 Months" },
+            { label: "Weekly Schedule", value: "Monday, Wednesday, & Friday" },
+            { label: "Class Timings", value: "08:00 PM to 09:30 PM" },
+            { label: "Mode", value: "Live Online Interactive Classes" },
           ].map((item) => (
             <div
-              key={item}
-              className="rounded-lg border-l-4 border-yellow-500 bg-yellow-50/60 p-4 text-gray-700"
+              key={item.label}
+              className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 shadow-sm"
             >
-              {item}
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                {item.label}
+              </p>
+              <p className="mt-2 text-base font-bold text-blue-900">
+                {item.value}
+              </p>
             </div>
           ))}
+        </div>
+
+        <div className="mb-8 rounded-2xl border border-yellow-200 bg-yellow-50/70 p-6">
+          <h4 className="mb-3 text-xl font-bold text-blue-900">
+            Our Proactive Teaching Strategy
+          </h4>
+          <p className="text-gray-700 leading-relaxed">
+            Cracking the GDC Mains requires a specialized approach that shifts
+            your mindset from objective ticking to sophisticated written
+            expression. Our uniquely designed curriculum focuses on structural
+            brilliance and absolute individual attention.
+          </p>
+        </div>
+
+        <div className="mb-8 grid gap-4 lg:grid-cols-2">
+          {[
+            {
+              title: "Deep Dive into Theoretical Aspects",
+              text: "Comprehensive conceptual clarity across the entire syllabus, ensuring your foundational core is rock-solid.",
+            },
+            {
+              title: "The Mechanics of Prose",
+              text: "Master the finer nuances of syntax, tone, and stylistic execution required for high-scoring humanities answers.",
+            },
+            {
+              title: "Rules of Advanced Academic Writing",
+              text: "Learn to craft arguments analytically, use precise vocabulary, and structure essays with academic rigor.",
+            },
+            {
+              title: "Unit-Wise Writing Practice",
+              text: "Thorough, comprehensive coverage of the entire syllabus, broken down unit by unit, so no topic is left unpracticed.",
+            },
+            {
+              title: "Word-for-Word Evaluation",
+              text: "Get meticulous, line-by-line critical feedback on every single answer sheet you submit instead of generic marks.",
+            },
+            {
+              title: "Rigorous Answer-Writing Practice",
+              text: "Regular, timed practice sessions to build speed, precision, and structural stamina for the actual exam room.",
+            },
+            {
+              title: "One-to-One Personal Attention",
+              text: "Every aspirant receives dedicated mentorship tailored to individual strengths and improvement areas.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                <div>
+                  <h5 className="text-lg font-bold text-blue-900">
+                    {item.title}
+                  </h5>
+                  <p className="mt-2 text-sm leading-7 text-gray-700">
+                    {item.text}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-6">
+            <h4 className="mb-3 text-2xl font-bold text-blue-900">
+              Why Choose LePearl Education for GDC Mains?
+            </h4>
+            <p className="mb-4 text-lg font-bold text-yellow-600">
+              &quot;Strategy बनाओ, SELECTION पाओ!&quot;
+            </p>
+            <p className="text-gray-700 leading-7">
+              Standard reading gets you through the Pre; elite writing gets you
+              through the Mains. Our program bridges that gap by transforming
+              your raw knowledge into highly polished, examiner-ready answers
+              under the guidance of expert mentorship.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h4 className="mb-4 text-xl font-bold text-blue-900">
+              What You Get When You Enroll
+            </h4>
+            <ul className="space-y-3 text-sm text-gray-700">
+              {[
+                "Live interactive lectures with recorded backups available on payment",
+                "Custom academic writing frameworks and model answers",
+                "Dedicated doubt-clearing segments during and after classes",
+                "Comprehensive evaluation dashboards to track week-over-week progress",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-blue-100 bg-gradient-to-r from-white to-blue-50 p-6 shadow-sm sm:p-8">
+          <h4 className="text-2xl font-bold text-blue-900">
+            Are you ready to claim your Assistant Professor seat?
+          </h4>
+          <p className="mt-3 max-w-3xl text-gray-700 leading-7">
+            Don&apos;t wait for others to outpace your writing preparation.
+            Space in our high-attention batch is intentionally capped to
+            maintain genuine one-on-one evaluation standards.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <div className="rounded-lg bg-blue-900 px-6 py-3 text-sm font-bold text-white shadow-lg">
+              Secure Your Seat Today!
+            </div>
+            <a
+              href="https://wa.me/919994990639?text=Hello%2C%20I%20have%20questions%20about%20the%20UP%20GDC%20Mains%20batch."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg border border-blue-200 bg-white px-6 py-3 text-sm font-semibold text-blue-900 transition hover:bg-blue-50"
+            >
+              Have Questions? Chat with our Expert Dr Prem Shankar Pandey
+            </a>
+          </div>
         </div>
       </div>
     ),
@@ -603,7 +756,10 @@ function ProgramTabsPanel() {
             )}
 
             {activeTab === "mains" && (
-              <div className="mx-auto mt-8 w-full max-w-5xl">
+              <div
+                id="upgdc-mains-fee-details"
+                className="mx-auto mt-8 w-full max-w-5xl scroll-mt-24"
+              >
                 <div className="mb-6 text-center">
                   <h3 className="text-2xl font-bold text-blue-900">
                     Mains Fee Details
