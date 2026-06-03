@@ -36,8 +36,14 @@ export async function POST(req: NextRequest) {
     }
 
     /* ── check Razorpay keys are configured ── */
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId =
+      process.env.RAZORPAY_KEY_ID ||
+      process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+      process.env.RAZORPAY_KEY;
+    const keySecret =
+      process.env.RAZORPAY_KEY_SECRET ||
+      process.env.RAZORPAY_SECRET ||
+      process.env.NEXT_PUBLIC_RAZORPAY_KEY_SECRET;
     if (
       !keyId ||
       !keySecret ||

@@ -336,7 +336,10 @@ export async function POST(req: NextRequest) {
     }
 
     /* ── verify Razorpay signature ── */
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret =
+      process.env.RAZORPAY_KEY_SECRET ||
+      process.env.RAZORPAY_SECRET ||
+      process.env.NEXT_PUBLIC_RAZORPAY_KEY_SECRET;
     if (!keySecret || keySecret.includes("REPLACE")) {
       return NextResponse.json(
         { error: "Payment gateway not configured" },
