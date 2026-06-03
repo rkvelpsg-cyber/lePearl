@@ -243,7 +243,7 @@ const upgdcFeeOptions: {
   {
     id: "mains-without-material",
     title: "GDC Mains (Without Study Material)",
-    totalAmount: 5,
+    totalAmount: 6995,
     tenure: "full",
     note: "Mains-only access without study material",
   },

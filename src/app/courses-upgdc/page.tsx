@@ -79,7 +79,7 @@ const tabBg: Record<TabId, string> = {
 const mainsFeePlans = [
   {
     title: "GDC Mains (Without Study Material)",
-    amount: "Rs.5",
+    amount: "Rs.6,995",
     badge: "BEST VALUE",
     cta: "Enroll Now",
     ctaClass:
