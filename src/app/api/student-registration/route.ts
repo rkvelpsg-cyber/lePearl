@@ -720,7 +720,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (mode === "paid") {
+    const normalizedPaymentMode =
+      mode === "paid"
+        ? sanitizeRegistrationValue(body.paymentMode ?? "razorpay").toLowerCase()
+        : null;
+    const isRazorpayPayment =
+      mode === "paid" &&
+      (normalizedPaymentMode === null ||
+        normalizedPaymentMode === "" ||
+        normalizedPaymentMode === "razorpay");
+    const paidStatus =
+      mode === "paid"
+        ? isRazorpayPayment
+          ? "completed"
+          : "pending"
+        : "pending";
+    const paidPaymentStatus =
+      mode === "paid"
+        ? isRazorpayPayment
+          ? "successful"
+          : "pending_verification"
+        : null;
+
+    if (mode === "paid" && isRazorpayPayment) {
       const orderId = sanitizeRegistrationValue(body.razorpayOrderId ?? "");
       const paymentId = sanitizeRegistrationValue(body.razorpayPaymentId ?? "");
       const signature = sanitizeRegistrationValue(body.razorpaySignature ?? "");
@@ -817,7 +839,7 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseClient();
     if (supabase) {
       const registrationRow = {
-        status: mode === "paid" ? "completed" : "pending",
+        status: paidStatus,
         mode,
         full_name: payload.fullName,
         qualification: payload.qualification,
@@ -861,22 +883,25 @@ export async function POST(req: NextRequest) {
           mode === "paid"
             ? sanitizeRegistrationValue(body.paymentMode ?? "razorpay")
             : null,
-        payment_status: mode === "paid" ? "successful" : null,
+        payment_status: paidPaymentStatus,
         payment_amount:
           mode === "paid" ? toNullableNumber(body.paymentAmount) : null,
         razorpay_order_id:
-          mode === "paid"
+          mode === "paid" && isRazorpayPayment
             ? sanitizeRegistrationValue(body.razorpayOrderId ?? "") || null
             : null,
         razorpay_payment_id:
-          mode === "paid"
+          mode === "paid" && isRazorpayPayment
             ? sanitizeRegistrationValue(body.razorpayPaymentId ?? "") || null
             : null,
         razorpay_signature:
-          mode === "paid"
+          mode === "paid" && isRazorpayPayment
             ? sanitizeRegistrationValue(body.razorpaySignature ?? "") || null
             : null,
-        payment_verified_at: mode === "paid" ? new Date().toISOString() : null,
+        payment_verified_at:
+          mode === "paid" && isRazorpayPayment
+            ? new Date().toISOString()
+            : null,
         heard_about_us:
           mode === "free"
             ? sanitizeRegistrationValue(body.heardAboutUs ?? "") || null
@@ -904,7 +929,7 @@ export async function POST(req: NextRequest) {
                 .from("student_registrations")
                 .insert([
                   {
-                    status: mode === "paid" ? "completed" : "pending",
+                    status: paidStatus,
                     mode,
                     full_name: payload.fullName,
                     qualification: payload.qualification,
@@ -927,7 +952,7 @@ export async function POST(req: NextRequest) {
                       mode === "paid"
                         ? toNullableNumber(body.paymentAmount)
                         : null,
-                    payment_status: mode === "paid" ? "successful" : null,
+                    payment_status: paidPaymentStatus,
                     payment_tenure:
                       mode === "paid"
                         ? sanitizeRegistrationValue(body.paymentTenure ?? "") ||
@@ -990,7 +1015,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (mode === "paid") {
+    if (mode === "paid" && isRazorpayPayment) {
       try {
         const ensureResult = await ensurePaidStudentAccount({ payload, body });
         if (!ensureResult.ensured) {
@@ -1116,7 +1141,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       message:
         mode === "paid"
-          ? "Payment successful. Paid registration completed. Confirmation email sent to student and admin."
+          ? isRazorpayPayment
+            ? "Payment successful. Paid registration completed. Confirmation email sent to student and admin."
+            : "Registration submitted in pending verification mode. Our team will confirm payment and activate your login credentials."
           : "Free registration submitted successfully. You can now access PYQs and demo resources.",
     });
   } catch (error) {

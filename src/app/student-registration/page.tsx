@@ -264,6 +264,7 @@ function StudentRegistrationContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const useUpiQrPayment = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
   const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
   const [courseBackHref, setCourseBackHref] = useState<string | null>(null);
   const [hasLoadedPaidDraft, setHasLoadedPaidDraft] = useState(false);
@@ -548,77 +549,92 @@ function StudentRegistrationContent() {
           ? `Paid Enrolment - ${safePaidFormData.course} (${selectedUPGDCFee?.title ?? "Selected Plan"})`
           : `Paid Enrolment - ${safePaidFormData.course}`;
 
-      const orderResponse = await fetch(
-        "/api/student-registration/create-payment-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: finalPayable,
-            description: paymentDescription,
-            fullName: payload.fullName,
-            email: payload.email,
-            whatsapp: payload.phone,
-            course: payload.course,
-            researchAssistanceFeeType: isResearchAssistanceCourse
-              ? safePaidFormData.researchAssistanceFeeType
-              : undefined,
-            upgdcFeeOption: isUPGDCCourse
-              ? safePaidFormData.upgdcFeeOption
-              : undefined,
-            registrationNo: safePaidFormData.registrationNo,
-          }),
-        },
-      );
+      let orderData: RazorpayOrderResponse | null = null;
+      let payment:
+        | RazorpaySuccessResponse
+        | {
+            razorpay_payment_id: string;
+            razorpay_order_id: string;
+            razorpay_signature: string;
+          } = {
+        razorpay_payment_id: "",
+        razorpay_order_id: "",
+        razorpay_signature: "",
+      };
 
-      const orderData = (await orderResponse.json()) as RazorpayOrderResponse;
-      if (!orderResponse.ok) {
-        throw new Error(
-          orderData.error ?? "Unable to create secure payment order.",
+      if (!useUpiQrPayment) {
+        const orderResponse = await fetch(
+          "/api/student-registration/create-payment-order",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: finalPayable,
+              description: paymentDescription,
+              fullName: payload.fullName,
+              email: payload.email,
+              whatsapp: payload.phone,
+              course: payload.course,
+              researchAssistanceFeeType: isResearchAssistanceCourse
+                ? safePaidFormData.researchAssistanceFeeType
+                : undefined,
+              upgdcFeeOption: isUPGDCCourse
+                ? safePaidFormData.upgdcFeeOption
+                : undefined,
+              registrationNo: safePaidFormData.registrationNo,
+            }),
+          },
+        );
+
+        orderData = (await orderResponse.json()) as RazorpayOrderResponse;
+        if (!orderResponse.ok) {
+          throw new Error(
+            orderData.error ?? "Unable to create secure payment order.",
+          );
+        }
+
+        await loadRazorpayCheckoutScript();
+
+        payment = await new Promise<RazorpaySuccessResponse>(
+          (resolve, reject) => {
+            const RazorpayCheckout = (
+              window as unknown as {
+                Razorpay: new (options: Record<string, unknown>) => {
+                  open: () => void;
+                };
+              }
+            ).Razorpay;
+
+            if (!RazorpayCheckout) {
+              reject(new Error("Razorpay checkout is unavailable."));
+              return;
+            }
+
+            const checkout = new RazorpayCheckout({
+              key: orderData?.key_id,
+              amount: orderData?.amount,
+              currency: orderData?.currency,
+              name: "LePearl Education",
+              description: paymentDescription,
+              order_id: orderData?.order_id,
+              prefill: {
+                name: payload.fullName,
+                email: payload.email,
+                contact: payload.phone,
+              },
+              theme: { color: "#7c3aed" },
+              handler: (response: RazorpaySuccessResponse) => resolve(response),
+              modal: {
+                ondismiss: () => reject(new Error("PAYMENT_CANCELLED")),
+              },
+            });
+
+            checkout.open();
+          },
         );
       }
-
-      await loadRazorpayCheckoutScript();
-
-      const payment = await new Promise<RazorpaySuccessResponse>(
-        (resolve, reject) => {
-          const RazorpayCheckout = (
-            window as unknown as {
-              Razorpay: new (options: Record<string, unknown>) => {
-                open: () => void;
-              };
-            }
-          ).Razorpay;
-
-          if (!RazorpayCheckout) {
-            reject(new Error("Razorpay checkout is unavailable."));
-            return;
-          }
-
-          const checkout = new RazorpayCheckout({
-            key: orderData.key_id,
-            amount: orderData.amount,
-            currency: orderData.currency,
-            name: "LePearl Education",
-            description: paymentDescription,
-            order_id: orderData.order_id,
-            prefill: {
-              name: payload.fullName,
-              email: payload.email,
-              contact: payload.phone,
-            },
-            theme: { color: "#7c3aed" },
-            handler: (response: RazorpaySuccessResponse) => resolve(response),
-            modal: {
-              ondismiss: () => reject(new Error("PAYMENT_CANCELLED")),
-            },
-          });
-
-          checkout.open();
-        },
-      );
 
       const response = await fetch("/api/student-registration", {
         method: "POST",
@@ -652,11 +668,13 @@ function StudentRegistrationContent() {
           discountAmount: totalDiscount,
           booksFee,
           finalPayable,
-          paymentMode: "razorpay",
-          paymentAmount: Number(orderData.amount) / 100,
-          razorpayOrderId: payment.razorpay_order_id,
-          razorpayPaymentId: payment.razorpay_payment_id,
-          razorpaySignature: payment.razorpay_signature,
+          paymentMode: useUpiQrPayment ? "upi_qr" : "razorpay",
+          paymentAmount: useUpiQrPayment
+            ? Number(finalPayable)
+            : Number(orderData?.amount ?? 0) / 100,
+          razorpayOrderId: payment.razorpay_order_id || undefined,
+          razorpayPaymentId: payment.razorpay_payment_id || undefined,
+          razorpaySignature: payment.razorpay_signature || undefined,
         }),
       });
 
@@ -675,7 +693,9 @@ function StudentRegistrationContent() {
         type: "success",
         message:
           result.message ??
-          "Payment successful. Your paid registration is completed. Confirmation details have been sent to your email, and our admin team has received your registration.",
+          (useUpiQrPayment
+            ? "Registration submitted in UPI/manual mode. Our team will verify your payment and share login details after confirmation."
+            : "Payment successful. Your paid registration is completed. Confirmation details have been sent to your email, and our admin team has received your registration."),
       });
       window.sessionStorage.removeItem(PAID_REGISTRATION_DRAFT_KEY);
       window.sessionStorage.removeItem(PAID_REGISTRATION_COURSE_BACK_KEY);
@@ -1248,8 +1268,18 @@ function StudentRegistrationContent() {
                   ? "Contact support for latest fee"
                   : safePaidFormData.paymentTenure === null
                     ? "Select a payment plan to continue"
-                    : "Proceed to Payment & Enrol"}
+                    : useUpiQrPayment
+                      ? "Submit Registration (UPI Mode)"
+                      : "Proceed to Payment & Enrol"}
             </button>
+
+            {useUpiQrPayment ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Razorpay is currently unavailable in this environment. Your
+                registration will be submitted in UPI/manual mode and our team
+                will verify payment before sharing credentials.
+              </div>
+            ) : null}
           </form>
         ) : (
           <form
