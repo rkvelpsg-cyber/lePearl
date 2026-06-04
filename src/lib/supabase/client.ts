@@ -12,7 +12,13 @@ export const createClient = (scope: AuthScope = "default") => {
   const options =
     scope === "default"
       ? undefined
-      : { auth: { storageKey: storageKeyByScope[scope] } };
+      : {
+          auth: {
+            storageKey: storageKeyByScope[scope],
+            storage:
+              typeof window !== "undefined" ? window.sessionStorage : undefined,
+          },
+        };
 
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,5 +31,5 @@ export function clearScopedAuthStorage(scope: AuthScope = "default") {
   if (typeof window === "undefined") return;
   if (scope === "default") return;
 
-  window.localStorage.removeItem(storageKeyByScope[scope]);
+  window.sessionStorage.removeItem(storageKeyByScope[scope]);
 }

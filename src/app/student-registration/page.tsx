@@ -51,6 +51,13 @@ type UPGDCFeeOptionId =
   | "mains-with-material"
   | "mains-with-material-instalment";
 
+type GICFeeOptionId =
+  | "prelims-only"
+  | "combined-full"
+  | "combined-instalment"
+  | "mains-without-material"
+  | "mains-with-material";
+
 type PaidEnrollmentFormState = {
   fullName: string;
   email: string;
@@ -58,6 +65,7 @@ type PaidEnrollmentFormState = {
   course: StudentRegistrationPayload["course"];
   researchAssistanceFeeType: ResearchAssistanceFeeOptionId;
   upgdcFeeOption: UPGDCFeeOptionId;
+  gicFeeOption: GICFeeOptionId;
   username: string;
   password: string;
   registrationNo: string;
@@ -109,6 +117,7 @@ const initialPaidForm = (): PaidEnrollmentFormState => ({
     ("" as StudentRegistrationPayload["course"]),
   researchAssistanceFeeType: "research-paper",
   upgdcFeeOption: "combined-full",
+  gicFeeOption: "prelims-only",
   username: "",
   password: "",
   registrationNo: generateRegistrationNo(),
@@ -281,8 +290,74 @@ const upgdcFeeOptions: {
   },
 ];
 
+const gicFeeOptions: {
+  id: GICFeeOptionId;
+  title: string;
+  totalAmount: number;
+  tenure: "full" | "instalment";
+  note: string;
+  instalments?: { label: string; amount: number; note: string }[];
+}[] = [
+  {
+    id: "prelims-only",
+    title: "Prelims only",
+    totalAmount: 9995,
+    tenure: "full",
+    note: "One-time payment for GIC Prelims track",
+  },
+  {
+    id: "combined-full",
+    title: "Prelims + Mains",
+    totalAmount: 14995,
+    tenure: "full",
+    note: "One-time payment for complete track",
+  },
+  {
+    id: "combined-instalment",
+    title: "Prelims + Mains Instalment",
+    totalAmount: 16485,
+    tenure: "instalment",
+    note: "Pay Rs. 5,495 now · split across 3 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 5495,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 5495,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 5495,
+        note: "Due 60 days after enrolment",
+      },
+    ],
+  },
+  {
+    id: "mains-without-material",
+    title: "Mains only (Without study material)",
+    totalAmount: 7995,
+    tenure: "full",
+    note: "Mains-only access without study material",
+  },
+  {
+    id: "mains-with-material",
+    title: "Mains only (With study material)",
+    totalAmount: 13995,
+    tenure: "full",
+    note: "Mains-only access with study material",
+  },
+];
+
 function isUPGDCFeeOptionId(value: string | null): value is UPGDCFeeOptionId {
   return !!value && upgdcFeeOptions.some((option) => option.id === value);
+}
+
+function isGICFeeOptionId(value: string | null): value is GICFeeOptionId {
+  return !!value && gicFeeOptions.some((option) => option.id === value);
 }
 
 function StudentRegistrationContent() {
@@ -313,6 +388,8 @@ function StudentRegistrationContent() {
   );
   const [modalUPGDCFeeChoice, setModalUPGDCFeeChoice] =
     useState<UPGDCFeeOptionId>("combined-full");
+  const [modalGICFeeChoice, setModalGICFeeChoice] =
+    useState<GICFeeOptionId>("prelims-only");
   const [modalResearchFeeChoice, setModalResearchFeeChoice] =
     useState<ResearchAssistanceFeeOptionId>("research-paper");
   const safePaidFormData: PaidEnrollmentFormState = {
@@ -327,23 +404,30 @@ function StudentRegistrationContent() {
   const isResearchAssistanceCourse =
     safePaidFormData.course === "Research Assistance";
   const isUPGDCCourse = safePaidFormData.course === "UP GDC";
+  const isGICCourse = safePaidFormData.course === "GIC";
   const selectedResearchAssistanceFee = researchAssistanceFeeOptions.find(
     (option) => option.id === safePaidFormData.researchAssistanceFeeType,
   );
   const selectedUPGDCFee = upgdcFeeOptions.find(
     (option) => option.id === safePaidFormData.upgdcFeeOption,
   );
+  const selectedGICFee = gicFeeOptions.find(
+    (option) => option.id === safePaidFormData.gicFeeOption,
+  );
 
   const currentPlan = coursePaymentPlans[safePaidFormData.course];
   const researchAssistanceBaseFee =
     selectedResearchAssistanceFee?.amount ?? 2995;
-  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 13995;
+  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 19995;
+  const gicBaseFee = selectedGICFee?.totalAmount ?? 9995;
   const baseCourseFee =
     (isResearchAssistanceCourse
       ? researchAssistanceBaseFee
       : isUPGDCCourse
         ? upgdcBaseFee
-        : currentPlan?.fullAmount) ??
+        : isGICCourse
+          ? gicBaseFee
+          : currentPlan?.fullAmount) ??
     paidRegistrationCourseFees[safePaidFormData.course] ??
     defaultPaidRegistrationCourseFee;
   const hasPublishedFee = baseCourseFee > 0;
@@ -366,7 +450,9 @@ function StudentRegistrationContent() {
   const activeInstalments =
     isUPGDCCourse && selectedUPGDCFee?.tenure === "instalment"
       ? selectedUPGDCFee.instalments
-      : currentPlan?.instalments;
+      : isGICCourse && selectedGICFee?.tenure === "instalment"
+        ? selectedGICFee.instalments
+        : currentPlan?.instalments;
   const firstInstalmentAmount = activeInstalments?.[0]?.amount ?? 0;
   const instalmentTotal =
     activeInstalments?.reduce((sum, item) => sum + item.amount, 0) ??
@@ -436,6 +522,7 @@ function StudentRegistrationContent() {
     const modeParam = searchParams.get("mode");
     const courseParam = searchParams.get("course");
     const upgdcFeeOptionParam = searchParams.get("upgdcFeeOption");
+    const gicFeeOptionParam = searchParams.get("gicFeeOption");
     const hasPaidCourseFlow =
       modeParam === "paid" &&
       !!courseParam &&
@@ -475,12 +562,21 @@ function StudentRegistrationContent() {
     if (courseParam && isValidStudentRegistrationCourse(courseParam)) {
       const hasUPGDCSelectionFromCoursePage =
         courseParam === "UP GDC" && isUPGDCFeeOptionId(upgdcFeeOptionParam);
+      const hasGICSelectionFromCoursePage =
+        courseParam === "GIC" && isGICFeeOptionId(gicFeeOptionParam);
       const resolvedUPGDCOption: UPGDCFeeOptionId =
         hasUPGDCSelectionFromCoursePage && upgdcFeeOptionParam
           ? upgdcFeeOptionParam
           : "combined-full";
+      const resolvedGICOption: GICFeeOptionId =
+        hasGICSelectionFromCoursePage && gicFeeOptionParam
+          ? gicFeeOptionParam
+          : "prelims-only";
       const resolvedUPGDCTenure =
         upgdcFeeOptions.find((option) => option.id === resolvedUPGDCOption)
+          ?.tenure ?? "full";
+      const resolvedGICTenure =
+        gicFeeOptions.find((option) => option.id === resolvedGICOption)
           ?.tenure ?? "full";
 
       setPaidFormData((current) => ({
@@ -488,17 +584,29 @@ function StudentRegistrationContent() {
         course: courseParam,
         researchAssistanceFeeType: "research-paper",
         upgdcFeeOption: resolvedUPGDCOption,
+        gicFeeOption: resolvedGICOption,
         paymentTenure: hasUPGDCSelectionFromCoursePage
           ? resolvedUPGDCTenure
-          : null,
+          : hasGICSelectionFromCoursePage
+            ? resolvedGICTenure
+            : null,
       }));
 
       // Auto-open fee plan modal when arriving from course pages, except when
       // UP GDC has an explicit fee option selected from the course card.
-      setModalPlanChoice(resolvedUPGDCTenure);
+      setModalPlanChoice(
+        hasUPGDCSelectionFromCoursePage
+          ? resolvedUPGDCTenure
+          : hasGICSelectionFromCoursePage
+            ? resolvedGICTenure
+            : "full",
+      );
       setModalUPGDCFeeChoice(resolvedUPGDCOption);
+      setModalGICFeeChoice(resolvedGICOption);
       setModalResearchFeeChoice("research-paper");
-      setShowFeePlanModal(!hasUPGDCSelectionFromCoursePage);
+      setShowFeePlanModal(
+        !hasUPGDCSelectionFromCoursePage && !hasGICSelectionFromCoursePage,
+      );
     }
 
     if (modeParam === "free") {
@@ -530,10 +638,12 @@ function StudentRegistrationContent() {
           : current.researchAssistanceFeeType,
       upgdcFeeOption:
         newCourse === "UP GDC" ? "combined-full" : current.upgdcFeeOption,
+      gicFeeOption: newCourse === "GIC" ? "prelims-only" : current.gicFeeOption,
       paymentTenure: null,
     }));
     setModalPlanChoice("full");
     setModalUPGDCFeeChoice("combined-full");
+    setModalGICFeeChoice("prelims-only");
     setModalResearchFeeChoice("research-paper");
     setShowFeePlanModal(true);
   }
@@ -582,7 +692,9 @@ function StudentRegistrationContent() {
         ? `Paid Enrolment - ${safePaidFormData.course} (${selectedResearchAssistanceFee?.title ?? "Selected Service"})`
         : isUPGDCCourse
           ? `Paid Enrolment - ${safePaidFormData.course} (${selectedUPGDCFee?.title ?? "Selected Plan"})`
-          : `Paid Enrolment - ${safePaidFormData.course}`;
+          : isGICCourse
+            ? `Paid Enrolment - ${safePaidFormData.course} (${selectedGICFee?.title ?? "Selected Plan"})`
+            : `Paid Enrolment - ${safePaidFormData.course}`;
 
       let orderData: RazorpayOrderResponse | null = null;
       let payment:
@@ -617,6 +729,9 @@ function StudentRegistrationContent() {
                 : undefined,
               upgdcFeeOption: isUPGDCCourse
                 ? safePaidFormData.upgdcFeeOption
+                : undefined,
+              gicFeeOption: isGICCourse
+                ? safePaidFormData.gicFeeOption
                 : undefined,
               registrationNo: safePaidFormData.registrationNo,
             }),
@@ -699,6 +814,8 @@ function StudentRegistrationContent() {
             ? safePaidFormData.upgdcFeeOption
             : undefined,
           upgdcFeeLabel: isUPGDCCourse ? selectedUPGDCFee?.title : undefined,
+          gicFeeOption: isGICCourse ? safePaidFormData.gicFeeOption : undefined,
+          gicFeeLabel: isGICCourse ? selectedGICFee?.title : undefined,
           baseCourseFee,
           discountAmount: totalDiscount,
           booksFee,
@@ -1026,6 +1143,7 @@ function StudentRegistrationContent() {
                       safePaidFormData.paymentTenure ?? "full",
                     );
                     setModalUPGDCFeeChoice(safePaidFormData.upgdcFeeOption);
+                    setModalGICFeeChoice(safePaidFormData.gicFeeOption);
                     setModalResearchFeeChoice(
                       safePaidFormData.researchAssistanceFeeType,
                     );
@@ -1074,6 +1192,14 @@ function StudentRegistrationContent() {
                         <span>Selected Plan</span>
                         <span className="font-semibold text-violet-700">
                           {selectedUPGDCFee?.title}
+                        </span>
+                      </div>
+                    )}
+                    {isGICCourse && (
+                      <div className="flex items-center justify-between">
+                        <span>Selected Plan</span>
+                        <span className="font-semibold text-violet-700">
+                          {selectedGICFee?.title}
                         </span>
                       </div>
                     )}
@@ -1454,13 +1580,10 @@ function StudentRegistrationContent() {
       {/* ── Fee Plan Selection Modal (centered dialog) ── */}
       {showFeePlanModal && activeMode === "paid" && (
         <>
-          {/* Backdrop – only dismissible if plan already chosen */}
+          {/* Backdrop */}
           <div
             className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-            onClick={() => {
-              if (safePaidFormData.paymentTenure !== null)
-                setShowFeePlanModal(false);
-            }}
+            onClick={() => setShowFeePlanModal(false)}
           />
 
           {/* Centered dialog */}
@@ -1471,16 +1594,14 @@ function StudentRegistrationContent() {
                   <h2 className="text-xl font-bold text-slate-900">
                     Choose Payment Plan
                   </h2>
-                  {safePaidFormData.paymentTenure !== null && (
-                    <button
-                      type="button"
-                      onClick={() => setShowFeePlanModal(false)}
-                      className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                      aria-label="Close"
-                    >
-                      ✕
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowFeePlanModal(false)}
+                    className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
                 </div>
                 <p className="mb-5 text-sm text-slate-500">
                   Course:{" "}
@@ -1532,6 +1653,86 @@ function StudentRegistrationContent() {
                           key={option.id}
                           type="button"
                           onClick={() => setModalUPGDCFeeChoice(option.id)}
+                          className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                            isSelected
+                              ? "border-violet-600 bg-violet-50"
+                              : "border-slate-200 bg-white hover:border-violet-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div
+                                className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                                  isSelected
+                                    ? "border-violet-600"
+                                    : "border-slate-400"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900">
+                                  {option.title}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {option.note}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs. {option.totalAmount}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {option.tenure === "instalment"
+                                  ? "Instalment"
+                                  : "Full Payment"}
+                              </p>
+                            </div>
+                          </div>
+                          {option.instalments && (
+                            <div className="ml-8 mt-3 space-y-1.5">
+                              {option.instalments.map((inst, idx) => (
+                                <div
+                                  key={`${option.id}-${inst.label}-${idx}`}
+                                  className="flex items-center justify-between rounded-lg bg-white/80 px-3 py-1.5 text-sm"
+                                >
+                                  <div>
+                                    <span className="font-medium text-slate-700">
+                                      {inst.label}
+                                    </span>
+                                    <span className="ml-2 text-xs text-slate-400">
+                                      · {inst.note}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`font-semibold ${
+                                      idx === 0
+                                        ? "text-violet-700"
+                                        : "text-slate-500"
+                                    }`}
+                                  >
+                                    Rs. {inst.amount}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : isGICCourse ? (
+                  <div className="space-y-3">
+                    {gicFeeOptions.map((option) => {
+                      const isSelected = modalGICFeeChoice === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setModalGICFeeChoice(option.id)}
                           className={`w-full rounded-xl border-2 p-4 text-left transition ${
                             isSelected
                               ? "border-violet-600 bg-violet-50"
@@ -1734,6 +1935,15 @@ function StudentRegistrationContent() {
                         "paymentTenure",
                         selectedOption?.tenure ?? "full",
                       );
+                    } else if (isGICCourse) {
+                      const selectedOption = gicFeeOptions.find(
+                        (option) => option.id === modalGICFeeChoice,
+                      );
+                      updatePaidField("gicFeeOption", modalGICFeeChoice);
+                      updatePaidField(
+                        "paymentTenure",
+                        selectedOption?.tenure ?? "full",
+                      );
                     } else {
                       updatePaidField("paymentTenure", modalPlanChoice);
                     }
@@ -1750,9 +1960,15 @@ function StudentRegistrationContent() {
                             (option) => option.id === modalUPGDCFeeChoice,
                           )?.title ?? "UP GDC Plan"
                         }`
-                      : modalPlanChoice === "full"
-                        ? "Full Payment"
-                        : "Instalment Plan"}
+                      : isGICCourse
+                        ? `Selected - ${
+                            gicFeeOptions.find(
+                              (option) => option.id === modalGICFeeChoice,
+                            )?.title ?? "GIC Plan"
+                          }`
+                        : modalPlanChoice === "full"
+                          ? "Full Payment"
+                          : "Instalment Plan"}
                 </button>
               </div>
             </div>

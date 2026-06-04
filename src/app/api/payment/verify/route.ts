@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 const adminPaymentRecipient =
   process.env.PAYMENT_NOTIFICATION_EMAIL ??
   process.env.ADMIN_PAYMENT_EMAIL ??
-  "lepearledu@gmail.com";
+  "admin@lepearleducation.com";
 
 function normalizeForMatch(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");

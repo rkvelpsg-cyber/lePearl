@@ -96,30 +96,36 @@ export async function POST(req: NextRequest) {
 
     const { data: tests, error: testsError } = await service
       .from("mock_tests")
-      .select("id, batch_id, course_id")
+      .select("id, batch_id, course_id, test_type")
       .in("id", requestedTestIds);
 
     if (testsError) throw testsError;
 
-    const accessibleTestIds = (
+    const accessibleTests = (
       (tests ?? []) as Array<{
         id: number;
         batch_id: number | null;
         course_id: number | null;
+        test_type: string | null;
       }>
-    )
-      .filter((test) => {
-        if (test.batch_id != null) return allowedBatchIds.has(test.batch_id);
-        if (test.course_id != null) return allowedCourseIds.has(test.course_id);
-        return false;
-      })
-      .map((test) => test.id);
+    ).filter((test) => {
+      if (test.batch_id != null) return allowedBatchIds.has(test.batch_id);
+      if (test.course_id != null) return allowedCourseIds.has(test.course_id);
+      return false;
+    });
+
+    const accessibleTestIds = accessibleTests.map((test) => test.id);
 
     if (accessibleTestIds.length === 0) {
       return NextResponse.json({ summaries: {} });
     }
 
-    const [ownAttemptsRes, allAttemptsRes] = await Promise.all([
+    const testTypeById = new Map<number, string | null>();
+    accessibleTests.forEach((test) => {
+      testTypeById.set(test.id, test.test_type ?? null);
+    });
+
+    const [ownAttemptsRes, allAttemptsRes, scoreRowsRes] = await Promise.all([
       service
         .from("mock_test_attempts")
         .select("mock_test_id, scored_marks")
@@ -129,19 +135,77 @@ export async function POST(req: NextRequest) {
         .from("mock_test_attempts")
         .select("mock_test_id, student_user_id, scored_marks, attempted_at")
         .in("mock_test_id", accessibleTestIds),
+      service
+        .from("student_mock_test_scores")
+        .select(
+          "mock_test_id, student_user_id, mcq_score, descriptive_score, updated_at",
+        )
+        .in("mock_test_id", accessibleTestIds),
     ]);
 
     if (ownAttemptsRes.error) throw ownAttemptsRes.error;
     if (allAttemptsRes.error) throw allAttemptsRes.error;
 
-    const ownAttempts = new Map<number, number>();
-    (
-      (ownAttemptsRes.data ?? []) as Array<{
+    // Table may not exist in older DB snapshots. In that case, rank with attempts only.
+    if (
+      scoreRowsRes.error &&
+      scoreRowsRes.error.code !== "42P01" &&
+      scoreRowsRes.error.code !== "42703"
+    ) {
+      throw scoreRowsRes.error;
+    }
+
+    const mergedByTestAndStudent = new Map<
+      string,
+      {
         mock_test_id: number;
+        student_user_id: string;
         scored_marks: number;
+        attempted_at: string | null;
+      }
+    >();
+
+    (
+      (allAttemptsRes.data ?? []) as Array<{
+        mock_test_id: number;
+        student_user_id: string;
+        scored_marks: number;
+        attempted_at: string | null;
       }>
     ).forEach((row) => {
-      ownAttempts.set(row.mock_test_id, Number(row.scored_marks ?? 0));
+      const key = `${row.mock_test_id}:${row.student_user_id}`;
+      mergedByTestAndStudent.set(key, {
+        mock_test_id: row.mock_test_id,
+        student_user_id: row.student_user_id,
+        scored_marks: Number(row.scored_marks ?? 0),
+        attempted_at: row.attempted_at,
+      });
+    });
+
+    (
+      ((scoreRowsRes.data ?? []) as Array<{
+        mock_test_id: number;
+        student_user_id: string;
+        mcq_score: number | null;
+        descriptive_score: number | null;
+        updated_at: string | null;
+      }>) ?? []
+    ).forEach((row) => {
+      const testType = testTypeById.get(row.mock_test_id);
+      const selectedScore =
+        testType === "descriptive"
+          ? row.descriptive_score
+          : (row.mcq_score ?? row.descriptive_score);
+
+      if (selectedScore == null) return;
+
+      const key = `${row.mock_test_id}:${row.student_user_id}`;
+      mergedByTestAndStudent.set(key, {
+        mock_test_id: row.mock_test_id,
+        student_user_id: row.student_user_id,
+        scored_marks: Number(selectedScore),
+        attempted_at: row.updated_at,
+      });
     });
 
     const attemptsByTest = new Map<
@@ -153,14 +217,7 @@ export async function POST(req: NextRequest) {
       }>
     >();
 
-    (
-      (allAttemptsRes.data ?? []) as Array<{
-        mock_test_id: number;
-        student_user_id: string;
-        scored_marks: number;
-        attempted_at: string | null;
-      }>
-    ).forEach((row) => {
+    Array.from(mergedByTestAndStudent.values()).forEach((row) => {
       const list = attemptsByTest.get(row.mock_test_id) ?? [];
       list.push({
         student_user_id: row.student_user_id,
@@ -173,7 +230,12 @@ export async function POST(req: NextRequest) {
     const summaries: Record<number, ResultSummary> = {};
 
     accessibleTestIds.forEach((testId) => {
-      const ownScore = ownAttempts.get(testId);
+      const ownAttempt = Array.from(mergedByTestAndStudent.values()).find(
+        (row) =>
+          row.mock_test_id === testId &&
+          row.student_user_id === tokenStudent.userId,
+      );
+      const ownScore = ownAttempt?.scored_marks;
       if (ownScore == null) return;
 
       const ranked = (attemptsByTest.get(testId) ?? []).sort((a, b) => {

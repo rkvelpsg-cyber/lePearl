@@ -188,16 +188,53 @@ type EnrollmentRow = {
   batch_id: number;
   batches: {
     batch_name: string;
+    faculty_user_id: string | null;
     courses: { id: number; title: string } | null;
   } | null;
 };
 
-const ONBOARDING_VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 const PROFILE_PHOTO_KEY_PREFIX = "lepearl-student-profile-photo";
+const PROFILE_PHOTO_NAME_KEY_PREFIX = "lepearl-student-profile-photo-name";
+const DEFAULT_FACULTY_KEY = "__default__";
+const FACULTY_FULL_NAME_BY_TOKEN: Record<string, string> = {
+  pandey: "Dr Prem Shankar Pandey",
+  sadhana: "Ms Sadhana",
+  patel: "Ms Neelu Patel",
+  mallick: "Dr Babli Mallick",
+};
 
 function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
   return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+function normalizeCourseKey(value: string | null | undefined) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+function inferFacultyFromBatchName(batchName: string | null | undefined) {
+  const raw = String(batchName ?? "").trim();
+  if (!raw) return null;
+
+  const tokens = raw
+    .split(/[-_]/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  if (tokens.length < 2) return null;
+
+  const inferred = tokens[tokens.length - 2];
+  if (!inferred || /^[A-Za-z]$/.test(inferred) || /^\d+$/.test(inferred)) {
+    return null;
+  }
+
+  const token = inferred.toLowerCase();
+  if (FACULTY_FULL_NAME_BY_TOKEN[token]) {
+    return FACULTY_FULL_NAME_BY_TOKEN[token];
+  }
+
+  return inferred.toLowerCase().replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
 function pct(n: number, d: number) {
   return d === 0 ? 0 : Math.round((n / d) * 100);
@@ -232,17 +269,46 @@ function optionText(question: McqQuestion, option: "A" | "B" | "C" | "D") {
 function localDateKey(d: Date = new Date()) {
   return localDateKeyIST(d);
 }
+function getSessionStartMinutes(startTime: string | null) {
+  if (!startTime) return null;
+  const [h, m] = startTime.split(":").map((v) => parseInt(v, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
 function isUpcomingSession(sessionDate: string, startTime: string | null) {
   const today = localDateKey();
   if (sessionDate > today) return true;
   if (sessionDate < today) return false;
-  if (!startTime) return true;
+  const sessionMinutes = getSessionStartMinutes(startTime);
+  if (sessionMinutes === null) return true;
 
-  const [h, m] = startTime.split(":").map((v) => parseInt(v, 10));
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const sessionMinutes = h * 60 + m;
   return sessionMinutes > nowMinutes;
+}
+
+function isRecentSession(sessionDate: string, startTime: string | null) {
+  const today = localDateKey();
+  if (sessionDate < today) return true;
+  if (sessionDate > today) return false;
+
+  const sessionMinutes = getSessionStartMinutes(startTime);
+  if (sessionMinutes === null) return false;
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return sessionMinutes <= nowMinutes;
+}
+
+function shouldIndentMcqQuestion(questionText: string) {
+  const normalized = questionText.toLowerCase();
+  return (
+    questionText.includes("\n") ||
+    normalized.includes("question:") ||
+    normalized.includes("assertion") ||
+    normalized.includes("reason") ||
+    questionText.length > 180
+  );
 }
 
 function mergePaymentHistory(
@@ -375,11 +441,16 @@ export default function StudentDashboardPage() {
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(
     null,
   );
+  const [profilePhotoFileName, setProfilePhotoFileName] =
+    useState<string>("No File Choosen");
   const [profilePhotoMsg, setProfilePhotoMsg] = useState<string | null>(null);
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
     null,
   );
   const [courses, setCourses] = useState<CourseProgress[]>([]);
+  const [facultyByCourseName, setFacultyByCourseName] = useState<
+    Record<string, string>
+  >({});
   const [batchLabel, setBatchLabel] = useState<string | null>(null);
   const [batchIds, setBatchIds] = useState<number[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<
@@ -404,6 +475,8 @@ export default function StudentDashboardPage() {
   const [selectedDescriptiveTest, setSelectedDescriptiveTest] =
     useState<McqTest | null>(null);
   const [uploadingFullSheet, setUploadingFullSheet] = useState(false);
+  const [fullSheetFileName, setFullSheetFileName] =
+    useState<string>("No File Choosen");
   const [uploadMsg, setUploadMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -449,15 +522,30 @@ export default function StudentDashboardPage() {
       `${PROFILE_PHOTO_KEY_PREFIX}-${userId}`,
     );
     if (stored) setProfilePhotoPreview(stored);
+
+    const storedFileName = window.localStorage.getItem(
+      `${PROFILE_PHOTO_NAME_KEY_PREFIX}-${userId}`,
+    );
+    if (storedFileName) {
+      setProfilePhotoFileName(storedFileName);
+    } else {
+      setProfilePhotoFileName("No File Choosen");
+    }
   }, [userId]);
 
   function handleProfilePhotoChange(file: File | null) {
-    if (!file || !userId) return;
+    if (!userId) return;
+    if (!file) {
+      setProfilePhotoFileName("No File Choosen");
+      return;
+    }
     if (!file.type.startsWith("image/")) {
       setProfilePhotoMsg("Please upload a valid image file.");
+      setProfilePhotoFileName("No File Choosen");
       return;
     }
 
+    setProfilePhotoFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = typeof reader.result === "string" ? reader.result : null;
@@ -467,7 +555,11 @@ export default function StudentDashboardPage() {
         `${PROFILE_PHOTO_KEY_PREFIX}-${userId}`,
         dataUrl,
       );
-      setProfilePhotoMsg("Profile picture updated.");
+      window.localStorage.setItem(
+        `${PROFILE_PHOTO_NAME_KEY_PREFIX}-${userId}`,
+        file.name,
+      );
+      setProfilePhotoMsg("Profile picture uploaded.");
     };
     reader.readAsDataURL(file);
   }
@@ -500,7 +592,9 @@ export default function StudentDashboardPage() {
           .single(),
         supabase
           .from("enrollments")
-          .select("batch_id, batches(batch_name, courses(id, title))")
+          .select(
+            "batch_id, batches(batch_name, faculty_user_id, courses(id, title))",
+          )
           .eq("student_user_id", uid),
       ]);
 
@@ -516,6 +610,57 @@ export default function StudentDashboardPage() {
 
       const enrollRows =
         (enrollRes.data as unknown as EnrollmentRow[] | null) ?? [];
+
+      const facultyIds = Array.from(
+        new Set(
+          enrollRows
+            .map((row) => unwrapOne(row.batches)?.faculty_user_id)
+            .filter((id): id is string => !!id),
+        ),
+      );
+
+      const facultyNameByUserId: Record<string, string> = {};
+      if (facultyIds.length > 0) {
+        const { data: facultyProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", facultyIds)
+          .eq("role", "faculty");
+
+        (
+          (facultyProfiles ?? []) as Array<{
+            user_id: string;
+            full_name: string;
+          }>
+        ).forEach((faculty) => {
+          facultyNameByUserId[faculty.user_id] = faculty.full_name;
+        });
+      }
+
+      const facultyMap: Record<string, string> = {};
+      enrollRows.forEach((row) => {
+        const batch = unwrapOne(row.batches) as {
+          batch_name: string;
+          faculty_user_id: string | null;
+          courses: { id: number; title: string } | null;
+        } | null;
+
+        const courseTitle = unwrapOne(batch?.courses)?.title?.trim();
+        const facultyName =
+          (batch?.faculty_user_id
+            ? facultyNameByUserId[batch.faculty_user_id]
+            : null) || inferFacultyFromBatchName(batch?.batch_name);
+
+        if (courseTitle && facultyName) {
+          const key = normalizeCourseKey(courseTitle);
+          if (!facultyMap[key]) facultyMap[key] = facultyName;
+        }
+        if (facultyName && !facultyMap[DEFAULT_FACULTY_KEY]) {
+          facultyMap[DEFAULT_FACULTY_KEY] = facultyName;
+        }
+      });
+      setFacultyByCourseName(facultyMap);
+
       const ids = enrollRows.map((e) => e.batch_id).filter(Boolean);
       setBatchIds(ids);
       const firstBatch = unwrapOne(enrollRows[0]?.batches) as {
@@ -731,6 +876,7 @@ export default function StudentDashboardPage() {
           .select(
             "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, available_until, is_published, courses(title), batches(batch_name)",
           )
+          .in("batch_id", ids)
           .eq("is_published", true)
           .order("scheduled_at", { ascending: true });
 
@@ -746,6 +892,7 @@ export default function StudentDashboardPage() {
             .select(
               "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, courses(title), batches(batch_name)",
             )
+            .in("batch_id", ids)
             .eq("is_published", true)
             .order("scheduled_at", { ascending: true });
 
@@ -930,17 +1077,23 @@ export default function StudentDashboardPage() {
       await supabase.from("mcq_student_answers").upsert(answers, {
         onConflict: "mock_test_id,student_user_id,question_id",
       });
-      const scored = answers.reduce(
-        (s, a) =>
-          a.is_correct
-            ? s +
-              (activeTest.questions.find((q) => q.id === a.question_id)
-                ?.marks ?? 1)
-            : a.chosen_option !== null
-              ? s - Number(activeTest.test.negative_marking ?? 0)
-              : s,
-        0,
-      );
+      const negativePerWrong = Number(activeTest.test.negative_marking ?? 0);
+      const correctMarks = answers.reduce((sum, answer) => {
+        if (!answer.is_correct) return sum;
+        const qMarks = Number(
+          activeTest.questions.find((q) => q.id === answer.question_id)
+            ?.marks ?? 1,
+        );
+        return sum + qMarks;
+      }, 0);
+      const wrongAttempts = answers.filter(
+        (answer) => answer.chosen_option !== null && !answer.is_correct,
+      ).length;
+      const penalty = wrongAttempts * negativePerWrong;
+      const rawScore =
+        negativePerWrong > 0 ? correctMarks - penalty : correctMarks;
+      const scored =
+        negativePerWrong > 0 ? Number(rawScore.toFixed(2)) : rawScore;
       await supabase.from("mock_test_attempts").upsert(
         {
           mock_test_id: activeTest.test.id,
@@ -1164,6 +1317,7 @@ export default function StudentDashboardPage() {
 
     setDescriptiveQuestions((qData || []) as unknown as DescriptiveQuestion[]);
     setSelectedDescriptiveTest(test);
+    setFullSheetFileName("No File Choosen");
 
     if (!qData || qData.length === 0) {
       setUploadMsg({
@@ -1176,6 +1330,8 @@ export default function StudentDashboardPage() {
   async function handleFullSheetUpload(file: File | null) {
     if (!file || !selectedDescriptiveTest) return;
 
+    setFullSheetFileName(file.name);
+
     const isPdf =
       file.type === "application/pdf" ||
       file.name.toLowerCase().endsWith(".pdf");
@@ -1183,14 +1339,6 @@ export default function StudentDashboardPage() {
       setUploadMsg({
         type: "err",
         text: "Please upload only a PDF file for the full answer sheet.",
-      });
-      return;
-    }
-
-    if (descriptiveQuestions.length === 0) {
-      setUploadMsg({
-        type: "err",
-        text: "No descriptive questions found for this test.",
       });
       return;
     }
@@ -1233,33 +1381,61 @@ export default function StudentDashboardPage() {
       }
 
       const submittedAt = new Date().toISOString();
-      const rows = descriptiveQuestions.map((q) => ({
-        mock_test_id: selectedDescriptiveTest.id,
-        student_user_id: user.user.id,
-        question_id: q.id,
-        answer_file_url: uploadJson.publicUrl,
-        submitted_at: submittedAt,
-      }));
 
-      const { error: answerError } = await supabase
-        .from("descriptive_student_answers")
-        .upsert(rows);
+      if (descriptiveQuestions.length > 0) {
+        // Test has individual questions — upsert one row per question
+        const rows = descriptiveQuestions.map((q) => ({
+          mock_test_id: selectedDescriptiveTest.id,
+          student_user_id: user.user!.id,
+          question_id: q.id,
+          answer_file_url: uploadJson.publicUrl,
+          submitted_at: submittedAt,
+        }));
 
-      if (answerError) throw answerError;
+        const { error: answerError } = await supabase
+          .from("descriptive_student_answers")
+          .upsert(rows, {
+            onConflict: "mock_test_id,student_user_id,question_id",
+          });
+
+        if (answerError) throw answerError;
+      } else {
+        // Full-sheet test with no individual questions — one row, question_id = null
+        // Delete any previous full-sheet submission for this test+student first
+        await supabase
+          .from("descriptive_student_answers")
+          .delete()
+          .eq("mock_test_id", selectedDescriptiveTest.id)
+          .eq("student_user_id", user.user!.id)
+          .is("question_id", null);
+
+        const { error: answerError } = await supabase
+          .from("descriptive_student_answers")
+          .insert({
+            mock_test_id: selectedDescriptiveTest.id,
+            student_user_id: user.user!.id,
+            question_id: null,
+            answer_file_url: uploadJson.publicUrl,
+            submitted_at: submittedAt,
+          });
+
+        if (answerError) throw answerError;
+      }
 
       const { data: updatedAnswers } = await supabase
         .from("descriptive_student_answers")
         .select("*")
-        .eq("student_user_id", user.user.id)
+        .eq("student_user_id", user.user!.id)
         .eq("mock_test_id", selectedDescriptiveTest.id);
 
       if (updatedAnswers) {
         setDescriptiveAnswers(updatedAnswers as unknown as DescriptiveAnswer[]);
       }
 
+      setFullSheetFileName("No File Choosen");
       setUploadMsg({
         type: "ok",
-        text: "Full answer sheet uploaded successfully for all questions.",
+        text: "Answer sheet submitted successfully! Your faculty will review it shortly.",
       });
     } catch (err) {
       console.error(err);
@@ -1439,6 +1615,24 @@ export default function StudentDashboardPage() {
       ? "Full Payment"
       : "Instalment"
     : "N/A";
+  const selectedCourseName =
+    paidRegistration?.course?.trim() ||
+    courses[0]?.courses?.title ||
+    studentProfile?.target_exam ||
+    "Not Assigned";
+  const assignedFacultyForSelectedCourse =
+    facultyByCourseName[normalizeCourseKey(selectedCourseName)] ||
+    facultyByCourseName[DEFAULT_FACULTY_KEY] ||
+    null;
+  const selectedCourseFacultyName =
+    assignedFacultyForSelectedCourse ||
+    courses.find(
+      (course) =>
+        course.courses?.title?.trim().toLowerCase() ===
+        selectedCourseName.trim().toLowerCase(),
+    )?.instructor_name ||
+    courses.find((course) => course.instructor_name)?.instructor_name ||
+    "Not Assigned";
   const overallProgress =
     courses.length > 0
       ? Math.round(
@@ -1446,13 +1640,11 @@ export default function StudentDashboardPage() {
         )
       : 0;
   const liveSessions = classSessions.filter((s) => s.is_live);
-  const upcomingSessions = classSessions.filter(
-    (s) => !s.is_live && isUpcomingSession(s.session_date, s.start_time),
+  const upcomingSessions = classSessions.filter((s) =>
+    isUpcomingSession(s.session_date, s.start_time),
   );
   const recentSessions = classSessions
-    .filter(
-      (s) => !s.is_live && !isUpcomingSession(s.session_date, s.start_time),
-    )
+    .filter((s) => isRecentSession(s.session_date, s.start_time))
     .slice(0, 10);
 
   /* â”€â”€ loading / error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1538,9 +1730,15 @@ export default function StudentDashboardPage() {
                   className="bg-gray-50 rounded-xl p-5 border border-gray-200"
                 >
                   <div className="flex items-start justify-between gap-3 mb-4">
-                    <p className="font-semibold text-gray-900">
+                    <p className="font-semibold text-gray-900 leading-7">
                       <span className="text-purple-600 mr-2">Q{idx + 1}.</span>
-                      {q.question_text}
+                      {shouldIndentMcqQuestion(q.question_text) ? (
+                        <span className="block pl-6 mt-1 whitespace-pre-line border-l-2 border-gray-200">
+                          {q.question_text}
+                        </span>
+                      ) : (
+                        q.question_text
+                      )}
                     </p>
                     <span
                       className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${q.is_correct ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
@@ -1603,7 +1801,10 @@ export default function StudentDashboardPage() {
               </div>
               {testSubmitted ? (
                 <button
-                  onClick={() => setActiveTest(null)}
+                  onClick={() => {
+                    setActiveTest(null);
+                    setTestSubmitted(false);
+                  }}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-semibold text-sm"
                 >
                   <X className="w-4 h-4" /> Close
@@ -1678,13 +1879,20 @@ export default function StudentDashboardPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button
-                    onClick={() => void openMcqReview(activeTest.test)}
+                    onClick={async () => {
+                      await openMcqReview(activeTest.test);
+                      setActiveTest(null);
+                      setTestSubmitted(false);
+                    }}
                     className="px-8 py-3 bg-white border border-purple-200 text-purple-700 rounded-xl font-semibold"
                   >
                     Review Answers
                   </button>
                   <button
-                    onClick={() => setActiveTest(null)}
+                    onClick={() => {
+                      setActiveTest(null);
+                      setTestSubmitted(false);
+                    }}
                     className="px-8 py-3 bg-purple-600 text-white rounded-xl font-semibold"
                   >
                     Close
@@ -1698,10 +1906,16 @@ export default function StudentDashboardPage() {
                     key={q.id}
                     className="bg-gray-50 rounded-xl p-5 border border-gray-200"
                   >
-                    <p className="font-semibold text-gray-900 mb-3">
+                    <p className="font-semibold text-gray-900 mb-3 leading-7">
                       <span className="text-purple-600 mr-2">Q{idx + 1}.</span>
-                      {q.question_text}
-                      <span className="ml-2 text-xs text-gray-500">
+                      {shouldIndentMcqQuestion(q.question_text) ? (
+                        <span className="block pl-6 mt-1 whitespace-pre-line border-l-2 border-purple-200">
+                          {q.question_text}
+                        </span>
+                      ) : (
+                        q.question_text
+                      )}
+                      <span className="ml-2 text-xs text-gray-500 align-middle">
                         ({q.marks} mark{q.marks > 1 ? "s" : ""})
                       </span>
                     </p>
@@ -1921,20 +2135,17 @@ export default function StudentDashboardPage() {
                     </div>
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                       <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
-                        Onboarding Video
+                        Faculty Name
                       </p>
-                      <p className="mt-2 text-sm text-gray-600">
-                        Start here to understand your dashboard, classes and
-                        test workflow.
+                      <p className="mt-1 text-base font-bold text-gray-900 break-words">
+                        {selectedCourseFacultyName}
                       </p>
-                      <a
-                        href={ONBOARDING_VIDEO_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-700"
-                      >
-                        <PlayCircle className="h-4 w-4" /> Watch Onboarding
-                      </a>
+                      <p className="mt-3 text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                        Course Name
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-indigo-700 break-words">
+                        {selectedCourseName}
+                      </p>
                     </div>
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                       <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
@@ -1943,13 +2154,25 @@ export default function StudentDashboardPage() {
                       <p className="mt-2 text-sm text-gray-600">
                         Upload your profile photo for dashboard personalization.
                       </p>
+                      <div className="mt-3 flex items-center gap-3">
+                        <label
+                          htmlFor="student-profile-photo-upload"
+                          className="inline-flex cursor-pointer items-center rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                        >
+                          Upload Picture
+                        </label>
+                        <span className="text-xs text-gray-600 truncate">
+                          {profilePhotoFileName || "No File Choosen"}
+                        </span>
+                      </div>
                       <input
+                        id="student-profile-photo-upload"
                         type="file"
                         accept="image/*"
                         onChange={(e) =>
                           handleProfilePhotoChange(e.target.files?.[0] ?? null)
                         }
-                        className="mt-3 block w-full text-xs text-gray-600"
+                        className="hidden"
                       />
                       {profilePhotoMsg && (
                         <p className="mt-2 text-xs text-emerald-700">
@@ -2337,22 +2560,48 @@ export default function StudentDashboardPage() {
                             Upload one combined PDF at the end; it will be
                             submitted for all descriptive questions.
                           </p>
+                          <div className="flex items-center gap-3">
+                            <label
+                              htmlFor="descriptive-full-sheet-upload"
+                              className={`inline-flex items-center rounded-lg px-3 py-2 text-xs font-semibold text-white ${uploadingFullSheet ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 cursor-pointer"}`}
+                            >
+                              Upload Answer Sheet
+                            </label>
+                            <span className="text-xs text-gray-600 truncate">
+                              {fullSheetFileName || "No File Choosen"}
+                            </span>
+                          </div>
                           <input
+                            id="descriptive-full-sheet-upload"
                             type="file"
                             accept=".pdf,application/pdf"
                             disabled={uploadingFullSheet}
                             onChange={(e) => {
                               if (e.target.files?.[0]) {
-                                handleFullSheetUpload(e.target.files[0]);
+                                void handleFullSheetUpload(e.target.files[0]);
+                              } else {
+                                setFullSheetFileName("No File Choosen");
                               }
+                              e.currentTarget.value = "";
                             }}
-                            className="text-xs"
+                            className="hidden"
                           />
                           {uploadingFullSheet && (
                             <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
                               <Loader2 className="w-3 h-3 animate-spin" />
                               Uploading full answer sheet...
                             </div>
+                          )}
+                          {uploadMsg && (
+                            <p
+                              className={`mt-2 text-xs font-semibold ${
+                                uploadMsg.type === "ok"
+                                  ? "text-green-700"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {uploadMsg.text}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -2702,6 +2951,11 @@ export default function StudentDashboardPage() {
                                   {isToday && (
                                     <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
                                       Today
+                                    </span>
+                                  )}
+                                  {s.start_time && (
+                                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">
+                                      Starts at {fmtTime(s.start_time)}
                                     </span>
                                   )}
                                 </div>

@@ -99,9 +99,9 @@ const mainsFeePlans = [
   {
     title: "GDC Mains (With Study Material)",
     amount: "Rs.15,995",
-    cta: "Fill Registration Form",
+    cta: "Enroll Now",
     ctaClass:
-      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
     cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
     features: [
       "Full course access for GDC Mains",
@@ -116,9 +116,9 @@ const mainsFeePlans = [
   {
     title: "Instalments for GDC Mains (With Study Material)",
     amount: "Rs.5,495 x 3",
-    cta: "Fill Registration Form",
+    cta: "Enroll Now",
     ctaClass:
-      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
     cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
     features: [
       "Full course access for GDC Mains",
@@ -152,9 +152,9 @@ const prelimsFeePlans = [
   {
     title: "Instalments for Only Prelims",
     amount: "Rs.3,995 x 3",
-    cta: "Fill Registration Form",
+    cta: "Enroll Now",
     ctaClass:
-      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
     cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
     features: [
       "Full course access for Prelims only",
@@ -190,9 +190,9 @@ const generalStudiesFeePlans = [
   {
     title: "Instalments for both Prelims + Mains",
     amount: "Rs.6,995 x 3",
-    cta: "Fill Registration Form",
+    cta: "Enroll Now",
     ctaClass:
-      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
     cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
     features: [
       "Full course access for Prelims + Mains",

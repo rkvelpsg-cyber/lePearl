@@ -31,11 +31,11 @@ export const paidRegistrationCourseFees: Partial<
   Record<StudentRegistrationCourse, number>
 > = {
   MPPSC: 8999,
-  UPHESC: 4995,
+  UPHESC: 14995,
   "UP GDC": 13995,
-  "NET Paper 1": 8999,
+  "NET Paper 1": 8995,
   "NET Paper 2 (English)": 8999,
-  GIC: 7995,
+  GIC: 9995,
   "LT Grade": 5995,
   "Interview Preparation - Assistant Professor": 7495,
   "Interview Preparation - DU Interview": 7495,
@@ -78,17 +78,22 @@ export const coursePaymentPlans: Record<
     ],
   },
   UPHESC: {
-    fullAmount: 4995,
+    fullAmount: 14995,
     instalments: [
       {
         label: "1st Instalment",
-        amount: 2250,
+        amount: 5495,
         note: "Pay now · Instant access",
       },
       {
         label: "2nd Instalment",
-        amount: 2250,
+        amount: 5495,
         note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 5495,
+        note: "Due 60 days after enrolment",
       },
     ],
   },
@@ -113,32 +118,22 @@ export const coursePaymentPlans: Record<
     ],
   },
   "NET Paper 1": {
-    fullAmount: 8999,
+    fullAmount: 8995,
     instalments: [
       {
         label: "1st Instalment",
-        amount: 2000,
+        amount: 3495,
         note: "Pay now · Instant access",
       },
       {
         label: "2nd Instalment",
-        amount: 2000,
+        amount: 3495,
         note: "Due 30 days after enrolment",
       },
       {
         label: "3rd Instalment",
-        amount: 2000,
+        amount: 3495,
         note: "Due 60 days after enrolment",
-      },
-      {
-        label: "4th Instalment",
-        amount: 2000,
-        note: "Due 90 days after enrolment",
-      },
-      {
-        label: "5th Instalment",
-        amount: 2000,
-        note: "Due 120 days after enrolment",
       },
     ],
   },
@@ -173,19 +168,7 @@ export const coursePaymentPlans: Record<
     ],
   },
   GIC: {
-    fullAmount: 7995,
-    instalments: [
-      {
-        label: "1st Instalment",
-        amount: 4397,
-        note: "Pay now · Instant access",
-      },
-      {
-        label: "2nd Instalment",
-        amount: 4397,
-        note: "Due 30 days after enrolment",
-      },
-    ],
+    fullAmount: 9995,
   },
   "LT Grade": {
     fullAmount: 5995,

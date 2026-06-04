@@ -474,9 +474,9 @@ function EnrollmentSection() {
 
             <a
               href="/student-registration?mode=paid&course=NET%20Paper%202%20(English)"
-              className="block w-full rounded-lg bg-amber-500 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-amber-600"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
             >
-              Fill Registration Form
+              Enroll Now
             </a>
           </div>
         </div>

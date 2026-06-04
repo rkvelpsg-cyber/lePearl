@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useEffect, useRef } from "react";
 import {
   GraduationCap,
   Download,
@@ -15,8 +16,10 @@ import {
   MessageCircle,
   UserCheck,
   Sparkles,
+  Play,
+  ChevronLeft,
+  ChevronRight,
   Star,
-  Quote,
   Check,
   Mail,
   Phone,
@@ -251,38 +254,117 @@ function Features() {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Testimonials
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const testimonials = [
+type MPPScVideoStory = {
+  id: string;
+  videoId: string;
+  videoUrl: string;
+  studentName: string;
+  role: string;
+  thumbnailUrl: string;
+};
+
+const mppscStories: MPPScVideoStory[] = [
   {
-    name: "Dr. Babli Mallick",
-    image: "/babil_faculty2.jpeg",
-    role: "Assistant Professor, Madhya Pradesh Public Service Commission-2025",
-    quote:
-      "LePearl's structured mentorship and exam-focused guidance helped me succeed in the MPPSC Assistant Professor exam.",
+    id: "mppsc-1",
+    videoId: "XGYapIjesQE",
+    videoUrl:
+      "https://www.youtube.com/watch?v=XGYapIjesQE&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=24",
+    studentName: "Dr. Babli Mallick, Assistant Professor, MPPSC-2025",
+    role: "Assistant Professor, MPPSC-2025",
+    thumbnailUrl: "https://img.youtube.com/vi/XGYapIjesQE/hqdefault.jpg",
   },
   {
-    name: "Mr Shubham Singh",
-    image: "/Shubham%20Singh.jpeg",
-    role: "Madhya Pradesh Public Service Commission-2025",
-    quote:
-      "Consistent mock practice and detailed feedback from LePearl helped me clear MPPSC Assistant Professor.",
+    id: "mppsc-2",
+    videoId: "sCxQ07TKzc0",
+    videoUrl:
+      "https://www.youtube.com/watch?v=sCxQ07TKzc0&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=25",
+    studentName:
+      "Mr Balram Mishra, Assistant Professor, Madhya Pradesh Public Service Commission-2025",
+    role: "Assistant Professor, MPPSC-2025",
+    thumbnailUrl: "https://img.youtube.com/vi/sCxQ07TKzc0/hqdefault.jpg",
   },
   {
-    name: "Mr. Vishal Damahe",
-    image: "/Vishal%20Damahe.jpeg",
-    role: "Assistant Professor, Madhya Pradesh Public Service Commission-2025",
-    quote:
-      "The live doubt sessions and study plan at LePearl gave me the confidence to secure my MPPSC faculty role.",
+    id: "mppsc-3",
+    videoId: "lUZ-KE_LLkc",
+    videoUrl:
+      "https://www.youtube.com/watch?v=lUZ-KE_LLkc&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=26",
+    studentName: "Shubham Singh, Assistant Professor, MPPSC-2025",
+    role: "Assistant Professor, MPPSC-2025",
+    thumbnailUrl: "https://img.youtube.com/vi/lUZ-KE_LLkc/hqdefault.jpg",
   },
   {
-    name: "Ms Neelu Patel",
-    image: "/Neelu%20Patel.jpeg",
-    role: "Assistant Professor, Madhya Pradesh Public Service Commission-2025 (AIR 39)",
-    quote:
-      "LePearl's expert faculty and focused preparation strategy helped me achieve AIR 39 in the MPPSC Assistant Professor exam.",
+    id: "mppsc-4",
+    videoId: "9-fngrO0Lc4",
+    videoUrl: "https://www.youtube.com/watch?v=9-fngrO0Lc4",
+    studentName: "Ms Neelu Patel, MPPSC AIR 39",
+    role: "Assistant Professor, MPPSC-2025 (AIR 39)",
+    thumbnailUrl: "https://img.youtube.com/vi/9-fngrO0Lc4/maxresdefault.jpg",
   },
 ];
 
 function Testimonials() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const directionRef = useRef<1 | -1>(1);
+  const manualPauseUntilRef = useRef(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+
+    let frameId = 0;
+
+    const step = () => {
+      if (Date.now() < manualPauseUntilRef.current) {
+        frameId = requestAnimationFrame(step);
+        return;
+      }
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) {
+        frameId = requestAnimationFrame(step);
+        return;
+      }
+
+      if (el.scrollLeft >= maxScroll - 1) {
+        directionRef.current = -1;
+      } else if (el.scrollLeft <= 1) {
+        directionRef.current = 1;
+      }
+
+      el.scrollLeft += 0.6 * directionRef.current;
+      frameId = requestAnimationFrame(step);
+    };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  const handlePrevious = () => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+
+    manualPauseUntilRef.current = Date.now() + 1200;
+    directionRef.current = -1;
+
+    el.scrollBy({ left: -el.clientWidth * 0.85, behavior: "smooth" });
+  };
+
+  const handleNext = () => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+
+    manualPauseUntilRef.current = Date.now() + 1200;
+    directionRef.current = 1;
+
+    el.scrollBy({ left: el.clientWidth * 0.85, behavior: "smooth" });
+  };
+
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -293,45 +375,97 @@ function Testimonials() {
           <div className="w-24 h-1 bg-amber-500 mx-auto"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow relative"
-            >
-              <Quote className="absolute top-6 right-6 w-10 h-10 text-amber-200" />
+        <div className="relative left-1/2 w-screen -translate-x-1/2 px-1 sm:px-2 md:px-4 lg:px-6 xl:px-8">
+          <button
+            onClick={handlePrevious}
+            className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-[#d9d2ff] bg-white/95 p-3 text-[#6A0DAD] shadow-xl transition-all duration-300 hover:scale-110 hover:bg-white md:left-4 lg:left-6"
+            aria-label="Previous stories"
+            type="button"
+          >
+            <ChevronLeft className="h-6 w-6 text-[#6A0DAD]" />
+          </button>
 
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-20 h-20 rounded-full overflow-hidden mb-4 border-4 border-amber-400">
-                  <ImageWithFallback
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h3 className="font-bold text-lg text-blue-900 mb-1">
-                  {testimonial.name}
-                </h3>
-                <p className="text-sm text-amber-600 font-semibold mb-3">
-                  {testimonial.role}
-                </p>
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className="w-4 h-4 fill-amber-400 text-amber-400"
+          <button
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-[#d9d2ff] bg-white/95 p-3 text-[#6A0DAD] shadow-xl transition-all duration-300 hover:scale-110 hover:bg-white md:right-4 lg:right-6"
+            aria-label="Next stories"
+            type="button"
+          >
+            <ChevronRight className="h-6 w-6 text-[#6A0DAD]" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="mppsc-stories-scroll overflow-x-auto px-12 py-1 sm:px-16 md:px-20 lg:px-24"
+          >
+            <div className="flex w-max gap-4 pb-4 md:gap-6">
+              {mppscStories.map((story) => (
+                <article
+                  key={story.id}
+                  className="relative flex-[0_0_clamp(260px,80vw,440px)] snap-start overflow-hidden rounded-lg sm:rounded-2xl bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                >
+                  <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 shadow-md backdrop-blur-sm sm:left-4 sm:top-4 sm:px-3">
+                    <Star className="h-3 w-3 fill-[#6A0DAD] text-[#6A0DAD]" />
+                    <span className="text-xs font-semibold text-[#6A0DAD]">
+                      Success Story
+                    </span>
+                  </div>
+
+                  <a
+                    href={story.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Play ${story.studentName} success story`}
+                    className="relative block aspect-video overflow-hidden bg-gray-900"
+                  >
+                    <ImageWithFallback
+                      src={story.thumbnailUrl}
+                      alt={`${story.studentName} success story`}
+                      className="h-full w-full object-cover"
                     />
-                  ))}
-                </div>
-              </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="rounded-full bg-[#6A0DAD] p-5 shadow-2xl transition-transform duration-300 hover:scale-110">
+                        <Play className="h-8 w-8 fill-white text-white" />
+                      </div>
+                    </div>
+                  </a>
 
-              <p className="text-gray-600 leading-relaxed italic">
-                &ldquo;{testimonial.quote}&rdquo;
-              </p>
+                  <div className="flex min-h-[240px] flex-col p-6">
+                    <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                      {story.studentName}
+                    </h3>
+                    <p className="mb-4 font-medium text-[#6A0DAD]">
+                      {story.role}
+                    </p>
+                    <a
+                      href={story.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#6A0DAD] to-[#1E3A8A] py-3 font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg"
+                    >
+                      <Play className="h-4 w-4 text-white" />
+                      <span className="text-white">Watch Story</span>
+                    </a>
+                  </div>
+                </article>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .mppsc-stories-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          scroll-snap-type: none;
+          scroll-padding-inline: clamp(3rem, 9vw, 8rem);
+        }
+
+        .mppsc-stories-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </section>
   );
 }
@@ -448,9 +582,10 @@ function Pricing() {
 
             <a
               href="/student-registration?mode=paid&course=MPPSC"
-              className="block w-full bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-colors hover:bg-blue-800"
+              style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
             >
-              Fill Registration Form
+              Enroll Now
             </a>
           </div>
         </div>

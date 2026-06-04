@@ -1061,26 +1061,16 @@ export function CoursesBooksSection() {
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.75rem",
+              fontSize: "clamp(0.95rem,1.6vw,1.2rem)",
+              fontWeight: 800,
               color: "#7c3aed",
               textTransform: "uppercase",
               letterSpacing: "3px",
               marginBottom: "1rem",
             }}
           >
-            Programs & Achievement
+            Our Programs & Achievements
           </p>
-          <h2
-            style={{
-              fontFamily: "Playfair Display, serif",
-              fontWeight: 800,
-              fontSize: "clamp(2rem,4vw,3rem)",
-              color: "#221b4a",
-              marginBottom: "1rem",
-            }}
-          >
-            Holistic Success
-          </h2>
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",

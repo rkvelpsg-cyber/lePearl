@@ -435,7 +435,7 @@ function EnrollmentSection() {
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
           <div className="relative overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
             <div className="absolute right-0 top-0 bg-amber-500 px-4 py-1 text-sm font-bold text-white">
-              SAVE ₹3,001
+              SAVE Rs. 3,005
             </div>
 
             <div className="mb-6">
@@ -443,7 +443,9 @@ function EnrollmentSection() {
                 One-Time Payment
               </h3>
               <div className="mb-1 flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-blue-900">₹8,999</span>
+                <span className="text-4xl font-bold text-blue-900">
+                  Rs. 8,995
+                </span>
               </div>
               <p className="text-gray-500 line-through">₹12,000</p>
             </div>
@@ -481,10 +483,10 @@ function EnrollmentSection() {
               </h3>
               <div className="mb-1 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-blue-900">
-                  5 Instalments of ₹2,000
+                  3 Instalments of Rs. 3,495
                 </span>
               </div>
-              <p className="text-gray-600">Total Cost: ₹10,000</p>
+              <p className="text-gray-600">Total Cost: Rs. 10,485</p>
             </div>
 
             <div className="mb-8">
@@ -501,9 +503,9 @@ function EnrollmentSection() {
 
             <a
               href="/student-registration?mode=paid&course=NET%20Paper%201"
-              className="block w-full rounded-lg bg-amber-500 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-amber-600"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
             >
-              Fill Registration Form
+              Enroll Now
             </a>
           </div>
         </div>

@@ -215,6 +215,12 @@ function isUpcomingSession(sessionDate: string, startTime: string | null) {
   const sessionMinutes = h * 60 + m;
   return sessionMinutes > nowMinutes;
 }
+function isIndentedQuestionType(testType?: string | null) {
+  const normalized = String(testType ?? "").toLowerCase();
+  return (
+    normalized === "assertion-reason" || normalized === "paragraph-question"
+  );
+}
 function normalizeAttendanceTitle(title: string) {
   return title.replace(/\s*\(upcoming\)\s*$/i, "").trim();
 }
@@ -471,6 +477,8 @@ export default function FacultyDashboardPage() {
     type: "ok" | "err";
     text: string;
   } | null>(null);
+  const [questionPaperFileName, setQuestionPaperFileName] =
+    useState("No file chosen");
   const [mcqForm, setMcqForm] = useState({
     courseId: "",
     batchId: "",
@@ -1517,7 +1525,11 @@ export default function FacultyDashboardPage() {
       });
       resetMcqForm();
       load();
-      if (insertData) setSelectedTest(insertData as McqTestFaculty);
+      if (insertData) {
+        setSelectedTest(insertData as McqTestFaculty);
+        setTestQuestions([]);
+        setShowQForm(false);
+      }
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "message" in err
@@ -1808,10 +1820,25 @@ export default function FacultyDashboardPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      const { data: facultyBatches, error: batchesError } = await supabase
+        .from("batches")
+        .select("id")
+        .eq("faculty_user_id", user.id);
+
+      if (batchesError) throw batchesError;
+
+      const batchIds = (facultyBatches ?? []).map((b) => b.id);
+      if (batchIds.length === 0) {
+        setDescriptiveTests([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("mock_tests")
         .select("*,batches(batch_name),courses(title)")
-        .eq("test_type", "descriptive");
+        .eq("test_type", "descriptive")
+        .in("batch_id", batchIds)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setDescriptiveTests(data || []);
@@ -1841,41 +1868,40 @@ export default function FacultyDashboardPage() {
   async function loadSubmissions(testId: number) {
     const supabase = createClient();
     try {
-      // Fetch submissions without the student_profiles join first
-      const { data, error } = await supabase
-        .from("descriptive_student_answers")
-        .select("*")
-        .eq("mock_test_id", testId);
-
-      if (error) throw error;
-
-      // Try to fetch student names separately (works after faculty RLS migration is applied)
-      let nameMap: Record<string, string> = {};
-      if (data && data.length > 0) {
-        const studentIds = [
-          ...new Set(data.map((s: any) => s.student_user_id)),
-        ];
-        const { data: profiles } = await supabase
-          .from("student_profiles")
-          .select("user_id, full_name")
-          .in("user_id", studentIds);
-        if (profiles) {
-          profiles.forEach((p: any) => {
-            nameMap[p.user_id] = p.full_name;
-          });
-        }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
       }
 
-      const submissions = (data || []).map((s: any) => ({
-        ...s,
-        student_name:
-          nameMap[s.student_user_id] ||
-          `Student (${s.student_user_id?.slice(0, 8)}...)`,
-      }));
+      const response = await fetch("/api/faculty/descriptive-submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ testId }),
+      });
 
-      setStudentSubmissions(submissions);
+      const payload = (await response.json()) as {
+        submissions?: DescriptiveAnswer[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load submissions.");
+      }
+
+      setStudentSubmissions(payload.submissions || []);
     } catch (err) {
       console.error("Error loading submissions:", err);
+      setEvaluationMsg({
+        type: "err",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Failed to load student submissions.",
+      });
     }
   }
 
@@ -3222,6 +3248,9 @@ export default function FacultyDashboardPage() {
                 ) : (
                   <button
                     onClick={() => {
+                      setSelectedTest(null);
+                      setTestQuestions([]);
+                      setShowQForm(false);
                       setMcqForm((prev) => ({
                         ...prev,
                         courseId:
@@ -3290,20 +3319,36 @@ export default function FacultyDashboardPage() {
                           </a>
                         )}
 
-                        <div className="mt-3">
+                        <div className="mt-3 flex items-center gap-3">
+                          <label
+                            htmlFor="descriptive-question-paper-upload"
+                            className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition ${
+                              questionPaperUploading
+                                ? "cursor-not-allowed bg-blue-300"
+                                : "cursor-pointer bg-blue-600 hover:bg-blue-700"
+                            }`}
+                          >
+                            Upload Question Paper
+                          </label>
+                          <span className="text-xs text-blue-900">
+                            {questionPaperFileName}
+                          </span>
                           <input
+                            id="descriptive-question-paper-upload"
                             type="file"
                             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                             disabled={questionPaperUploading}
                             onChange={(e) => {
                               if (e.target.files?.[0]) {
+                                const selectedFile = e.target.files[0];
+                                setQuestionPaperFileName(selectedFile.name);
                                 void handleDescriptiveQuestionPaperUpload(
-                                  e.target.files[0],
+                                  selectedFile,
                                 );
                                 e.currentTarget.value = "";
                               }
                             }}
-                            className="text-xs"
+                            className="sr-only"
                           />
                         </div>
 
@@ -3604,11 +3649,19 @@ export default function FacultyDashboardPage() {
                           className="bg-gray-50 rounded-xl p-4 border border-gray-200"
                         >
                           <div className="flex items-start justify-between">
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-gray-900 leading-6">
                               <span className="text-purple-600 mr-2">
                                 Q{idx + 1}.
                               </span>
-                              {q.question_text}
+                              {isIndentedQuestionType(
+                                selectedTest?.test_type,
+                              ) ? (
+                                <span className="block pl-7 whitespace-pre-line">
+                                  {q.question_text}
+                                </span>
+                              ) : (
+                                q.question_text
+                              )}
                             </p>
                             <button
                               onClick={() => deleteQuestion(q.id)}
@@ -3865,8 +3918,9 @@ export default function FacultyDashboardPage() {
                                     {s.student_name || "Unknown Student"}
                                   </p>
                                   <p className="text-xs text-gray-600 mt-1">
-                                    Q{question?.question_order}:{" "}
-                                    {question?.question_text}
+                                    {question
+                                      ? `Q${question.question_order}: ${question.question_text}`
+                                      : "Full Answer Sheet"}
                                   </p>
                                   {s.submitted_at && (
                                     <p className="text-xs text-gray-500 mt-1">
@@ -3905,12 +3959,10 @@ export default function FacultyDashboardPage() {
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
                         Grade: {selectedSubmission.student_name || "Student"}{" "}
-                        &mdash; Q
-                        {
-                          descriptiveQuestions.find(
-                            (q) => q.id === selectedSubmission.question_id,
-                          )?.question_order
-                        }
+                        &mdash;{" "}
+                        {selectedSubmission.question_id != null
+                          ? `Q${descriptiveQuestions.find((q) => q.id === selectedSubmission.question_id)?.question_order ?? ""}`
+                          : "Full Answer Sheet"}
                       </h2>
                       <button
                         onClick={() => {
@@ -3929,22 +3981,24 @@ export default function FacultyDashboardPage() {
 
                     <div className="border border-gray-200 rounded-xl p-4 mb-4">
                       <p className="text-sm font-semibold text-gray-900 mb-2">
-                        Question
+                        {selectedSubmission.question_id != null
+                          ? "Question"
+                          : "Test"}
                       </p>
                       <p className="text-sm text-gray-700 mb-2">
-                        {
-                          descriptiveQuestions.find(
-                            (q) => q.id === selectedSubmission.question_id,
-                          )?.question_text
-                        }
+                        {selectedSubmission.question_id != null
+                          ? descriptiveQuestions.find(
+                              (q) => q.id === selectedSubmission.question_id,
+                            )?.question_text
+                          : selectedEvalTest?.title}
                       </p>
                       <p className="text-xs text-gray-500">
                         Max Marks:{" "}
-                        {
-                          descriptiveQuestions.find(
-                            (q) => q.id === selectedSubmission.question_id,
-                          )?.marks
-                        }
+                        {selectedSubmission.question_id != null
+                          ? (descriptiveQuestions.find(
+                              (q) => q.id === selectedSubmission.question_id,
+                            )?.marks ?? "-")
+                          : (selectedEvalTest?.total_marks ?? "-")}
                       </p>
                     </div>
 

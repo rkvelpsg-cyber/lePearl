@@ -426,8 +426,6 @@ export default async function Home() {
                   >
                     <Link
                       href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       style={{
                         color: "#fff",
                         textDecoration: "none",

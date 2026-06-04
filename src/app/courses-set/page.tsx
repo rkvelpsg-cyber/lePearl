@@ -301,7 +301,7 @@ function ScheduleAndFeeSection() {
             <a
               href="/student-registration?mode=paid&course=SET"
               className="block w-full rounded-lg bg-teal-800 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-teal-700"
-              style={{ color: "#ffffff" }}
+              style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -337,7 +337,8 @@ function ScheduleAndFeeSection() {
 
             <a
               href="/student-registration?mode=paid&course=SET"
-              className="block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-teal-900 transition-colors hover:bg-yellow-400"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-blue-800"
+              style={{ color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
             >
               Enroll Now
             </a>

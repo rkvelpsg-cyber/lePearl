@@ -433,7 +433,7 @@ function EnrollmentSection() {
     {
       icon: CreditCard,
       title: "One-Time Payment",
-      price: "₹4,995",
+      price: "Rs. 14,995",
       features: [
         "Full course access",
         "All video lectures",
@@ -446,7 +446,7 @@ function EnrollmentSection() {
     {
       icon: Calendar,
       title: "Installment Plan",
-      price: "₹2,250 × 2",
+      price: "Rs. 5,495 × 3",
       features: [
         "Full course access",
         "All video lectures",
@@ -544,9 +544,9 @@ function EnrollmentSection() {
             </p>
             <a
               href="/student-registration?mode=paid&course=UPHESC"
-              className="inline-block bg-yellow-500 text-teal-900 px-10 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 transition-all duration-300 hover:scale-105 shadow-xl"
+              className="inline-block rounded-lg bg-blue-900 px-10 py-4 text-lg font-bold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-blue-800"
             >
-              Fill Registration Form
+              Enroll Now
             </a>
           </div>
         </div>
