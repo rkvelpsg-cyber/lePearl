@@ -113,6 +113,24 @@ const mainsFeePlans = [
     ],
     href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=mains-with-material",
   },
+  {
+    title: "Instalments for GDC Mains (With Study Material)",
+    amount: "Rs.5,495 x 3",
+    cta: "Fill Registration Form",
+    ctaClass:
+      "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
+    cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
+    features: [
+      "Full course access for GDC Mains",
+      "Printed/compiled study material support",
+      "Live doubt clearing sessions",
+      "Mock answer practice with evaluation",
+      "Mentor-driven progress tracking",
+      "One year access to videos and PDFs",
+      "Flexible payment terms",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=mains-with-material-instalment",
+  },
 ];
 
 const prelimsFeePlans = [
@@ -152,7 +170,7 @@ const prelimsFeePlans = [
 const generalStudiesFeePlans = [
   {
     title: "One-time payment for both Prelims + Mains",
-    amount: "Rs.13,995",
+    amount: "Rs.19,995",
     badge: "BEST VALUE",
     cta: "Enroll Now",
     ctaClass:
@@ -171,7 +189,7 @@ const generalStudiesFeePlans = [
   },
   {
     title: "Instalments for both Prelims + Mains",
-    amount: "Rs.4,995 x 3",
+    amount: "Rs.6,995 x 3",
     cta: "Fill Registration Form",
     ctaClass:
       "block w-full rounded-lg bg-yellow-500 py-4 text-center text-lg font-bold text-blue-900 shadow-lg transition-all duration-300 hover:bg-yellow-600 hover:shadow-xl",
@@ -770,7 +788,7 @@ function ProgramTabsPanel() {
                   </p>
                 </div>
 
-                <div className="grid gap-8 md:grid-cols-2">
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                   {mainsFeePlans.map((plan) => (
                     <div key={plan.title} className={plan.cardClass}>
                       {plan.badge && (

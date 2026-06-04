@@ -104,8 +104,7 @@ export async function POST(req: NextRequest) {
       if (!isAllowedQuestionPaper) {
         return NextResponse.json(
           {
-            error:
-              "Question paper must be PDF, DOC, or DOCX format for upload",
+            error: "Question paper must be PDF, DOC, or DOCX format for upload",
           },
           { status: 400 },
         );

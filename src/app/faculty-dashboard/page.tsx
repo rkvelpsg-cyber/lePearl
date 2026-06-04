@@ -1704,7 +1704,9 @@ export default function FacultyDashboardPage() {
       }
 
       setSelectedTest((current) =>
-        current ? { ...current, question_paper_file_url: uploadedUrl } : current,
+        current
+          ? { ...current, question_paper_file_url: uploadedUrl }
+          : current,
       );
       setMcqTests((current) =>
         current.map((test) =>

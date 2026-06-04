@@ -48,7 +48,8 @@ type UPGDCFeeOptionId =
   | "prelims-full"
   | "prelims-instalment"
   | "mains-without-material"
-  | "mains-with-material";
+  | "mains-with-material"
+  | "mains-with-material-instalment";
 
 type PaidEnrollmentFormState = {
   fullName: string;
@@ -181,30 +182,30 @@ const upgdcFeeOptions: {
   {
     id: "combined-full",
     title: "One-time payment for both Prelims + Mains",
-    totalAmount: 13995,
+    totalAmount: 19995,
     tenure: "full",
     note: "Best value · Discounts eligible",
   },
   {
     id: "combined-instalment",
     title: "Instalments for both Prelims + Mains",
-    totalAmount: 14985,
+    totalAmount: 20985,
     tenure: "instalment",
-    note: "Pay Rs. 4,995 now · split across 3 payments",
+    note: "Pay Rs. 6,995 now · split across 3 payments",
     instalments: [
       {
         label: "1st Instalment",
-        amount: 4995,
+        amount: 6995,
         note: "Pay now · Instant access",
       },
       {
         label: "2nd Instalment",
-        amount: 4995,
+        amount: 6995,
         note: "Due 30 days after enrolment",
       },
       {
         label: "3rd Instalment",
-        amount: 4995,
+        amount: 6995,
         note: "Due 60 days after enrolment",
       },
     ],
@@ -253,6 +254,30 @@ const upgdcFeeOptions: {
     totalAmount: 15995,
     tenure: "full",
     note: "Mains-only access with study material",
+  },
+  {
+    id: "mains-with-material-instalment",
+    title: "Instalments for GDC Mains (With Study Material)",
+    totalAmount: 16485,
+    tenure: "instalment",
+    note: "Pay Rs. 5,495 now · split across 3 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 5495,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 5495,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 5495,
+        note: "Due 60 days after enrolment",
+      },
+    ],
   },
 ];
 
@@ -1297,7 +1322,7 @@ function StudentRegistrationContent() {
             <section className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5">
               <h2 className="text-lg font-bold text-emerald-800 flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5" /> Free Registration for PYQs &
-                Demo Class
+                Demo Class & Download Syllabus
               </h2>
               <p className="mt-2 text-sm text-emerald-800/90">
                 Submit this 5-field form for instant PYQ access and demo-class
@@ -1417,7 +1442,7 @@ function StudentRegistrationContent() {
             >
               {isSubmittingFree
                 ? "Submitting free registration..."
-                : "Get Free PYQ & Demo Access"}
+                : "Get Free PYQ, Demo & Download Syllabus Access"}
             </button>
           </form>
         )}

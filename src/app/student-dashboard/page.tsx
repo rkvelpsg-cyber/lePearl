@@ -2220,7 +2220,9 @@ export default function StudentDashboardPage() {
                           </p>
                           {selectedDescriptiveTest.question_paper_file_url ? (
                             <a
-                              href={selectedDescriptiveTest.question_paper_file_url}
+                              href={
+                                selectedDescriptiveTest.question_paper_file_url
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
