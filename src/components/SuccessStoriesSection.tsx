@@ -267,6 +267,38 @@ const successStories: VideoStory[] = [
     achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/9-fngrO0Lc4/maxresdefault.jpg",
   },
+  {
+    id: "29",
+    videoId: "TwoCTp0Cp3U",
+    videoUrl: "https://youtu.be/TwoCTp0Cp3U?si=7gge5eZDaPGU71FA",
+    studentName: "Ms Kowsalya NTA-NET ENGLISH (2025)",
+    achievement: "",
+    thumbnailUrl: "https://img.youtube.com/vi/TwoCTp0Cp3U/maxresdefault.jpg",
+  },
+  {
+    id: "30",
+    videoId: "cU0vx_Zl9vA",
+    videoUrl: "https://youtu.be/cU0vx_Zl9vA?si=tsjWFUAfPie-hHB4",
+    studentName: "MS RICHA RANI NTA-NET ENGLISH (2025)\n(Hindi Version)",
+    achievement: "",
+    thumbnailUrl: "https://img.youtube.com/vi/cU0vx_Zl9vA/maxresdefault.jpg",
+  },
+  {
+    id: "31",
+    videoId: "pnXnZ7u_JeU",
+    videoUrl: "https://youtu.be/pnXnZ7u_JeU?si=BWEVxvH0ua8YrLc0",
+    studentName: "MS NIDHI SHUKLA NTA-NET ENGLISH (2025) (Hindi Version)",
+    achievement: "",
+    thumbnailUrl: "https://img.youtube.com/vi/pnXnZ7u_JeU/maxresdefault.jpg",
+  },
+  {
+    id: "32",
+    videoId: "aKzlx4V-3rU",
+    videoUrl: "https://youtu.be/aKzlx4V-3rU?si=Y1Ssm5dHeYawfzg9",
+    studentName: "Mr Soumya Panigrahi, LECTURER,OPSC (2026)",
+    achievement: "",
+    thumbnailUrl: "https://img.youtube.com/vi/aKzlx4V-3rU/maxresdefault.jpg",
+  },
 ];
 
 function VideoCard({ story }: { story: VideoStory }) {
