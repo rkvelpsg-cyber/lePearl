@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import {
   GraduationCap,
@@ -17,7 +17,8 @@ import {
   UserCheck,
   ChevronLeft,
   ChevronRight,
-  Quote,
+  Play,
+  Star,
   Check,
   CreditCard,
   Calendar,
@@ -271,159 +272,220 @@ function FeaturesSection() {
 }
 
 function TestimonialsSection() {
-  const testimonials = [
+  const stories = [
     {
+      id: "uphesc-1",
+      videoId: "hcwQpy5Stx0",
+      videoUrl:
+        "https://www.youtube.com/watch?v=hcwQpy5Stx0&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=5",
       name: "Ms Priya Sharma",
-      exam: "UPHESC Adv 50-2022",
-      image: "/Priya%20sharma.jpeg",
-      quote:
-        "LePearl's comprehensive study material and expert guidance helped me clear UPHESC Adv 50-2022. Their personalized attention made all the difference.",
+      role: "Assistant Professor, UPHESC Adv 50-2022",
+      thumbnailUrl: "https://img.youtube.com/vi/hcwQpy5Stx0/maxresdefault.jpg",
     },
     {
+      id: "uphesc-2",
+      videoId: "l0Abm1noZIQ",
+      videoUrl:
+        "https://www.youtube.com/watch?v=l0Abm1noZIQ&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=2",
       name: "Ms Sandhya Patel",
-      exam: "UPHESC Adv 50-2022",
-      image: "/Sandhya%20Patel.jpeg",
-      quote:
-        "From comprehensive study material to answer writing practice, LePearl covered everything. I'm now proudly serving as an Assistant Professor!",
+      role: "Assistant Professor, UPHESC Adv 50-2022",
+      thumbnailUrl: "https://img.youtube.com/vi/l0Abm1noZIQ/maxresdefault.jpg",
     },
     {
+      id: "uphesc-3",
+      videoId: "rOW5qTfiu1w",
+      videoUrl:
+        "https://www.youtube.com/watch?v=rOW5qTfiu1w&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=7",
       name: "Ms Rashmi Verma",
-      exam: "UPHESC Adv 50-2022",
-      image: "/Rashmi%20verma.jpeg",
-      quote:
-        "LePearl's structured approach and mock tests were instrumental in my success. Their faculty support is unmatched.",
+      role: "Assistant Professor, UPHESC Adv 50-2022",
+      thumbnailUrl: "https://img.youtube.com/vi/rOW5qTfiu1w/maxresdefault.jpg",
     },
     {
+      id: "uphesc-4",
+      videoId: "GUFJHeMMG10",
+      videoUrl:
+        "https://www.youtube.com/watch?v=GUFJHeMMG10&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=7",
       name: "Ms Mahima Thakur",
-      exam: "UPHESC Adv 50-2022",
-      image: "/Mahima.jpeg",
-      quote:
-        "The live doubt sessions and personalized guidance at LePearl helped me build confidence and clear the exam successfully.",
+      role: "Assistant Professor, UPHESC Adv 50-2022",
+      thumbnailUrl: "https://img.youtube.com/vi/GUFJHeMMG10/maxresdefault.jpg",
     },
     {
-      name: "Ms. Surbhi Satyabha",
-      exam: "UPHESC-Adv 50-2022",
-      image: "/Surbhi.jpeg",
-      quote:
-        "LePearl's holistic approach to preparation transformed my understanding of the subject. Grateful for their expert mentorship.",
-    },
-    {
+      id: "uphesc-5",
+      videoId: "YvGREAy7h5M",
+      videoUrl:
+        "https://www.youtube.com/watch?v=YvGREAy7h5M&list=PLAx-8DhWebAVV345Gtu7HxAjplsZ9UYIt&index=9",
       name: "Dr. Amresh",
-      exam: "UPHESC, Adv 50- 2022",
-      image: "/Amresh.jpeg",
-      quote:
-        "The comprehensive study materials and regular assessments at LePearl were key to my success in the UPHESC examination.",
+      role: "Assistant Professor, UPHESC Adv 50-2022",
+      thumbnailUrl: "https://img.youtube.com/vi/YvGREAy7h5M/maxresdefault.jpg",
     },
   ];
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const directionRef = useRef<1 | -1>(1);
+  const manualPauseUntilRef = useRef(0);
 
-  // Auto-slide functionality
   useEffect(() => {
-    if (isPaused) return;
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-    }, 4000); // Change slide every 4 seconds
+    let frameId = 0;
 
-    return () => clearInterval(interval);
-  }, [testimonials.length, isPaused]);
+    const step = () => {
+      if (Date.now() < manualPauseUntilRef.current) {
+        frameId = requestAnimationFrame(step);
+        return;
+      }
 
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) {
+        frameId = requestAnimationFrame(step);
+        return;
+      }
+
+      if (el.scrollLeft >= maxScroll - 1) {
+        directionRef.current = -1;
+      } else if (el.scrollLeft <= 1) {
+        directionRef.current = 1;
+      }
+
+      el.scrollLeft += 0.6 * directionRef.current;
+      frameId = requestAnimationFrame(step);
+    };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  const handlePrevious = () => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+
+    manualPauseUntilRef.current = Date.now() + 1200;
+    directionRef.current = -1;
+
+    el.scrollBy({ left: -el.clientWidth * 0.85, behavior: "smooth" });
   };
 
-  const prevSlide = () => {
-    setCurrentIndex(
-      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
-    );
+  const handleNext = () => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+
+    manualPauseUntilRef.current = Date.now() + 1200;
+    directionRef.current = 1;
+
+    el.scrollBy({ left: el.clientWidth * 0.85, behavior: "smooth" });
   };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-teal-800 via-cyan-700 to-teal-800 text-white">
+    <section className="py-16 md:py-24 bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-blue-900 mb-4">
             Student Success Stories
           </h2>
-          <div className="w-24 h-1 bg-gradient-to-r from-yellow-500 to-yellow-600 mx-auto"></div>
-          <p className="text-cyan-100 mt-4">
+          <div className="w-24 h-1 bg-amber-500 mx-auto"></div>
+          <p className="text-gray-600 mt-4">
             Success stories from UPHESC Advertisement 50 batch
           </p>
         </div>
 
-        <div className="relative max-w-4xl mx-auto">
-          <div
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 sm:p-12 border border-white/20"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
+        <div className="relative left-1/2 w-screen -translate-x-1/2 px-1 sm:px-2 md:px-4 lg:px-6 xl:px-8">
+          <button
+            onClick={handlePrevious}
+            className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-[#d9d2ff] bg-white/95 p-3 text-[#6A0DAD] shadow-xl transition-all duration-300 hover:scale-110 hover:bg-white md:left-4 lg:left-6"
+            aria-label="Previous stories"
+            type="button"
           >
-            <div className="flex flex-col md:flex-row gap-8 items-center">
-              <div className="flex-shrink-0">
-                <div className="relative">
-                  <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-yellow-400">
+            <ChevronLeft className="h-6 w-6 text-[#6A0DAD]" />
+          </button>
+
+          <button
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full border border-[#d9d2ff] bg-white/95 p-3 text-[#6A0DAD] shadow-xl transition-all duration-300 hover:scale-110 hover:bg-white md:right-4 lg:right-6"
+            aria-label="Next stories"
+            type="button"
+          >
+            <ChevronRight className="h-6 w-6 text-[#6A0DAD]" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="uphesc-stories-scroll overflow-x-auto px-12 py-1 sm:px-16 md:px-20 lg:px-24"
+          >
+            <div className="flex w-max gap-4 pb-4 md:gap-6">
+              {stories.map((story) => (
+                <article
+                  key={story.id}
+                  className="relative flex-[0_0_clamp(260px,80vw,440px)] snap-start overflow-hidden rounded-lg sm:rounded-2xl bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                >
+                  <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 shadow-md backdrop-blur-sm sm:left-4 sm:top-4 sm:px-3">
+                    <Star className="h-3 w-3 fill-[#6A0DAD] text-[#6A0DAD]" />
+                    <span className="text-xs font-semibold text-[#6A0DAD]">
+                      Success Story
+                    </span>
+                  </div>
+
+                  <a
+                    href={story.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Play ${story.name} success story`}
+                    className="relative block aspect-video overflow-hidden bg-gray-900"
+                  >
                     <ImageWithFallback
-                      src={testimonials[currentIndex].image}
-                      alt={testimonials[currentIndex].name}
-                      className="w-full h-full object-cover"
+                      src={story.thumbnailUrl}
+                      alt={`${story.name} success story`}
+                      className="h-full w-full object-cover"
                     />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <Quote className="w-6 h-6 text-teal-900" />
-                  </div>
-                </div>
-              </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="rounded-full bg-[#6A0DAD] p-5 shadow-2xl transition-transform duration-300 hover:scale-110">
+                        <Play className="h-8 w-8 fill-white text-white" />
+                      </div>
+                    </div>
+                  </a>
 
-              <div className="flex-1 text-center md:text-left">
-                <p className="text-lg sm:text-xl text-cyan-100 mb-6 leading-relaxed italic">
-                  &quot;{testimonials[currentIndex].quote}&quot;
-                </p>
-                <div>
-                  <h4 className="text-xl font-bold text-yellow-400">
-                    {testimonials[currentIndex].name}
-                  </h4>
-                  <p className="text-cyan-200 mt-1">
-                    {testimonials[currentIndex].exam}
-                  </p>
-                </div>
-              </div>
+                  <div className="flex min-h-[220px] flex-col p-6">
+                    <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                      {story.name}
+                    </h3>
+                    <p className="mb-4 font-medium text-[#6A0DAD]">
+                      {story.role}
+                    </p>
+                    <a
+                      href={story.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#6A0DAD] to-[#1E3A8A] py-3 font-semibold text-white shadow-md transition-all duration-300 hover:shadow-lg"
+                    >
+                      <Play className="h-4 w-4 text-white" />
+                      <span className="text-white">Watch Story</span>
+                    </a>
+                  </div>
+                </article>
+              ))}
             </div>
-          </div>
-
-          <div className="flex justify-center gap-4 mt-8">
-            <button
-              onClick={prevSlide}
-              className="w-12 h-12 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center hover:bg-yellow-500 hover:border-yellow-500 transition-all duration-300 group"
-              aria-label="Previous testimonial"
-            >
-              <ChevronLeft className="w-6 h-6 text-white group-hover:text-teal-900" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="w-12 h-12 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center hover:bg-yellow-500 hover:border-yellow-500 transition-all duration-300 group"
-              aria-label="Next testimonial"
-            >
-              <ChevronRight className="w-6 h-6 text-white group-hover:text-teal-900" />
-            </button>
-          </div>
-
-          <div className="flex justify-center gap-2 mt-6">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex
-                    ? "w-8 bg-yellow-500"
-                    : "w-2 bg-white/30"
-                }`}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .uphesc-stories-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          scroll-snap-type: none;
+          scroll-padding-inline: clamp(3rem, 9vw, 8rem);
+        }
+
+        .uphesc-stories-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </section>
   );
 }
@@ -531,24 +593,6 @@ function EnrollmentSection() {
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-16 text-center">
-          <div className="bg-gradient-to-r from-teal-700 to-cyan-600 rounded-2xl p-8 sm:p-12 max-w-3xl mx-auto shadow-xl">
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-              Ready to Begin Your Success Journey?
-            </h3>
-            <p className="text-cyan-100 mb-6">
-              Fill out our registration form and our team will guide you through
-              the enrollment process
-            </p>
-            <a
-              href="/student-registration?mode=paid&course=UPHESC"
-              className="inline-block rounded-lg bg-blue-900 px-10 py-4 text-lg font-bold text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-blue-800"
-            >
-              Enroll Now
-            </a>
-          </div>
         </div>
       </div>
     </section>

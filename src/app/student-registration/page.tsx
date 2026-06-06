@@ -8,6 +8,8 @@ import {
   ArrowLeft,
   CheckCircle2,
   CreditCard,
+  Eye,
+  EyeOff,
   FileCheck2,
   ShieldCheck,
 } from "lucide-react";
@@ -383,6 +385,7 @@ function StudentRegistrationContent() {
       type: "idle",
     });
   const [showFeePlanModal, setShowFeePlanModal] = useState(false);
+  const [showPaidPassword, setShowPaidPassword] = useState(false);
   const [modalPlanChoice, setModalPlanChoice] = useState<"full" | "instalment">(
     "full",
   );
@@ -1102,16 +1105,32 @@ function StudentRegistrationContent() {
               </label>
               <label className="text-base font-semibold text-slate-700">
                 Case-sensitive Password <span className="text-red-500">*</span>
-                <input
-                  type="password"
-                  required
-                  value={safePaidFormData.password}
-                  onChange={(event) =>
-                    updatePaidField("password", event.target.value)
-                  }
-                  className={inputClassName}
-                  placeholder="At least 8 chars + special character"
-                />
+                <div className="relative">
+                  <input
+                    type={showPaidPassword ? "text" : "password"}
+                    required
+                    value={safePaidFormData.password}
+                    onChange={(event) =>
+                      updatePaidField("password", event.target.value)
+                    }
+                    className={`${inputClassName} pr-12`}
+                    placeholder="At least 8 chars + special character"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPaidPassword((prev) => !prev)}
+                    aria-label={
+                      showPaidPassword ? "Hide password" : "Show password"
+                    }
+                    className="absolute inset-y-0 right-0 px-3 text-slate-500 hover:text-slate-700"
+                  >
+                    {showPaidPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
                 {!passwordValidation &&
                   safePaidFormData.password.length > 0 && (
                     <p className="mt-2 text-xs text-rose-600">

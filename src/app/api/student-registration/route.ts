@@ -158,10 +158,22 @@ function getDefaultFacultyForCourse(course: string) {
   }
 
   if (
+    normalized.includes("uphesc") ||
+    normalized.includes("interviewpreparationassistantprofessor") ||
+    normalized.includes("interviewpreparationduinterview") ||
+    normalized.includes("interviewpreparationphdinterview") ||
+    normalized.includes("communicationskills") ||
+    normalized.includes("researchassistance")
+  ) {
+    return "Dr. Prem Shankar Pandey";
+  }
+
+  if (
     normalized.includes("netpaper1") ||
     normalized.includes("netpaper2") ||
     normalized.includes("netpaper2english") ||
-    normalized.includes("ltgrade")
+    normalized.includes("ltgrade") ||
+    normalized.includes("set")
   ) {
     return "Ms Sadhana";
   }

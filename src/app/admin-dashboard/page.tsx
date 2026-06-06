@@ -27,6 +27,7 @@ import {
   Plus,
   Search,
   Eye,
+  EyeOff,
   Video,
   ExternalLink,
   Download,
@@ -505,6 +506,9 @@ export default function AdminDashboardPage() {
     text: string;
   } | null>(null);
   const [studentActionLoading, setStudentActionLoading] = useState(false);
+  const [showStudentPassword, setShowStudentPassword] = useState(false);
+  const [enrollmentDeleteLoadingCourse, setEnrollmentDeleteLoadingCourse] =
+    useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -1786,15 +1790,15 @@ export default function AdminDashboardPage() {
     }
   }
 
-  async function deleteSelectedStudent() {
+  async function deleteSelectedEnrollment(courseName: string) {
     if (!selectedStudent) return;
 
     const ok = window.confirm(
-      `Delete ${selectedStudent.full_name}? This will permanently remove the student login and related records.`,
+      `Delete enrollment for '${courseName}' for ${selectedStudent.full_name}?`,
     );
     if (!ok) return;
 
-    setStudentActionLoading(true);
+    setEnrollmentDeleteLoadingCourse(courseName);
     setStudentActionMsg(null);
     try {
       const accessToken = await getAdminAccessToken();
@@ -1809,8 +1813,9 @@ export default function AdminDashboardPage() {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          action: "delete",
+          action: "deleteEnrollment",
           studentUserId: selectedStudent.user_id,
+          courseName,
         }),
       });
 
@@ -1819,21 +1824,44 @@ export default function AdminDashboardPage() {
         message?: string;
       };
       if (!res.ok)
-        throw new Error(payload.error || "Failed to delete student.");
+        throw new Error(payload.error || "Failed to delete enrollment.");
 
       setStudentActionMsg({
         type: "ok",
-        text: payload.message || "Student deleted.",
+        text: payload.message || "Enrollment deleted.",
       });
-      setSelectedStudent(null);
       await load();
+
+      const remainingEnrollments =
+        (selectedStudent.enrollments || []).filter(
+          (entry) => entry.course_title !== courseName,
+        ) ?? [];
+
+      if (remainingEnrollments.length === 0) {
+        setSelectedStudent(null);
+      } else {
+        setSelectedStudent((prev) =>
+          prev
+            ? {
+                ...prev,
+                enrollments: remainingEnrollments,
+              }
+            : prev,
+        );
+        setStudentEditForm((prev) => ({
+          ...prev,
+          courseName: remainingEnrollments[0]?.course_title ?? "",
+          facultyName: remainingEnrollments[0]?.faculty_name ?? "",
+        }));
+      }
     } catch (err) {
       setStudentActionMsg({
         type: "err",
-        text: err instanceof Error ? err.message : "Failed to delete student.",
+        text:
+          err instanceof Error ? err.message : "Failed to delete enrollment.",
       });
     } finally {
-      setStudentActionLoading(false);
+      setEnrollmentDeleteLoadingCourse(null);
     }
   }
 
@@ -2829,18 +2857,38 @@ export default function AdminDashboardPage() {
                           <label className="text-xs font-semibold text-gray-600 mb-1 block">
                             New Password
                           </label>
-                          <input
-                            type="password"
-                            value={studentEditForm.password}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                password: e.target.value,
-                              }))
-                            }
-                            placeholder="Leave blank to keep the current password"
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showStudentPassword ? "text" : "password"}
+                              value={studentEditForm.password}
+                              onChange={(e) =>
+                                setStudentEditForm((prev) => ({
+                                  ...prev,
+                                  password: e.target.value,
+                                }))
+                              }
+                              placeholder="Leave blank to keep the current password"
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-11 text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowStudentPassword((prev) => !prev)
+                              }
+                              aria-label={
+                                showStudentPassword
+                                  ? "Hide password"
+                                  : "Show password"
+                              }
+                              className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
+                            >
+                              {showStudentPassword ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                           <p className="mt-1 text-xs text-gray-500">
                             If you set a new username or password, the student
                             will be forced to change the password on first
@@ -2862,17 +2910,44 @@ export default function AdminDashboardPage() {
                         </button>
                       </div>
 
+                      <div className="mt-4 rounded-xl border border-red-100 bg-red-50/40 p-4">
+                        <p className="text-xs font-semibold text-red-700 mb-2">
+                          Delete Course Enrollment
+                        </p>
+                        <p className="text-xs text-red-600 mb-3">
+                          This removes only the selected course enrollment. The
+                          student account and other course access remain active.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(selectedStudent.enrollments || []).map(
+                            (enrollment) => (
+                              <button
+                                key={`${selectedStudent.user_id}-${enrollment.course_title}`}
+                                onClick={() =>
+                                  deleteSelectedEnrollment(
+                                    enrollment.course_title,
+                                  )
+                                }
+                                disabled={
+                                  !!enrollmentDeleteLoadingCourse ||
+                                  studentActionLoading
+                                }
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-60"
+                              >
+                                {enrollmentDeleteLoadingCourse ===
+                                enrollment.course_title ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                                Delete {enrollment.course_title}
+                              </button>
+                            ),
+                          )}
+                        </div>
+                      </div>
+
                       <div className="mt-4 flex flex-wrap gap-3">
-                        <button
-                          onClick={deleteSelectedStudent}
-                          disabled={studentActionLoading}
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {studentActionLoading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : null}
-                          Delete Student
-                        </button>
                         <button
                           onClick={() => setSelectedStudent(null)}
                           className="text-sm text-gray-500 hover:text-gray-700 underline"

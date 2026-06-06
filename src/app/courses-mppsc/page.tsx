@@ -589,18 +589,6 @@ function Pricing() {
             </a>
           </div>
         </div>
-
-        <div className="text-center mt-10">
-          <p className="text-blue-100">
-            Need help choosing?{" "}
-            <a
-              href="#"
-              className="text-amber-400 hover:text-amber-300 font-semibold underline"
-            >
-              Contact us
-            </a>
-          </p>
-        </div>
       </div>
     </section>
   );

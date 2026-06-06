@@ -680,7 +680,10 @@ function ProgramTabsPanel() {
             {contentMap[activeTab]}
 
             {activeTab === "general-studies" && (
-              <div className="mx-auto mt-8 w-full max-w-5xl">
+              <div
+                id="upgdc-general-fee-details"
+                className="mx-auto mt-8 w-full max-w-5xl scroll-mt-24"
+              >
                 <div className="grid gap-8 md:grid-cols-2">
                   {generalStudiesFeePlans.map((plan) => (
                     <div key={plan.title} className={plan.cardClass}>
@@ -727,7 +730,10 @@ function ProgramTabsPanel() {
             )}
 
             {activeTab === "prelims" && (
-              <div className="mx-auto mt-8 w-full max-w-5xl">
+              <div
+                id="upgdc-prelims-fee-details"
+                className="mx-auto mt-8 w-full max-w-5xl scroll-mt-24"
+              >
                 <div className="mb-6 text-center">
                   <h3 className="text-2xl font-bold text-blue-900">
                     Prelims Fee Details
@@ -841,11 +847,18 @@ function ProgramTabsPanel() {
 
 function UPGDCPage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [showPosterPopup, setShowPosterPopup] = useState(true);
 
   const scrollToEnroll = () => {
-    document
-      .getElementById("enrollment")
-      ?.scrollIntoView({ behavior: "smooth" });
+    const targetId = [
+      "upgdc-general-fee-details",
+      "upgdc-prelims-fee-details",
+      "upgdc-mains-fee-details",
+    ].find((id) => document.getElementById(id));
+
+    if (!targetId) return;
+
+    document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
   };
 
   const downloadSyllabus = () => {
@@ -867,6 +880,29 @@ function UPGDCPage() {
   return (
     <div className="min-h-screen bg-white">
       <CoursePageHeader onEnroll={scrollToEnroll} />
+
+      {showPosterPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/75 px-4 py-6">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-2 shadow-2xl sm:max-w-lg sm:p-3">
+            <button
+              type="button"
+              onClick={() => setShowPosterPopup(false)}
+              aria-label="Close poster popup"
+              className="absolute right-2 top-2 z-10 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-md transition-colors hover:bg-slate-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <ImageWithFallback
+                src="/GDC_Poster.jpeg"
+                alt="UP GDC poster"
+                className="h-auto w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <section className="relative overflow-hidden bg-blue-900 text-white">
         <div className="absolute inset-0 opacity-20">

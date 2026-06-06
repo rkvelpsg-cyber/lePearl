@@ -344,15 +344,6 @@ function ScheduleAndFeeSection() {
             </a>
           </div>
         </div>
-
-        <div className="mt-10 text-center">
-          <p className="text-gray-600">
-            Need help choosing?{" "}
-            <a href="#" className="font-semibold text-teal-700 underline">
-              Contact us
-            </a>
-          </p>
-        </div>
       </div>
     </section>
   );
