@@ -25,6 +25,8 @@ export default async function FacultyProfilePage({
   const { id } = await params;
   const faculty = facultyProfiles.find((f) => f.id === Number(id));
   if (!faculty) notFound();
+  const profileImagePosition =
+    faculty.id === 4 ? "center top" : (faculty.imagePosition ?? "center");
 
   const others = facultyProfiles.filter((f) => f.id !== faculty.id);
 
@@ -97,7 +99,7 @@ export default async function FacultyProfilePage({
                   alt={faculty.name}
                   fill
                   className="object-cover"
-                  style={{ objectPosition: faculty.imagePosition ?? "center" }}
+                  style={{ objectPosition: profileImagePosition }}
                   priority
                 />
               </div>

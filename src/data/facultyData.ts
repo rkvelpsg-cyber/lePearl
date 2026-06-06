@@ -117,7 +117,7 @@ export const facultyProfiles: FacultyProfile[] = [
     title: "Assistant Professor (English)",
     designation:
       "Educator | English Literature Expert | MPPSC AP & Competitive Exam Mentor",
-    image: "/neelu_faculty3.jpeg",
+    image: "/facultyneelunew.png",
     shortBio:
       "Educator and Assistant Professor of English with strong academic and competitive exam background",
     fullBio:
@@ -167,7 +167,7 @@ export const facultyProfiles: FacultyProfile[] = [
       "Educator | Sociologist | Public Sector Professional | Mentor for GS & UGC NET",
     designation:
       "Educator | Sociologist | Public Sector Professional | Mentor for GS & UGC NET",
-    image: "/harendra_faculty4.jpeg",
+    image: "/harendranewpic.png",
     shortBio:
       "Experienced educator, sociologist, and public sector professional with multidisciplinary expertise",
     fullBio:

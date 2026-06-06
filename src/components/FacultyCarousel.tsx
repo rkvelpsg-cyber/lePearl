@@ -5,8 +5,8 @@ import { ArrowRight } from "lucide-react";
 import Image, { type StaticImageData } from "next/image";
 import sadhanaImg from "../../public/sadhana_faculty1.jpeg";
 import babliImg from "../../public/DrBablick.png";
-import neeluImg from "../../public/neelu_faculty3.jpeg";
-import harendraImg from "../../public/harendra_faculty4.jpeg";
+import neeluImg from "../../public/facultyneelunew.png";
+import harendraImg from "../../public/harendranewpic.png";
 
 interface FacultyMember {
   id: number;
