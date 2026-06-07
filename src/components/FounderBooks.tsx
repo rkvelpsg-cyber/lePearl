@@ -57,7 +57,7 @@ const books: Book[] = [
     id: 1,
     image: book1,
     title: "World Literature In Your Fist - Volume 1",
-    amazonLink: "https://amzn.in/d/0aj4gJS6",
+    amazonLink: "https://www.amazon.in/dp/9363888142",
   },
   {
     id: 2,
