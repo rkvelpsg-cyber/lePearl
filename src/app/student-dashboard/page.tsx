@@ -41,6 +41,7 @@ type Section =
   | "tests"
   | "classes"
   | "lectures"
+  | "studyMaterials"
   | "fees"
   | "tasks";
 type Profile = {
@@ -176,6 +177,15 @@ type StudentTask = {
   profiles: { full_name: string } | null;
 };
 type RecordedLecture = {
+  id: number;
+  title: string;
+  description: string | null;
+  subject: string | null;
+  drive_link: string;
+  created_at: string;
+  batches: { batch_name: string; courses: { title: string } | null } | null;
+};
+type StudyMaterial = {
   id: number;
   title: string;
   description: string | null;
@@ -483,6 +493,7 @@ export default function StudentDashboardPage() {
   } | null>(null);
   const [classSessions, setClassSessions] = useState<ClassSession[]>([]);
   const [lectures, setLectures] = useState<RecordedLecture[]>([]);
+  const [studyMaterials, setStudyMaterials] = useState<StudyMaterial[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [feePlan, setFeePlan] = useState<FeePlan | null>(null);
   const [paidRegistration, setPaidRegistration] =
@@ -688,6 +699,7 @@ export default function StudentDashboardPage() {
         mockRes,
         tasksRes,
         lecturesRes,
+        studyMaterialsRes,
       ] = await Promise.all([
         supabase
           .from("student_course_progress")
@@ -760,6 +772,16 @@ export default function StudentDashboardPage() {
               .eq("is_active", true)
               .order("created_at", { ascending: false })
           : Promise.resolve({ data: [], error: null }),
+        ids.length > 0
+          ? supabase
+              .from("study_materials")
+              .select(
+                "id, title, description, subject, drive_link, created_at, batches(batch_name, courses(title))",
+              )
+              .in("batch_id", ids)
+              .eq("is_active", true)
+              .order("created_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       /* set course progress */
@@ -808,6 +830,14 @@ export default function StudentDashboardPage() {
         setLectures(lecturesRes.data as unknown as RecordedLecture[]);
       if (lecturesRes.error) {
         console.error("Failed to load recorded lectures:", lecturesRes.error);
+      }
+      if (studyMaterialsRes.data)
+        setStudyMaterials(studyMaterialsRes.data as unknown as StudyMaterial[]);
+      if (studyMaterialsRes.error) {
+        console.error(
+          "Failed to load study materials:",
+          studyMaterialsRes.error,
+        );
       }
       if (tasksRes.data)
         setFacultyTasks(tasksRes.data as unknown as StudentTask[]);
@@ -2089,6 +2119,13 @@ export default function StudentDashboardPage() {
                   label="Recorded Lectures"
                 />
                 <NavBtn
+                  section="studyMaterials"
+                  active={activeSection}
+                  onClick={setActiveSection}
+                  icon={BookOpen}
+                  label="Study Material"
+                />
+                <NavBtn
                   section="fees"
                   active={activeSection}
                   onClick={setActiveSection}
@@ -3098,6 +3135,78 @@ export default function StudentDashboardPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 !text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                            >
+                              <ExternalLink className="w-4 h-4" /> Open in
+                              Google Drive
+                            </a>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ══ STUDY MATERIAL ═════════════════════════ */}
+              {activeSection === "studyMaterials" && (
+                <>
+                  <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white">
+                    <h1 className="text-xl font-bold mb-1">Study Material</h1>
+                    <p className="text-blue-100 text-sm">
+                      Click any item to open notes and study resources in Google
+                      Drive
+                    </p>
+                  </div>
+                  {studyMaterials.length === 0 ? (
+                    <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                      <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">
+                        No study material available yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {studyMaterials.map((material) => {
+                        const batch = unwrapOne(material.batches);
+                        const course = unwrapOne(batch?.courses);
+                        return (
+                          <div
+                            key={material.id}
+                            className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 hover:border-blue-200 transition-colors"
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <BookOpen className="w-6 h-6 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-900 text-sm leading-tight">
+                                  {material.title}
+                                </h3>
+                                {material.subject && (
+                                  <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                                    {material.subject}
+                                  </p>
+                                )}
+                                {course?.title && (
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {course.title}
+                                  </p>
+                                )}
+                                {material.description && (
+                                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                    {material.description}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {fmtDate(material.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                            <a
+                              href={material.drive_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 !text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
                             >
                               <ExternalLink className="w-4 h-4" /> Open in
                               Google Drive

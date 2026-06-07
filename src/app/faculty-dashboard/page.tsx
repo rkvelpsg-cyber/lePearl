@@ -50,6 +50,7 @@ type Section =
   | "evaluations"
   | "classes"
   | "lectures"
+  | "studyMaterial"
   | "tasks"
   | "students";
 type Profile = { full_name: string; phone: string | null };
@@ -153,6 +154,16 @@ type DescriptiveAnswer = {
   student_name?: string; // For display purposes
 };
 type RecordedLectureFaculty = {
+  id: number;
+  title: string;
+  description: string | null;
+  subject: string | null;
+  drive_link: string;
+  created_at: string;
+  batch_id: number | null;
+  batches: { batch_name: string } | null;
+};
+type StudyMaterialFaculty = {
   id: number;
   title: string;
   description: string | null;
@@ -613,12 +624,34 @@ export default function FacultyDashboardPage() {
   /* lectures */
   const [lectures, setLectures] = useState<RecordedLectureFaculty[]>([]);
   const [showLectureForm, setShowLectureForm] = useState(false);
+  const [editingLectureId, setEditingLectureId] = useState<number | null>(null);
   const [lectureMsg, setLectureMsg] = useState<{
     type: "ok" | "err";
     text: string;
   } | null>(null);
   const [lectureSubmitting, setLectureSubmitting] = useState(false);
   const [lectureForm, setLectureForm] = useState({
+    batchId: "",
+    title: "",
+    subject: "",
+    description: "",
+    driveLink: "",
+  });
+
+  /* study material */
+  const [studyMaterials, setStudyMaterials] = useState<StudyMaterialFaculty[]>(
+    [],
+  );
+  const [showStudyMaterialForm, setShowStudyMaterialForm] = useState(false);
+  const [editingStudyMaterialId, setEditingStudyMaterialId] = useState<
+    number | null
+  >(null);
+  const [studyMaterialMsg, setStudyMaterialMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+  const [studyMaterialSubmitting, setStudyMaterialSubmitting] = useState(false);
+  const [studyMaterialForm, setStudyMaterialForm] = useState({
     batchId: "",
     title: "",
     subject: "",
@@ -763,6 +796,7 @@ export default function FacultyDashboardPage() {
         tasksRes,
         mcqRes,
         lecturesRes,
+        materialsRes,
         attSessionsRes,
       ] = await Promise.all([
         supabase
@@ -796,6 +830,15 @@ export default function FacultyDashboardPage() {
             "id, title, description, subject, drive_link, created_at, batch_id, batches(batch_name)",
           )
           .eq("faculty_user_id", uid)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("study_materials")
+          .select(
+            "id, title, description, subject, drive_link, created_at, batch_id, batches(batch_name)",
+          )
+          .eq("faculty_user_id", uid)
+          .eq("is_active", true)
           .order("created_at", { ascending: false }),
         supabase
           .from("class_sessions")
@@ -843,6 +886,10 @@ export default function FacultyDashboardPage() {
       }
       if (lecturesRes.data)
         setLectures(lecturesRes.data as unknown as RecordedLectureFaculty[]);
+      if (materialsRes.data)
+        setStudyMaterials(
+          materialsRes.data as unknown as StudyMaterialFaculty[],
+        );
 
       // Load classes with backward-compatible fallback for DBs missing is_live.
       const { data: classesData, error: classesError } = await supabase
@@ -899,6 +946,11 @@ export default function FacultyDashboardPage() {
           lecturesRes.data as unknown as RecordedLectureFaculty[] | null
         )?.forEach((lecture) => {
           if (lecture.batch_id != null) linkedBatchIds.add(lecture.batch_id);
+        });
+        (
+          materialsRes.data as unknown as StudyMaterialFaculty[] | null
+        )?.forEach((material) => {
+          if (material.batch_id != null) linkedBatchIds.add(material.batch_id);
         });
 
         const missingBatchIds = Array.from(linkedBatchIds).filter(
@@ -1511,60 +1563,95 @@ export default function FacultyDashboardPage() {
         created_by: user.id,
       };
 
-      const minimalPayload = {
-        // Base schema compatibility payload (without newer columns)
+      const legacyInsertPayload = {
+        // Base schema compatibility payload for older DBs.
         title: mcqForm.title.trim(),
         total_marks: totalMarks,
-        negative_marking: mcqForm.testType === "mcq" ? negativeMarking : 0,
         course_id: courseId,
         scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
         created_by: user.id,
       };
 
+      const legacyUpdatePayload = {
+        // Update payload for older DBs (avoid newer columns).
+        title: mcqForm.title.trim(),
+        total_marks: totalMarks,
+        course_id: courseId,
+        scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
+      };
+
       // Some DB instances still have the older mock_tests schema.
       // Try full write first; if columns are missing, retry with minimal payload.
-      let insertData: unknown = null;
-      let insertError: { code?: string; message?: string } | null = null;
+      let savedTestData: unknown = null;
 
-      const fullInsert = editingTestId
-        ? await supabase
-            .from("mock_tests")
-            .update(fullPayload)
-            .eq("id", editingTestId)
-            .select()
-            .single()
-        : await supabase
-            .from("mock_tests")
-            .insert(fullPayload)
-            .select()
-            .single();
-      insertData = fullInsert.data;
-      insertError = fullInsert.error as {
-        code?: string;
-        message?: string;
-      } | null;
+      if (editingTestId) {
+        let updateError: { code?: string; message?: string } | null = null;
 
-      if (insertError?.code === "42703") {
-        const fallbackInsert = editingTestId
-          ? await supabase
-              .from("mock_tests")
-              .update(minimalPayload)
-              .eq("id", editingTestId)
-              .select()
-              .single()
-          : await supabase
-              .from("mock_tests")
-              .insert(minimalPayload)
-              .select()
-              .single();
-        insertData = fallbackInsert.data;
-        insertError = fallbackInsert.error as {
+        const fullUpdate = await supabase
+          .from("mock_tests")
+          .update(fullPayload)
+          .eq("id", editingTestId);
+        updateError = fullUpdate.error as {
           code?: string;
           message?: string;
         } | null;
-      }
 
-      if (insertError) throw insertError;
+        if (updateError?.code === "42703") {
+          const fallbackUpdate = await supabase
+            .from("mock_tests")
+            .update(legacyUpdatePayload)
+            .eq("id", editingTestId);
+          updateError = fallbackUpdate.error as {
+            code?: string;
+            message?: string;
+          } | null;
+        }
+
+        if (updateError) throw updateError;
+
+        const refreshed = await supabase
+          .from("mock_tests")
+          .select(
+            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+          )
+          .eq("id", editingTestId)
+          .maybeSingle();
+
+        if (refreshed.error) {
+          const err = refreshed.error as { code?: string; message?: string };
+          if (err.code !== "PGRST116") throw refreshed.error;
+        }
+
+        savedTestData = refreshed.data;
+      } else {
+        let insertError: { code?: string; message?: string } | null = null;
+
+        const fullInsert = await supabase
+          .from("mock_tests")
+          .insert(fullPayload)
+          .select()
+          .single();
+        savedTestData = fullInsert.data;
+        insertError = fullInsert.error as {
+          code?: string;
+          message?: string;
+        } | null;
+
+        if (insertError?.code === "42703") {
+          const fallbackInsert = await supabase
+            .from("mock_tests")
+            .insert(legacyInsertPayload)
+            .select()
+            .single();
+          savedTestData = fallbackInsert.data;
+          insertError = fallbackInsert.error as {
+            code?: string;
+            message?: string;
+          } | null;
+        }
+
+        if (insertError) throw insertError;
+      }
 
       setMcqMsg({
         type: "ok",
@@ -1574,8 +1661,10 @@ export default function FacultyDashboardPage() {
       });
       resetMcqForm();
       load();
-      if (insertData) {
-        setSelectedTest(insertData as McqTestFaculty);
+      if (savedTestData) {
+        setSelectedTest(savedTestData as McqTestFaculty);
+      }
+      if (!editingTestId) {
         setTestQuestions([]);
         setShowQForm(false);
       }
@@ -2283,17 +2372,27 @@ export default function FacultyDashboardPage() {
         setLectureMsg({ type: "err", text: "Please select a valid batch." });
         return;
       }
-      const { error } = await supabase.from("recorded_lectures").insert({
+      const payload = {
         batch_id: batchId,
         faculty_user_id: user.id,
         title: lectureForm.title,
         subject: lectureForm.subject || null,
         description: lectureForm.description || null,
         drive_link: lectureForm.driveLink,
-      });
+      };
+      const { error } = editingLectureId
+        ? await supabase
+            .from("recorded_lectures")
+            .update(payload)
+            .eq("id", editingLectureId)
+        : await supabase.from("recorded_lectures").insert(payload);
       if (error) throw error;
-      setLectureMsg({ type: "ok", text: "Lecture link added!" });
+      setLectureMsg({
+        type: "ok",
+        text: editingLectureId ? "Lecture updated!" : "Lecture link added!",
+      });
       setShowLectureForm(false);
+      setEditingLectureId(null);
       setLectureForm({
         batchId: "",
         title: "",
@@ -2303,10 +2402,40 @@ export default function FacultyDashboardPage() {
       });
       load();
     } catch {
-      setLectureMsg({ type: "err", text: "Failed to add lecture." });
+      setLectureMsg({
+        type: "err",
+        text: editingLectureId
+          ? "Failed to update lecture."
+          : "Failed to add lecture.",
+      });
     } finally {
       setLectureSubmitting(false);
     }
+  }
+
+  function startEditLecture(lecture: RecordedLectureFaculty) {
+    setEditingLectureId(lecture.id);
+    setShowLectureForm(true);
+    setLectureMsg(null);
+    setLectureForm({
+      batchId: lecture.batch_id ? String(lecture.batch_id) : "",
+      title: lecture.title,
+      subject: lecture.subject ?? "",
+      description: lecture.description ?? "",
+      driveLink: lecture.drive_link,
+    });
+  }
+
+  function cancelLectureEdit() {
+    setEditingLectureId(null);
+    setShowLectureForm(false);
+    setLectureForm({
+      batchId: "",
+      title: "",
+      subject: "",
+      description: "",
+      driveLink: "",
+    });
   }
 
   async function deleteLecture(id: number) {
@@ -2316,6 +2445,107 @@ export default function FacultyDashboardPage() {
       .from("recorded_lectures")
       .update({ is_active: false })
       .eq("id", id);
+    if (editingLectureId === id) {
+      cancelLectureEdit();
+    }
+    setLectureMsg({ type: "ok", text: "Lecture deleted." });
+    load();
+  }
+
+  async function addStudyMaterial() {
+    const supabase = createClient();
+    setStudyMaterialSubmitting(true);
+    setStudyMaterialMsg(null);
+    try {
+      const user = await getFacultyUserSafe(supabase);
+      if (!user) return;
+      const batchId = parseInt(studyMaterialForm.batchId, 10);
+      if (!Number.isFinite(batchId)) {
+        setStudyMaterialMsg({
+          type: "err",
+          text: "Please select a valid batch.",
+        });
+        return;
+      }
+      const payload = {
+        batch_id: batchId,
+        faculty_user_id: user.id,
+        title: studyMaterialForm.title,
+        subject: studyMaterialForm.subject || null,
+        description: studyMaterialForm.description || null,
+        drive_link: studyMaterialForm.driveLink,
+      };
+      const { error } = editingStudyMaterialId
+        ? await supabase
+            .from("study_materials")
+            .update(payload)
+            .eq("id", editingStudyMaterialId)
+        : await supabase.from("study_materials").insert(payload);
+      if (error) throw error;
+      setStudyMaterialMsg({
+        type: "ok",
+        text: editingStudyMaterialId
+          ? "Study material updated!"
+          : "Study material added!",
+      });
+      setShowStudyMaterialForm(false);
+      setEditingStudyMaterialId(null);
+      setStudyMaterialForm({
+        batchId: "",
+        title: "",
+        subject: "",
+        description: "",
+        driveLink: "",
+      });
+      load();
+    } catch {
+      setStudyMaterialMsg({
+        type: "err",
+        text: editingStudyMaterialId
+          ? "Failed to update study material."
+          : "Failed to add study material.",
+      });
+    } finally {
+      setStudyMaterialSubmitting(false);
+    }
+  }
+
+  function startEditStudyMaterial(material: StudyMaterialFaculty) {
+    setEditingStudyMaterialId(material.id);
+    setShowStudyMaterialForm(true);
+    setStudyMaterialMsg(null);
+    setStudyMaterialForm({
+      batchId: material.batch_id ? String(material.batch_id) : "",
+      title: material.title,
+      subject: material.subject ?? "",
+      description: material.description ?? "",
+      driveLink: material.drive_link,
+    });
+  }
+
+  function cancelStudyMaterialEdit() {
+    setEditingStudyMaterialId(null);
+    setShowStudyMaterialForm(false);
+    setStudyMaterialForm({
+      batchId: "",
+      title: "",
+      subject: "",
+      description: "",
+      driveLink: "",
+    });
+  }
+
+  async function deleteStudyMaterial(id: number) {
+    if (!confirm("Delete this study material link?")) return;
+    const supabase = createClient();
+    await supabase
+      .from("study_materials")
+      .update({ is_active: false })
+      .eq("id", id);
+    if (editingStudyMaterialId === id) {
+      cancelStudyMaterialEdit();
+    }
+    setStudyMaterialMsg({ type: "ok", text: "Study material deleted." });
     load();
   }
 
@@ -2672,6 +2902,13 @@ export default function FacultyDashboardPage() {
                 onClick={setActiveSection}
                 icon={PlayCircle}
                 label="Recorded Lectures"
+              />
+              <NavBtn
+                section="studyMaterial"
+                active={activeSection}
+                onClick={setActiveSection}
+                icon={BookOpen}
+                label="Study Material"
               />
               <NavBtn
                 section="tasks"
@@ -4529,10 +4766,12 @@ export default function FacultyDashboardPage() {
                   <div className="bg-white rounded-2xl shadow-sm p-5 border border-indigo-100">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
-                        Add Recorded Lecture
+                        {editingLectureId
+                          ? "Edit Recorded Lecture"
+                          : "Add Recorded Lecture"}
                       </h2>
                       <button
-                        onClick={() => setShowLectureForm(false)}
+                        onClick={cancelLectureEdit}
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <X className="w-5 h-5" />
@@ -4644,12 +4883,15 @@ export default function FacultyDashboardPage() {
                       ) : (
                         <Plus className="w-4 h-4" />
                       )}
-                      Add Lecture
+                      {editingLectureId ? "Update Lecture" : "Add Lecture"}
                     </button>
                   </div>
                 ) : (
                   <button
-                    onClick={() => setShowLectureForm(true)}
+                    onClick={() => {
+                      setEditingLectureId(null);
+                      setShowLectureForm(true);
+                    }}
                     className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700"
                   >
                     <Plus className="w-4 h-4" /> Add Recorded Lecture
@@ -4707,7 +4949,246 @@ export default function FacultyDashboardPage() {
                               Drive
                             </a>
                             <button
+                              onClick={() => startEditLecture(lec)}
+                              className="px-3 py-2 bg-amber-50 text-amber-700 text-xs font-semibold rounded-xl hover:bg-amber-100"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
                               onClick={() => deleteLecture(lec.id)}
+                              className="px-3 py-2 bg-red-50 text-red-600 text-xs font-semibold rounded-xl hover:bg-red-100"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ══ STUDY MATERIAL ═════════════════════════ */}
+            {activeSection === "studyMaterial" && (
+              <>
+                <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 text-white">
+                  <h1 className="text-xl font-bold mb-1">Study Material</h1>
+                  <p className="text-blue-100 text-sm">
+                    Add Google Drive links for notes, PDFs, and reference
+                    material
+                  </p>
+                </div>
+
+                {studyMaterialMsg && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-xl text-sm ${studyMaterialMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+                  >
+                    {studyMaterialMsg.type === "ok" ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    {studyMaterialMsg.text}
+                  </div>
+                )}
+
+                {showStudyMaterialForm ? (
+                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="font-bold text-gray-900">
+                        {editingStudyMaterialId
+                          ? "Edit Study Material"
+                          : "Add Study Material"}
+                      </h2>
+                      <button
+                        onClick={cancelStudyMaterialEdit}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Material Title
+                        </label>
+                        <input
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          value={studyMaterialForm.title}
+                          onChange={(e) =>
+                            setStudyMaterialForm((p) => ({
+                              ...p,
+                              title: e.target.value,
+                            }))
+                          }
+                          placeholder="e.g., Unit 3 Notes and Important Topics"
+                        />
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Batch (optional)
+                          </label>
+                          <select
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            value={studyMaterialForm.batchId}
+                            onChange={(e) =>
+                              setStudyMaterialForm((p) => ({
+                                ...p,
+                                batchId: e.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">All my students</option>
+                            {filteredBatches.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.batch_name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Subject / Topic
+                          </label>
+                          <input
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            value={studyMaterialForm.subject}
+                            onChange={(e) =>
+                              setStudyMaterialForm((p) => ({
+                                ...p,
+                                subject: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g., Medieval Poetry"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Google Drive Link
+                        </label>
+                        <input
+                          type="url"
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                          value={studyMaterialForm.driveLink}
+                          onChange={(e) =>
+                            setStudyMaterialForm((p) => ({
+                              ...p,
+                              driveLink: e.target.value,
+                            }))
+                          }
+                          placeholder="https://drive.google.com/..."
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                          Description (optional)
+                        </label>
+                        <textarea
+                          rows={2}
+                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none"
+                          value={studyMaterialForm.description}
+                          onChange={(e) =>
+                            setStudyMaterialForm((p) => ({
+                              ...p,
+                              description: e.target.value,
+                            }))
+                          }
+                          placeholder="Brief notes about this material..."
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={addStudyMaterial}
+                      disabled={
+                        studyMaterialSubmitting ||
+                        !studyMaterialForm.title ||
+                        !studyMaterialForm.driveLink
+                      }
+                      className="mt-4 flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm disabled:opacity-60"
+                    >
+                      {studyMaterialSubmitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                      {editingStudyMaterialId
+                        ? "Update Study Material"
+                        : "Add Study Material"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingStudyMaterialId(null);
+                      setShowStudyMaterialForm(true);
+                    }}
+                    className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700"
+                  >
+                    <Plus className="w-4 h-4" /> Add Study Material
+                  </button>
+                )}
+
+                {studyMaterials.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
+                    <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">
+                      No study material added yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {studyMaterials.map((material) => {
+                      const batch = unwrapOne(material.batches);
+                      return (
+                        <div
+                          key={material.id}
+                          className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                              <BookOpen className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-gray-900 text-sm">
+                                {material.title}
+                              </h3>
+                              {material.subject && (
+                                <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                                  {material.subject}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-400">
+                                {batch?.batch_name ?? "All batches"} |{" "}
+                                {fmtDate(material.created_at)}
+                              </p>
+                              {material.description && (
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {material.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <a
+                              href={material.drive_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-700 text-xs font-semibold rounded-xl hover:bg-blue-200"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" /> Open
+                              Drive
+                            </a>
+                            <button
+                              onClick={() => startEditStudyMaterial(material)}
+                              className="px-3 py-2 bg-amber-50 text-amber-700 text-xs font-semibold rounded-xl hover:bg-amber-100"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => deleteStudyMaterial(material.id)}
                               className="px-3 py-2 bg-red-50 text-red-600 text-xs font-semibold rounded-xl hover:bg-red-100"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
