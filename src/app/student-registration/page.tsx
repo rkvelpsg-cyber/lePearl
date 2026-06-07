@@ -42,7 +42,8 @@ type ResearchAssistanceFeeOptionId =
   | "thesis"
   | "phd-proposal"
   | "mla-apa"
-  | "mentoring";
+  | "mentoring-one-hour"
+  | "mentoring-thirty-minutes";
 
 type UPGDCFeeOptionId =
   | "combined-full"
@@ -60,6 +61,22 @@ type GICFeeOptionId =
   | "mains-without-material"
   | "mains-with-material";
 
+type LTGradeFeeOptionId =
+  | "prelims-full"
+  | "prelims-instalment"
+  | "combined-full"
+  | "combined-instalment"
+  | "mains-without-material"
+  | "mains-with-material";
+
+type CommunicationSkillsFeeOptionId = "beginner" | "intermediate" | "advanced";
+
+type InterviewPrepFeeOptionId = "full-preparation" | "mock-interview";
+
+type InterviewPrepCourseId =
+  | "Interview Preparation - Assistant Professor"
+  | "Interview Preparation - Ph.D Interview";
+
 type PaidEnrollmentFormState = {
   fullName: string;
   email: string;
@@ -68,6 +85,9 @@ type PaidEnrollmentFormState = {
   researchAssistanceFeeType: ResearchAssistanceFeeOptionId;
   upgdcFeeOption: UPGDCFeeOptionId;
   gicFeeOption: GICFeeOptionId;
+  ltGradeFeeOption: LTGradeFeeOptionId;
+  communicationSkillsFeeOption: CommunicationSkillsFeeOptionId;
+  interviewPrepFeeOption: InterviewPrepFeeOptionId;
   username: string;
   password: string;
   registrationNo: string;
@@ -120,6 +140,9 @@ const initialPaidForm = (): PaidEnrollmentFormState => ({
   researchAssistanceFeeType: "research-paper",
   upgdcFeeOption: "combined-full",
   gicFeeOption: "prelims-only",
+  ltGradeFeeOption: "prelims-full",
+  communicationSkillsFeeOption: "beginner",
+  interviewPrepFeeOption: "full-preparation",
   username: "",
   password: "",
   registrationNo: generateRegistrationNo(),
@@ -148,6 +171,80 @@ type SubmissionState =
 const PAID_REGISTRATION_DRAFT_KEY = "lepearl-paid-registration-draft";
 const PAID_REGISTRATION_COURSE_BACK_KEY = "lepearl-paid-course-back-href";
 
+function isInterviewPrepCourseId(
+  course: StudentRegistrationPayload["course"],
+): course is InterviewPrepCourseId {
+  return (
+    course === "Interview Preparation - Assistant Professor" ||
+    course === "Interview Preparation - Ph.D Interview"
+  );
+}
+
+function getInterviewPrepFeeOptions(course: InterviewPrepCourseId) {
+  if (course === "Interview Preparation - Ph.D Interview") {
+    return [
+      {
+        id: "full-preparation" as const,
+        title: "Full PhD Preparation",
+        totalAmount: 7495,
+        tenure: "full" as const,
+        note: "Classes + Mock Viva",
+      },
+      {
+        id: "mock-interview" as const,
+        title: "Mock Viva Package",
+        totalAmount: 2000,
+        tenure: "full" as const,
+        note: "Rs. 2,000 per mock test",
+      },
+    ];
+  }
+
+  return [
+    {
+      id: "full-preparation" as const,
+      title: "Full Preparation Package",
+      totalAmount: 7495,
+      tenure: "full" as const,
+      note: "Classes + Mock Interviews",
+    },
+    {
+      id: "mock-interview" as const,
+      title: "Mock Interview Package",
+      totalAmount: 2000,
+      tenure: "full" as const,
+      note: "Rs. 2,000 per mock test",
+    },
+  ];
+}
+
+function getCourseBackHref(
+  course: StudentRegistrationPayload["course"],
+): string | null {
+  switch (course) {
+    case "UP GDC":
+      return "/courses-upgdc";
+    case "NET Paper 1":
+      return "/courses-net-paper1";
+    case "NET Paper 2 (English)":
+      return "/courses-net-paper2";
+    case "GIC":
+      return "/courses-gic";
+    case "LT Grade":
+      return "/courses-ltgrade";
+    case "Interview Preparation - Assistant Professor":
+      return "/interview-preparation/assistant-professor-1";
+    case "Interview Preparation - Ph.D Interview":
+      return "/interview-preparation/phd-interview";
+    case "Communication Skills":
+      return "/courses-communication-skills";
+    case "Research Assistance":
+      return "/research-assistance";
+    default:
+      return null;
+  }
+}
+
 const researchAssistanceFeeOptions: {
   id: ResearchAssistanceFeeOptionId;
   title: string;
@@ -175,12 +272,37 @@ const researchAssistanceFeeOptions: {
     amount: 1995,
   },
   {
-    id: "mentoring",
-    title: "Guidance and Mentoring for Research Paper Writing",
+    id: "mentoring-one-hour",
+    title: "Guidance and Mentoring for Research Paper Writing (1 Hour)",
     amount: 1000,
-    note: "30 minutes option is also available at Rs. 750",
+    note: "One hour slot",
+  },
+  {
+    id: "mentoring-thirty-minutes",
+    title: "Guidance and Mentoring for Research Paper Writing (30 Minutes)",
+    amount: 750,
+    note: "30 minute slot",
   },
 ];
+
+function normalizeResearchAssistanceFeeOption(
+  value: string | null,
+): ResearchAssistanceFeeOptionId | null {
+  if (value === "mentoring") {
+    return "mentoring-one-hour";
+  }
+
+  return isResearchAssistanceFeeOptionId(value) ? value : null;
+}
+
+function isResearchAssistanceFeeOptionId(
+  value: string | null,
+): value is ResearchAssistanceFeeOptionId {
+  return (
+    !!value &&
+    researchAssistanceFeeOptions.some((option) => option.id === value)
+  );
+}
 
 const upgdcFeeOptions: {
   id: UPGDCFeeOptionId;
@@ -354,12 +476,155 @@ const gicFeeOptions: {
   },
 ];
 
+const ltGradeFeeOptions: {
+  id: LTGradeFeeOptionId;
+  title: string;
+  totalAmount: number;
+  tenure: "full" | "instalment";
+  note: string;
+  instalments?: { label: string; amount: number; note: string }[];
+}[] = [
+  {
+    id: "prelims-full",
+    title: "LT Grade Prelims (Full Payment)",
+    totalAmount: 9995,
+    tenure: "full",
+    note: "One-time payment for Prelims",
+  },
+  {
+    id: "prelims-instalment",
+    title: "LT Grade Prelims (3 Instalments)",
+    totalAmount: 10200,
+    tenure: "instalment",
+    note: "Pay Rs. 3,400 now · split across 3 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 3400,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 3400,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 3400,
+        note: "Due 60 days after enrolment",
+      },
+    ],
+  },
+  {
+    id: "mains-without-material",
+    title: "LT Grade Mains (Without Study Material)",
+    totalAmount: 7995,
+    tenure: "full",
+    note: "Mains-only access without study material",
+  },
+  {
+    id: "mains-with-material",
+    title: "LT Grade Mains (With Study Material)",
+    totalAmount: 13995,
+    tenure: "full",
+    note: "Mains-only access with study material",
+  },
+  {
+    id: "combined-full",
+    title: "LT Grade Prelims + Mains (Full Payment)",
+    totalAmount: 14994,
+    tenure: "full",
+    note: "One-time payment for complete track",
+  },
+  {
+    id: "combined-instalment",
+    title: "LT Grade Prelims + Mains (3 Instalments)",
+    totalAmount: 17985,
+    tenure: "instalment",
+    note: "Pay Rs. 5,995 now · split across 3 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 5995,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 5995,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 5995,
+        note: "Due 60 days after enrolment",
+      },
+    ],
+  },
+];
+
+const interviewPrepFeeOptions = getInterviewPrepFeeOptions(
+  "Interview Preparation - Assistant Professor",
+);
+
+const communicationSkillsFeeOptions: {
+  id: CommunicationSkillsFeeOptionId;
+  title: string;
+  totalAmount: number;
+  tenure: "full";
+  note: string;
+}[] = [
+  {
+    id: "beginner",
+    title: "Beginner Level",
+    totalAmount: 3995,
+    tenure: "full",
+    note: "Duration: 1 month · Total hours: 25",
+  },
+  {
+    id: "intermediate",
+    title: "Intermediate Level",
+    totalAmount: 4995,
+    tenure: "full",
+    note: "Duration: 1 month · Total hours: 25",
+  },
+  {
+    id: "advanced",
+    title: "Advanced Level",
+    totalAmount: 5995,
+    tenure: "full",
+    note: "Duration: 1 month · Total hours: 25",
+  },
+];
+
 function isUPGDCFeeOptionId(value: string | null): value is UPGDCFeeOptionId {
   return !!value && upgdcFeeOptions.some((option) => option.id === value);
 }
 
 function isGICFeeOptionId(value: string | null): value is GICFeeOptionId {
   return !!value && gicFeeOptions.some((option) => option.id === value);
+}
+
+function isLTGradeFeeOptionId(
+  value: string | null,
+): value is LTGradeFeeOptionId {
+  return !!value && ltGradeFeeOptions.some((option) => option.id === value);
+}
+
+function isCommunicationSkillsFeeOptionId(
+  value: string | null,
+): value is CommunicationSkillsFeeOptionId {
+  return (
+    !!value &&
+    communicationSkillsFeeOptions.some((option) => option.id === value)
+  );
+}
+
+function isInterviewPrepFeeOptionId(
+  value: string | null,
+): value is InterviewPrepFeeOptionId {
+  return (
+    !!value && interviewPrepFeeOptions.some((option) => option.id === value)
+  );
 }
 
 function StudentRegistrationContent() {
@@ -393,6 +658,14 @@ function StudentRegistrationContent() {
     useState<UPGDCFeeOptionId>("combined-full");
   const [modalGICFeeChoice, setModalGICFeeChoice] =
     useState<GICFeeOptionId>("prelims-only");
+  const [modalLTGradeFeeChoice, setModalLTGradeFeeChoice] =
+    useState<LTGradeFeeOptionId>("prelims-full");
+  const [
+    modalCommunicationSkillsFeeChoice,
+    setModalCommunicationSkillsFeeChoice,
+  ] = useState<CommunicationSkillsFeeOptionId>("beginner");
+  const [modalInterviewPrepFeeChoice, setModalInterviewPrepFeeChoice] =
+    useState<InterviewPrepFeeOptionId>("full-preparation");
   const [modalResearchFeeChoice, setModalResearchFeeChoice] =
     useState<ResearchAssistanceFeeOptionId>("research-paper");
   const safePaidFormData: PaidEnrollmentFormState = {
@@ -408,6 +681,18 @@ function StudentRegistrationContent() {
     safePaidFormData.course === "Research Assistance";
   const isUPGDCCourse = safePaidFormData.course === "UP GDC";
   const isGICCourse = safePaidFormData.course === "GIC";
+  const isLTGradeCourse = safePaidFormData.course === "LT Grade";
+  const isCommunicationSkillsCourse =
+    safePaidFormData.course === "Communication Skills";
+  const isInterviewPrepCourse = isInterviewPrepCourseId(
+    safePaidFormData.course,
+  );
+  const interviewPrepCourse = isInterviewPrepCourse
+    ? (safePaidFormData.course as InterviewPrepCourseId)
+    : null;
+  const interviewPrepFeeOptionsForCourse = isInterviewPrepCourse
+    ? getInterviewPrepFeeOptions(interviewPrepCourse!)
+    : interviewPrepFeeOptions;
   const selectedResearchAssistanceFee = researchAssistanceFeeOptions.find(
     (option) => option.id === safePaidFormData.researchAssistanceFeeType,
   );
@@ -417,12 +702,25 @@ function StudentRegistrationContent() {
   const selectedGICFee = gicFeeOptions.find(
     (option) => option.id === safePaidFormData.gicFeeOption,
   );
+  const selectedLTGradeFee = ltGradeFeeOptions.find(
+    (option) => option.id === safePaidFormData.ltGradeFeeOption,
+  );
+  const selectedCommunicationSkillsFee = communicationSkillsFeeOptions.find(
+    (option) => option.id === safePaidFormData.communicationSkillsFeeOption,
+  );
+  const selectedInterviewPrepFee = interviewPrepFeeOptionsForCourse.find(
+    (option) => option.id === safePaidFormData.interviewPrepFeeOption,
+  );
 
   const currentPlan = coursePaymentPlans[safePaidFormData.course];
   const researchAssistanceBaseFee =
     selectedResearchAssistanceFee?.amount ?? 2995;
   const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 19995;
   const gicBaseFee = selectedGICFee?.totalAmount ?? 9995;
+  const ltGradeBaseFee = selectedLTGradeFee?.totalAmount ?? 9995;
+  const communicationSkillsBaseFee =
+    selectedCommunicationSkillsFee?.totalAmount ?? 3995;
+  const interviewPrepBaseFee = selectedInterviewPrepFee?.totalAmount ?? 7495;
   const baseCourseFee =
     (isResearchAssistanceCourse
       ? researchAssistanceBaseFee
@@ -430,7 +728,13 @@ function StudentRegistrationContent() {
         ? upgdcBaseFee
         : isGICCourse
           ? gicBaseFee
-          : currentPlan?.fullAmount) ??
+          : isLTGradeCourse
+            ? ltGradeBaseFee
+            : isCommunicationSkillsCourse
+              ? communicationSkillsBaseFee
+              : isInterviewPrepCourse
+                ? interviewPrepBaseFee
+                : currentPlan?.fullAmount) ??
     paidRegistrationCourseFees[safePaidFormData.course] ??
     defaultPaidRegistrationCourseFee;
   const hasPublishedFee = baseCourseFee > 0;
@@ -455,7 +759,9 @@ function StudentRegistrationContent() {
       ? selectedUPGDCFee.instalments
       : isGICCourse && selectedGICFee?.tenure === "instalment"
         ? selectedGICFee.instalments
-        : currentPlan?.instalments;
+        : isLTGradeCourse && selectedLTGradeFee?.tenure === "instalment"
+          ? selectedLTGradeFee.instalments
+          : currentPlan?.instalments;
   const firstInstalmentAmount = activeInstalments?.[0]?.amount ?? 0;
   const instalmentTotal =
     activeInstalments?.reduce((sum, item) => sum + item.amount, 0) ??
@@ -502,9 +808,17 @@ function StudentRegistrationContent() {
           persistedPaidDraft,
         ) as Partial<PaidEnrollmentFormState>;
         if (parsedDraft && typeof parsedDraft === "object") {
+          const normalizedResearchFeeType =
+            normalizeResearchAssistanceFeeOption(
+              typeof parsedDraft.researchAssistanceFeeType === "string"
+                ? parsedDraft.researchAssistanceFeeType
+                : null,
+            );
           setPaidFormData((current) => ({
             ...current,
             ...parsedDraft,
+            researchAssistanceFeeType:
+              normalizedResearchFeeType ?? current.researchAssistanceFeeType,
             // Never restore passwords from storage.
             password: "",
           }));
@@ -524,8 +838,18 @@ function StudentRegistrationContent() {
     const searchParams = new URLSearchParams(window.location.search);
     const modeParam = searchParams.get("mode");
     const courseParam = searchParams.get("course");
+    const researchAssistanceFeeTypeParam = searchParams.get(
+      "researchAssistanceFeeType",
+    );
     const upgdcFeeOptionParam = searchParams.get("upgdcFeeOption");
     const gicFeeOptionParam = searchParams.get("gicFeeOption");
+    const ltGradeFeeOptionParam = searchParams.get("ltGradeFeeOption");
+    const communicationSkillsFeeOptionParam = searchParams.get(
+      "communicationSkillsFeeOption",
+    );
+    const interviewPrepFeeOptionParam = searchParams.get(
+      "interviewPrepFeeOption",
+    );
     const hasPaidCourseFlow =
       modeParam === "paid" &&
       !!courseParam &&
@@ -533,6 +857,8 @@ function StudentRegistrationContent() {
 
     // Show "Back to Course Page" only when this page was opened from a course-route enrol flow.
     if (hasPaidCourseFlow) {
+      const fallbackCourseBackHref = getCourseBackHref(courseParam);
+
       try {
         if (document.referrer) {
           const refUrl = new URL(document.referrer);
@@ -542,7 +868,8 @@ function StudentRegistrationContent() {
             /^\/courses-[a-z0-9-]+$/i.test(refPath) ||
             refPath === "/all-courses" ||
             refPath === "/research-assistance" ||
-            refPath === "/interview-preparation";
+            refPath === "/interview-preparation" ||
+            /^\/interview-preparation\/[a-z0-9-]+$/i.test(refPath);
 
           if (isSameOrigin && isCourseRoute) {
             const resolvedCourseBackHref = `${refPath}${refUrl.search}${refUrl.hash}`;
@@ -551,10 +878,28 @@ function StudentRegistrationContent() {
               PAID_REGISTRATION_COURSE_BACK_KEY,
               resolvedCourseBackHref,
             );
+          } else if (fallbackCourseBackHref) {
+            setCourseBackHref(fallbackCourseBackHref);
+            window.sessionStorage.setItem(
+              PAID_REGISTRATION_COURSE_BACK_KEY,
+              fallbackCourseBackHref,
+            );
           }
+        } else if (fallbackCourseBackHref) {
+          setCourseBackHref(fallbackCourseBackHref);
+          window.sessionStorage.setItem(
+            PAID_REGISTRATION_COURSE_BACK_KEY,
+            fallbackCourseBackHref,
+          );
         }
       } catch {
-        // Keep previously restored course back link if any.
+        if (fallbackCourseBackHref) {
+          setCourseBackHref(fallbackCourseBackHref);
+          window.sessionStorage.setItem(
+            PAID_REGISTRATION_COURSE_BACK_KEY,
+            fallbackCourseBackHref,
+          );
+        }
       }
     } else {
       // Non course-flow: clear stale course back links.
@@ -565,34 +910,90 @@ function StudentRegistrationContent() {
     if (courseParam && isValidStudentRegistrationCourse(courseParam)) {
       const hasUPGDCSelectionFromCoursePage =
         courseParam === "UP GDC" && isUPGDCFeeOptionId(upgdcFeeOptionParam);
+      const normalizedResearchAssistanceFeeType =
+        normalizeResearchAssistanceFeeOption(researchAssistanceFeeTypeParam);
+      const hasResearchAssistanceSelectionFromCoursePage =
+        courseParam === "Research Assistance" &&
+        normalizedResearchAssistanceFeeType !== null;
       const hasGICSelectionFromCoursePage =
         courseParam === "GIC" && isGICFeeOptionId(gicFeeOptionParam);
+      const hasLTGradeSelectionFromCoursePage =
+        courseParam === "LT Grade" &&
+        isLTGradeFeeOptionId(ltGradeFeeOptionParam);
+      const hasCommunicationSkillsSelectionFromCoursePage =
+        courseParam === "Communication Skills" &&
+        isCommunicationSkillsFeeOptionId(communicationSkillsFeeOptionParam);
+      const hasInterviewPrepSelectionFromCoursePage =
+        isInterviewPrepCourseId(courseParam) &&
+        isInterviewPrepFeeOptionId(interviewPrepFeeOptionParam);
       const resolvedUPGDCOption: UPGDCFeeOptionId =
         hasUPGDCSelectionFromCoursePage && upgdcFeeOptionParam
           ? upgdcFeeOptionParam
           : "combined-full";
+      const resolvedResearchAssistanceFeeType: ResearchAssistanceFeeOptionId =
+        hasResearchAssistanceSelectionFromCoursePage &&
+        normalizedResearchAssistanceFeeType
+          ? normalizedResearchAssistanceFeeType
+          : "research-paper";
       const resolvedGICOption: GICFeeOptionId =
         hasGICSelectionFromCoursePage && gicFeeOptionParam
           ? gicFeeOptionParam
           : "prelims-only";
+      const resolvedLTGradeOption: LTGradeFeeOptionId =
+        hasLTGradeSelectionFromCoursePage && ltGradeFeeOptionParam
+          ? ltGradeFeeOptionParam
+          : "prelims-full";
+      const resolvedCommunicationSkillsOption: CommunicationSkillsFeeOptionId =
+        hasCommunicationSkillsSelectionFromCoursePage &&
+        communicationSkillsFeeOptionParam
+          ? communicationSkillsFeeOptionParam
+          : "beginner";
+      const resolvedInterviewPrepOption: InterviewPrepFeeOptionId =
+        hasInterviewPrepSelectionFromCoursePage && interviewPrepFeeOptionParam
+          ? interviewPrepFeeOptionParam
+          : "full-preparation";
       const resolvedUPGDCTenure =
         upgdcFeeOptions.find((option) => option.id === resolvedUPGDCOption)
           ?.tenure ?? "full";
       const resolvedGICTenure =
         gicFeeOptions.find((option) => option.id === resolvedGICOption)
           ?.tenure ?? "full";
+      const resolvedLTGradeTenure =
+        ltGradeFeeOptions.find((option) => option.id === resolvedLTGradeOption)
+          ?.tenure ?? "full";
+      const resolvedCommunicationSkillsTenure =
+        communicationSkillsFeeOptions.find(
+          (option) => option.id === resolvedCommunicationSkillsOption,
+        )?.tenure ?? "full";
+      const resolvedInterviewPrepTenure =
+        (isInterviewPrepCourseId(courseParam)
+          ? getInterviewPrepFeeOptions(courseParam)
+          : interviewPrepFeeOptions
+        ).find((option) => option.id === resolvedInterviewPrepOption)?.tenure ??
+        "full";
 
       setPaidFormData((current) => ({
         ...current,
         course: courseParam,
-        researchAssistanceFeeType: "research-paper",
+        researchAssistanceFeeType: resolvedResearchAssistanceFeeType,
         upgdcFeeOption: resolvedUPGDCOption,
         gicFeeOption: resolvedGICOption,
+        ltGradeFeeOption: resolvedLTGradeOption,
+        communicationSkillsFeeOption: resolvedCommunicationSkillsOption,
+        interviewPrepFeeOption: resolvedInterviewPrepOption,
         paymentTenure: hasUPGDCSelectionFromCoursePage
           ? resolvedUPGDCTenure
-          : hasGICSelectionFromCoursePage
-            ? resolvedGICTenure
-            : null,
+          : hasResearchAssistanceSelectionFromCoursePage
+            ? "full"
+            : hasGICSelectionFromCoursePage
+              ? resolvedGICTenure
+              : hasLTGradeSelectionFromCoursePage
+                ? resolvedLTGradeTenure
+                : hasCommunicationSkillsSelectionFromCoursePage
+                  ? resolvedCommunicationSkillsTenure
+                  : hasInterviewPrepSelectionFromCoursePage
+                    ? resolvedInterviewPrepTenure
+                    : null,
       }));
 
       // Auto-open fee plan modal when arriving from course pages, except when
@@ -600,15 +1001,31 @@ function StudentRegistrationContent() {
       setModalPlanChoice(
         hasUPGDCSelectionFromCoursePage
           ? resolvedUPGDCTenure
-          : hasGICSelectionFromCoursePage
-            ? resolvedGICTenure
-            : "full",
+          : hasResearchAssistanceSelectionFromCoursePage
+            ? "full"
+            : hasGICSelectionFromCoursePage
+              ? resolvedGICTenure
+              : hasLTGradeSelectionFromCoursePage
+                ? resolvedLTGradeTenure
+                : hasCommunicationSkillsSelectionFromCoursePage
+                  ? resolvedCommunicationSkillsTenure
+                  : hasInterviewPrepSelectionFromCoursePage
+                    ? resolvedInterviewPrepTenure
+                    : "full",
       );
+      setModalResearchFeeChoice(resolvedResearchAssistanceFeeType);
       setModalUPGDCFeeChoice(resolvedUPGDCOption);
       setModalGICFeeChoice(resolvedGICOption);
-      setModalResearchFeeChoice("research-paper");
+      setModalLTGradeFeeChoice(resolvedLTGradeOption);
+      setModalCommunicationSkillsFeeChoice(resolvedCommunicationSkillsOption);
+      setModalInterviewPrepFeeChoice(resolvedInterviewPrepOption);
       setShowFeePlanModal(
-        !hasUPGDCSelectionFromCoursePage && !hasGICSelectionFromCoursePage,
+        !hasUPGDCSelectionFromCoursePage &&
+          !hasResearchAssistanceSelectionFromCoursePage &&
+          !hasGICSelectionFromCoursePage &&
+          !hasLTGradeSelectionFromCoursePage &&
+          !hasCommunicationSkillsSelectionFromCoursePage &&
+          !hasInterviewPrepSelectionFromCoursePage,
       );
     }
 
@@ -642,11 +1059,23 @@ function StudentRegistrationContent() {
       upgdcFeeOption:
         newCourse === "UP GDC" ? "combined-full" : current.upgdcFeeOption,
       gicFeeOption: newCourse === "GIC" ? "prelims-only" : current.gicFeeOption,
+      ltGradeFeeOption:
+        newCourse === "LT Grade" ? "prelims-full" : current.ltGradeFeeOption,
+      communicationSkillsFeeOption:
+        newCourse === "Communication Skills"
+          ? "beginner"
+          : current.communicationSkillsFeeOption,
+      interviewPrepFeeOption: isInterviewPrepCourseId(newCourse)
+        ? "full-preparation"
+        : current.interviewPrepFeeOption,
       paymentTenure: null,
     }));
     setModalPlanChoice("full");
     setModalUPGDCFeeChoice("combined-full");
     setModalGICFeeChoice("prelims-only");
+    setModalLTGradeFeeChoice("prelims-full");
+    setModalCommunicationSkillsFeeChoice("beginner");
+    setModalInterviewPrepFeeChoice("full-preparation");
     setModalResearchFeeChoice("research-paper");
     setShowFeePlanModal(true);
   }
@@ -697,7 +1126,13 @@ function StudentRegistrationContent() {
           ? `Paid Enrolment - ${safePaidFormData.course} (${selectedUPGDCFee?.title ?? "Selected Plan"})`
           : isGICCourse
             ? `Paid Enrolment - ${safePaidFormData.course} (${selectedGICFee?.title ?? "Selected Plan"})`
-            : `Paid Enrolment - ${safePaidFormData.course}`;
+            : isLTGradeCourse
+              ? `Paid Enrolment - ${safePaidFormData.course} (${selectedLTGradeFee?.title ?? "Selected Plan"})`
+              : isCommunicationSkillsCourse
+                ? `Paid Enrolment - ${safePaidFormData.course} (${selectedCommunicationSkillsFee?.title ?? "Selected Level"})`
+                : isInterviewPrepCourse
+                  ? `Paid Enrolment - ${safePaidFormData.course} (${selectedInterviewPrepFee?.title ?? "Selected Plan"})`
+                  : `Paid Enrolment - ${safePaidFormData.course}`;
 
       let orderData: RazorpayOrderResponse | null = null;
       let payment:
@@ -735,6 +1170,15 @@ function StudentRegistrationContent() {
                 : undefined,
               gicFeeOption: isGICCourse
                 ? safePaidFormData.gicFeeOption
+                : undefined,
+              ltGradeFeeOption: isLTGradeCourse
+                ? safePaidFormData.ltGradeFeeOption
+                : undefined,
+              communicationSkillsFeeOption: isCommunicationSkillsCourse
+                ? safePaidFormData.communicationSkillsFeeOption
+                : undefined,
+              interviewPrepFeeOption: isInterviewPrepCourse
+                ? safePaidFormData.interviewPrepFeeOption
                 : undefined,
               registrationNo: safePaidFormData.registrationNo,
             }),
@@ -819,6 +1263,24 @@ function StudentRegistrationContent() {
           upgdcFeeLabel: isUPGDCCourse ? selectedUPGDCFee?.title : undefined,
           gicFeeOption: isGICCourse ? safePaidFormData.gicFeeOption : undefined,
           gicFeeLabel: isGICCourse ? selectedGICFee?.title : undefined,
+          ltGradeFeeOption: isLTGradeCourse
+            ? safePaidFormData.ltGradeFeeOption
+            : undefined,
+          ltGradeFeeLabel: isLTGradeCourse
+            ? selectedLTGradeFee?.title
+            : undefined,
+          communicationSkillsFeeOption: isCommunicationSkillsCourse
+            ? safePaidFormData.communicationSkillsFeeOption
+            : undefined,
+          communicationSkillsFeeLabel: isCommunicationSkillsCourse
+            ? selectedCommunicationSkillsFee?.title
+            : undefined,
+          interviewPrepFeeOption: isInterviewPrepCourse
+            ? safePaidFormData.interviewPrepFeeOption
+            : undefined,
+          interviewPrepFeeLabel: isInterviewPrepCourse
+            ? selectedInterviewPrepFee?.title
+            : undefined,
           baseCourseFee,
           discountAmount: totalDiscount,
           booksFee,
@@ -1163,6 +1625,10 @@ function StudentRegistrationContent() {
                     );
                     setModalUPGDCFeeChoice(safePaidFormData.upgdcFeeOption);
                     setModalGICFeeChoice(safePaidFormData.gicFeeOption);
+                    setModalLTGradeFeeChoice(safePaidFormData.ltGradeFeeOption);
+                    setModalInterviewPrepFeeChoice(
+                      safePaidFormData.interviewPrepFeeOption,
+                    );
                     setModalResearchFeeChoice(
                       safePaidFormData.researchAssistanceFeeType,
                     );
@@ -1195,7 +1661,9 @@ function StudentRegistrationContent() {
                       ? "Selected fee type from Research Assistance course page."
                       : isUPGDCCourse
                         ? "Selected UP GDC plan from course page."
-                        : "Full payment selected · Discounts eligible."}
+                        : isCommunicationSkillsCourse
+                          ? "Selected communication skills level from course page."
+                          : "Full payment selected · Discounts eligible."}
                   </p>
                   <div className="mt-4 grid gap-3 text-sm text-slate-700">
                     {isResearchAssistanceCourse && (
@@ -1219,6 +1687,30 @@ function StudentRegistrationContent() {
                         <span>Selected Plan</span>
                         <span className="font-semibold text-violet-700">
                           {selectedGICFee?.title}
+                        </span>
+                      </div>
+                    )}
+                    {isLTGradeCourse && (
+                      <div className="flex items-center justify-between">
+                        <span>Selected Plan</span>
+                        <span className="font-semibold text-violet-700">
+                          {selectedLTGradeFee?.title}
+                        </span>
+                      </div>
+                    )}
+                    {isCommunicationSkillsCourse && (
+                      <div className="flex items-center justify-between">
+                        <span>Selected Level</span>
+                        <span className="font-semibold text-violet-700">
+                          {selectedCommunicationSkillsFee?.title}
+                        </span>
+                      </div>
+                    )}
+                    {isInterviewPrepCourse && (
+                      <div className="flex items-center justify-between">
+                        <span>Selected Plan</span>
+                        <span className="font-semibold text-violet-700">
+                          {selectedInterviewPrepFee?.title}
                         </span>
                       </div>
                     )}
@@ -1823,6 +2315,192 @@ function StudentRegistrationContent() {
                       );
                     })}
                   </div>
+                ) : isLTGradeCourse ? (
+                  <div className="space-y-3">
+                    {ltGradeFeeOptions.map((option) => {
+                      const isSelected = modalLTGradeFeeChoice === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setModalLTGradeFeeChoice(option.id)}
+                          className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                            isSelected
+                              ? "border-violet-600 bg-violet-50"
+                              : "border-slate-200 bg-white hover:border-violet-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div
+                                className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                                  isSelected
+                                    ? "border-violet-600"
+                                    : "border-slate-400"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900">
+                                  {option.title}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {option.note}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs. {option.totalAmount}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                {option.tenure === "instalment"
+                                  ? "Instalment"
+                                  : "Full Payment"}
+                              </p>
+                            </div>
+                          </div>
+                          {option.instalments && (
+                            <div className="ml-8 mt-3 space-y-1.5">
+                              {option.instalments.map((inst, idx) => (
+                                <div
+                                  key={`${option.id}-${inst.label}-${idx}`}
+                                  className="flex items-center justify-between rounded-lg bg-white/80 px-3 py-1.5 text-sm"
+                                >
+                                  <div>
+                                    <span className="font-medium text-slate-700">
+                                      {inst.label}
+                                    </span>
+                                    <span className="ml-2 text-xs text-slate-400">
+                                      · {inst.note}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`font-semibold ${
+                                      idx === 0
+                                        ? "text-violet-700"
+                                        : "text-slate-500"
+                                    }`}
+                                  >
+                                    Rs. {inst.amount}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : isCommunicationSkillsCourse ? (
+                  <div className="space-y-3">
+                    {communicationSkillsFeeOptions.map((option) => {
+                      const isSelected =
+                        modalCommunicationSkillsFeeChoice === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() =>
+                            setModalCommunicationSkillsFeeChoice(option.id)
+                          }
+                          className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                            isSelected
+                              ? "border-violet-600 bg-violet-50"
+                              : "border-slate-200 bg-white hover:border-violet-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div
+                                className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                                  isSelected
+                                    ? "border-violet-600"
+                                    : "border-slate-400"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900">
+                                  {option.title}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {option.note}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs. {option.totalAmount}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                Full Payment
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : isInterviewPrepCourse ? (
+                  <div className="space-y-3">
+                    {interviewPrepFeeOptionsForCourse.map((option) => {
+                      const isSelected =
+                        modalInterviewPrepFeeChoice === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() =>
+                            setModalInterviewPrepFeeChoice(option.id)
+                          }
+                          className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                            isSelected
+                              ? "border-violet-600 bg-violet-50"
+                              : "border-slate-200 bg-white hover:border-violet-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <div
+                                className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                                  isSelected
+                                    ? "border-violet-600"
+                                    : "border-slate-400"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-900">
+                                  {option.title}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {option.note}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs. {option.totalAmount}
+                              </p>
+                              <p className="text-xs text-slate-400">
+                                Full Payment
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {/* Full Payment */}
@@ -1963,6 +2641,44 @@ function StudentRegistrationContent() {
                         "paymentTenure",
                         selectedOption?.tenure ?? "full",
                       );
+                    } else if (isLTGradeCourse) {
+                      const selectedOption = ltGradeFeeOptions.find(
+                        (option) => option.id === modalLTGradeFeeChoice,
+                      );
+                      updatePaidField(
+                        "ltGradeFeeOption",
+                        modalLTGradeFeeChoice,
+                      );
+                      updatePaidField(
+                        "paymentTenure",
+                        selectedOption?.tenure ?? "full",
+                      );
+                    } else if (isCommunicationSkillsCourse) {
+                      const selectedOption = communicationSkillsFeeOptions.find(
+                        (option) =>
+                          option.id === modalCommunicationSkillsFeeChoice,
+                      );
+                      updatePaidField(
+                        "communicationSkillsFeeOption",
+                        modalCommunicationSkillsFeeChoice,
+                      );
+                      updatePaidField(
+                        "paymentTenure",
+                        selectedOption?.tenure ?? "full",
+                      );
+                    } else if (isInterviewPrepCourse) {
+                      const selectedOption =
+                        interviewPrepFeeOptionsForCourse.find(
+                          (option) => option.id === modalInterviewPrepFeeChoice,
+                        );
+                      updatePaidField(
+                        "interviewPrepFeeOption",
+                        modalInterviewPrepFeeChoice,
+                      );
+                      updatePaidField(
+                        "paymentTenure",
+                        selectedOption?.tenure ?? "full",
+                      );
                     } else {
                       updatePaidField("paymentTenure", modalPlanChoice);
                     }
@@ -1985,9 +2701,30 @@ function StudentRegistrationContent() {
                               (option) => option.id === modalGICFeeChoice,
                             )?.title ?? "GIC Plan"
                           }`
-                        : modalPlanChoice === "full"
-                          ? "Full Payment"
-                          : "Instalment Plan"}
+                        : isLTGradeCourse
+                          ? `Selected - ${
+                              ltGradeFeeOptions.find(
+                                (option) => option.id === modalLTGradeFeeChoice,
+                              )?.title ?? "LT Grade Plan"
+                            }`
+                          : isCommunicationSkillsCourse
+                            ? `Selected - ${
+                                communicationSkillsFeeOptions.find(
+                                  (option) =>
+                                    option.id ===
+                                    modalCommunicationSkillsFeeChoice,
+                                )?.title ?? "Communication Skills Level"
+                              }`
+                            : isInterviewPrepCourse
+                              ? `Selected - ${
+                                  interviewPrepFeeOptionsForCourse.find(
+                                    (option) =>
+                                      option.id === modalInterviewPrepFeeChoice,
+                                  )?.title ?? "Interview Plan"
+                                }`
+                              : modalPlanChoice === "full"
+                                ? "Full Payment"
+                                : "Instalment Plan"}
                 </button>
               </div>
             </div>

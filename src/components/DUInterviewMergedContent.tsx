@@ -1,106 +1,74 @@
-﻿"use client";
+"use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
-  MessageCircle,
-  Users,
+  AlertTriangle,
+  CheckCircle,
+  ClipboardCheck,
   Eye,
   Lightbulb,
-  CheckCircle,
-  AlertTriangle,
-  ClipboardCheck,
+  MessageCircle,
   Mic,
+  Users,
 } from "lucide-react";
-import { CoursePageHeader } from "@/components/CoursePageHeader";
-import { CoursePageFooter } from "@/components/CoursePageFooter";
-import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
+const assistantProfessorInterviewHref =
+  "/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor";
+const assistantProfessorFullPrepHref = `${assistantProfessorInterviewHref}&interviewPrepFeeOption=full-preparation`;
+const assistantProfessorMockHref = `${assistantProfessorInterviewHref}&interviewPrepFeeOption=mock-interview`;
 const pricingSectionId = "payment-plans";
-const phdInterviewRegistrationHref =
-  "/student-registration?mode=paid&course=Interview%20Preparation%20-%20Ph.D%20Interview";
-const phdFullPrepHref = `${phdInterviewRegistrationHref}&interviewPrepFeeOption=full-preparation`;
-const phdMockVivaHref = `${phdInterviewRegistrationHref}&interviewPrepFeeOption=mock-interview`;
 
-function Header() {
-  const scrollToEnrollment = () => {
-    document
-      .getElementById(pricingSectionId)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  return (
-    <CoursePageHeader
-      onEnroll={scrollToEnrollment}
-      enrollHref={`#${pricingSectionId}`}
-    />
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-teal-800 via-cyan-700 to-teal-800 text-white">
-      <div className="absolute inset-0 opacity-20">
-        <ImageWithFallback
-          src="/research-assistance/bg-thesis.jpg"
-          alt="PhD interview preparation"
-          className="h-full w-full object-cover"
-        />
-      </div>
-
-      <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
-      <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
-
-      <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-        <div className="mx-auto max-w-4xl text-center">
-          <h1 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            PhD Interview Preparation Course
-          </h1>
-          <p className="mx-auto mb-10 max-w-3xl text-lg text-cyan-100 sm:text-xl">
-            Communication Skills: The Secret Weapon That Turns Research
-            Potential into PhD Selection
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
-                <Mic className="h-5 w-5 text-yellow-400" />
-              </div>
-              <span className="text-sm font-medium sm:text-base">
-                Research Clarity
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
-                <ClipboardCheck className="h-5 w-5 text-yellow-400" />
-              </div>
-              <span className="text-sm font-medium sm:text-base">
-                Viva Confidence
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
-                <MessageCircle className="h-5 w-5 text-yellow-400" />
-              </div>
-              <span className="text-sm font-medium sm:text-base">
-                Selection Mindset
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function InterviewContent() {
+export function DUInterviewMergedContent() {
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
 
   return (
     <>
-      <Section>
+      <Section className="bg-gradient-to-br from-teal-800 via-cyan-700 to-teal-800 text-white">
+        <div className="absolute inset-0 opacity-20" />
+        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+          <div className="mx-auto max-w-4xl text-center">
+            <h2 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+              Delhi University Interview Preparation
+            </h2>
+            <p className="mx-auto mb-10 max-w-3xl text-lg text-cyan-100 sm:text-xl">
+              Communication Skills: The Edge That Turns Strong Subject Knowledge
+              into Final Selection
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
+                  <Mic className="h-5 w-5 text-yellow-400" />
+                </div>
+                <span className="text-sm font-medium sm:text-base">
+                  Teaching-Focused Answers
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
+                  <ClipboardCheck className="h-5 w-5 text-yellow-400" />
+                </div>
+                <span className="text-sm font-medium sm:text-base">
+                  Mock Panel Practice
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
+                  <MessageCircle className="h-5 w-5 text-yellow-400" />
+                </div>
+                <span className="text-sm font-medium sm:text-base">
+                  Confident Classroom Presence
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section id={pricingSectionId}>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -110,18 +78,20 @@ function InterviewContent() {
         >
           <div>
             <h2 className="mb-6 text-4xl font-bold text-indigo-900 md:text-5xl">
-              The PhD Interview Moment That Defines Your Research Future
+              The DU Interview Moment Changes Everything
             </h2>
             <p className="mb-6 text-lg leading-relaxed text-slate-700">
-              Imagine walking into the PhD interview room at a university. The
-              doctoral panel is seated. The questions begin. Your research
-              proposal and academic record got you here - but it is how you
-              communicate that decides whether you are selected... or fade away.
+              Imagine stepping into a Delhi University college interview for a
+              Guest Faculty or Assistant Professor position in English. The
+              panel already knows your academic background. Now they are asking
+              a sharper question: can you explain ideas with clarity, authority,
+              and warmth?
             </p>
             <p className="text-lg leading-relaxed text-slate-700">
-              Will your words clearly convey the importance of your research?
-              Will you defend your ideas with confidence and clarity? Or will
-              nervousness overshadow your potential?
+              In that room, knowledge alone is not enough. Your ability to make
+              literary concepts teachable, answer with composure, and sound like
+              someone students would trust can shift the result decisively in
+              your favour.
             </p>
           </div>
           <motion.div
@@ -135,7 +105,7 @@ function InterviewContent() {
             <div className="overflow-hidden rounded-2xl shadow-2xl">
               <ImageWithFallback
                 src="/research-assistance/hero-research.jpg"
-                alt="PhD interview discussion with panel"
+                alt="Delhi University interview discussion"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -152,12 +122,12 @@ function InterviewContent() {
           className="mb-16 text-center"
         >
           <h2 className="mb-6 text-4xl font-bold text-indigo-900 md:text-5xl">
-            Why Communication Can Make or Break Your PhD Selection
+            Why Communication Decides So Many DU Interviews
           </h2>
           <p className="mx-auto max-w-4xl text-xl leading-relaxed text-slate-700">
-            Universities do not just want subject experts. They want researchers
-            who can articulate ideas sharply, defend their work under scrutiny,
-            and show real academic promise.
+            Delhi University panels are not only evaluating scholarship. They
+            are imagining you in front of real students, handling live
+            questions, discussion-driven classes, and high expectations.
           </p>
         </motion.div>
 
@@ -165,23 +135,23 @@ function InterviewContent() {
           {[
             {
               icon: <MessageCircle className="h-12 w-12" />,
-              title: "Can you explain your research?",
+              title: "Can you teach, not just answer?",
               description:
-                "Panels want clarity - can you make your topic sound significant and accessible?",
+                "Panels listen for explanations that sound classroom-ready, not merely academic.",
               color: "from-blue-500 to-indigo-600",
             },
             {
               icon: <Users className="h-12 w-12" />,
-              title: "Can you defend your ideas?",
+              title: "Can you connect with students?",
               description:
-                "Will you hold your position calmly when the panel pushes back on your methodology?",
+                "Your tone, pace, and clarity signal whether students would stay engaged with you.",
               color: "from-purple-500 to-pink-600",
             },
             {
               icon: <Eye className="h-12 w-12" />,
-              title: "Do you show research potential?",
+              title: "Can you stay composed under scrutiny?",
               description:
-                "Composure, curiosity, and intellectual depth are visible in how you speak.",
+                "Strong candidates keep their structure and confidence even when questions become pointed.",
               color: "from-indigo-500 to-purple-600",
             },
           ].map((item, index) => (
@@ -217,21 +187,21 @@ function InterviewContent() {
           viewport={{ once: true }}
           className="mb-16 text-center text-4xl font-bold text-indigo-900 md:text-5xl"
         >
-          The Hidden Layers PhD Panels Notice First
+          The Hidden Layers DU Panels Notice First
         </motion.h2>
 
         <SkillCard
           number="01"
-          title="Verbal Mastery: Articulate Your Research with Precision"
-          description="Answer every question with natural confidence - clear, precise, and passionate. Structure your responses so the panel stays fully engaged, whether you are explaining your research gap, defending your methodology, or describing your contribution to the field. The ability to make complex ideas sound compelling is a rare skill that doctoral panels remember."
-          image="/research-assistance/bg-phd-proposal.jpg"
+          title="Teaching-Focused Verbal Clarity"
+          description="DU interviews often move quickly from literary theory to classroom application. You need answers that sound precise, teachable, and compelling. When your responses have shape and flow, the panel can instantly imagine you handling lectures, tutorials, and student doubts with ease."
+          image="/research-assistance/bg-research-paper.jpg"
           gradient="from-blue-500 to-indigo-600"
         />
 
         <SkillCard
           number="02"
-          title="Non-Verbal Power: Command the Room Before You Speak"
-          description="Before you say a single word, your posture, eye contact, and presence have already made an impression. A steady, open demeanour signals intellectual maturity and confidence. Small intentional shifts in how you carry yourself can immediately signal that you belong in a doctoral programme."
+          title="Non-Verbal Credibility and Presence"
+          description="Before the panel evaluates your ideas, they register your posture, eye contact, and sense of calm. A steady presence suggests you can manage a classroom, speak with authority, and remain professional under pressure. That silent first impression can work strongly for or against you."
           image="/research-assistance/bg-mentoring.jpg"
           reverse={true}
           gradient="from-purple-500 to-pink-600"
@@ -239,9 +209,9 @@ function InterviewContent() {
 
         <SkillCard
           number="03"
-          title="The Art of Listening: The Researcher's Hidden Advantage"
-          description="PhD candidates who listen strategically and respond thoughtfully stand out sharply from those who rush. A deliberate pause before answering a difficult question on your research design or theoretical framework can turn a challenging moment into a demonstration of scholarly composure."
-          image="/research-assistance/bg-research-paper.jpg"
+          title="Listening Before Responding"
+          description="Many DU candidates lose marks by rushing. Stronger candidates listen fully, identify what the panel is really testing, and then answer with purpose. That short pause before speaking often communicates maturity, self-control, and intellectual discipline."
+          image="/research-assistance/bg-phd-proposal.jpg"
           gradient="from-indigo-500 to-purple-600"
         />
       </Section>
@@ -254,29 +224,29 @@ function InterviewContent() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="mb-6 text-center text-4xl font-bold md:text-5xl">
-            Essential Preparations You Cannot Afford to Miss
+            Essential Preparation for DU Interviews
           </h2>
           <p className="mx-auto mb-16 max-w-3xl text-center text-xl text-white/90">
-            The panel observes everything from your entry to your final answer.
-            Certain basics quietly make or break first impressions.
+            Panels notice your readiness long before the interview ends. Small
+            details often reinforce or weaken your overall impression.
           </p>
 
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
                 icon: <CheckCircle />,
-                title: "Research Documentation",
-                desc: "Keep your proposal, synopsis, publications, and certificates perfectly organised and accessible.",
+                title: "Academic Readiness",
+                desc: "Keep documents, publications, teaching records, and CV details instantly accessible.",
               },
               {
                 icon: <Users />,
-                title: "Scholarly Presence",
-                desc: "Dress and carry yourself like someone who already belongs in a doctoral programme.",
+                title: "Classroom Professionalism",
+                desc: "Dress, posture, and tone should match the role of a confident university teacher.",
               },
               {
                 icon: <Lightbulb />,
-                title: "Academic Etiquette",
-                desc: "Respectful engagement, thoughtful pauses, and measured confidence create lasting trust.",
+                title: "Interview Etiquette",
+                desc: "Respectful listening, clean structure, and measured responses create trust quickly.",
               },
             ].map((item, index) => (
               <motion.div
@@ -307,19 +277,19 @@ function InterviewContent() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="mb-6 text-center text-4xl font-bold text-indigo-900 md:text-5xl">
-            Common Pitfalls That Cost PhD Candidates Their Seat
+            Common Mistakes That Cost DU Opportunities
           </h2>
           <p className="mx-auto mb-16 max-w-3xl text-center text-xl text-slate-700">
-            Even well-prepared researchers sometimes lose their edge due to
-            small, avoidable communication habits.
+            Good candidates often slip because they sound less ready than they
+            actually are.
           </p>
 
           <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2">
             {[
-              "Rushing answers without fully understanding what the panel is really testing",
-              "Sounding over-rehearsed instead of genuinely passionate about the research",
-              "Weak eye contact that signals low confidence in your own work",
-              "Failing to let authentic curiosity and research enthusiasm show naturally",
+              "Giving academically correct answers that still sound difficult for students to follow",
+              "Speaking too quickly when demo-teaching or describing pedagogy",
+              "Over-rehearsing until every answer feels mechanical",
+              "Forgetting to show authentic enthusiasm for literature and teaching",
             ].map((pitfall, index) => (
               <motion.div
                 key={pitfall}
@@ -353,38 +323,39 @@ function InterviewContent() {
             className="overflow-hidden rounded-2xl shadow-2xl"
           >
             <ImageWithFallback
-              src="/research-assistance/bg-mla-apa.jpg"
-              alt="PhD research journey"
+              src="/research-assistance/bg-thesis.jpg"
+              alt="Delhi University classroom readiness"
               className="h-full w-full object-cover"
             />
           </motion.div>
           <div>
             <h2 className="mb-6 text-4xl font-bold text-indigo-900 md:text-5xl">
-              Your Next Step Toward PhD Selection
+              Your Next Step Toward DU Interview Success
             </h2>
             <p className="mb-6 text-lg leading-relaxed text-slate-700">
-              Communication is more than speaking well. It is about connecting,
-              convincing, and proving you belong in their research community.
+              Communication is what helps the panel trust that you can teach,
+              guide, and manage a real classroom. It turns your knowledge into a
+              credible academic presence.
             </p>
             <p className="mb-8 text-lg leading-relaxed text-slate-700">
-              Ready to turn nervousness into confident, scholarly presence?
-              Start practising now. With polished communication, you will not
-              just attend the PhD interview - you will own it.
+              If you want your answers to sound like a future Delhi University
+              teacher rather than just another applicant, this is where the
+              shift begins.
             </p>
             <motion.a
-              href={phdFullPrepHref}
+              href={assistantProfessorFullPrepHref}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="inline-block rounded-full bg-indigo-600 px-8 py-4 text-white shadow-xl transition-all hover:bg-indigo-700"
               style={{ color: "#ffffff" }}
             >
-              Begin Your PhD Transformation
+              Begin Your Interview Transformation
             </motion.a>
           </div>
         </motion.div>
       </Section>
 
-      <Section id={pricingSectionId}>
+      <Section>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -393,11 +364,10 @@ function InterviewContent() {
           className="text-center"
         >
           <h2 className="mb-6 text-4xl font-bold text-indigo-900 md:text-5xl">
-            Investment in Your PhD Success
+            Investment in Your DU Success
           </h2>
           <p className="mx-auto mb-16 max-w-3xl text-xl text-slate-700">
-            Choose the preparation format that best fits your viva and interview
-            needs.
+            Choose the preparation format that best fits your interview needs.
           </p>
 
           <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2">
@@ -413,10 +383,8 @@ function InterviewContent() {
                 COMPLETE
               </div>
               <div className="mb-6 mt-4">
-                <h3 className="mb-3 text-3xl font-bold">
-                  Full PhD Preparation
-                </h3>
-                <p className="mb-6 text-white/90">Classes + Mock Viva</p>
+                <h3 className="mb-3 text-3xl font-bold">Full DU Preparation</h3>
+                <p className="mb-6 text-white/90">Classes + Mock Interviews</p>
                 <div className="mb-6 flex items-baseline justify-center gap-2">
                   <span className="text-5xl font-bold md:text-6xl">₹7,495</span>
                   <span className="text-white/80">/-</span>
@@ -424,10 +392,10 @@ function InterviewContent() {
               </div>
               <div className="mb-8 space-y-4 text-left">
                 {[
-                  "Complete communication skills training for PhD interviews",
-                  "Mock viva sessions with subject-specific panel questions",
-                  "Research articulation and proposal defence coaching",
-                  "Guidance on verbal, non-verbal, and scholarly presence",
+                  "Complete communication skills training for DU interview settings",
+                  "Mock panel interviews with teaching-focused feedback",
+                  "Answer structuring for subject and pedagogy questions",
+                  "Guidance on verbal and non-verbal classroom presence",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-green-300" />
@@ -436,10 +404,10 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href={phdFullPrepHref}
+                href={assistantProfessorFullPrepHref}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="block w-full rounded-full bg-white py-4 text-center font-bold shadow-xl transition-all hover:shadow-2xl"
+                className="block w-full rounded-full bg-white py-4 text-center font-bold text-black shadow-xl transition-all hover:shadow-2xl"
                 style={{ color: "#000000" }}
               >
                 Enroll Now
@@ -459,7 +427,7 @@ function InterviewContent() {
               </div>
               <div className="mb-6 mt-4">
                 <h3 className="mb-3 text-3xl font-bold text-indigo-900">
-                  Mock Viva Package
+                  Mock Interview Package
                 </h3>
                 <p className="mb-6 text-slate-600">Practice Makes Perfect</p>
                 <div className="mb-6 flex items-baseline justify-center gap-2">
@@ -474,10 +442,10 @@ function InterviewContent() {
               </div>
               <div className="mb-8 space-y-4 text-left">
                 {[
-                  "1-2 focused PhD-style mock viva sessions",
-                  "Detailed feedback on research communication",
-                  "Real interview simulation with panel-style questions",
-                  "Practical tips for immediate improvement",
+                  "1-2 focused DU-style mock interviews",
+                  "Detailed performance feedback",
+                  "Practice for teaching and panel questions",
+                  "Actionable tips for immediate improvement",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-indigo-600" />
@@ -486,13 +454,13 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href={phdMockVivaHref}
+                href={assistantProfessorMockHref}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full rounded-full bg-indigo-600 py-4 text-center font-bold text-white shadow-xl transition-all hover:bg-indigo-700 hover:shadow-2xl"
                 style={{ color: "#ffffff" }}
               >
-                Book Mock Viva
+                Book Mock Interview
               </motion.a>
             </motion.div>
           </div>
@@ -508,20 +476,20 @@ function InterviewContent() {
           className="mx-auto max-w-4xl text-center"
         >
           <h2 className="mb-6 text-4xl font-bold md:text-6xl">
-            Your PhD Journey Starts Here
+            Your DU Opportunity Awaits
           </h2>
           <p className="mb-8 text-2xl text-white/90">
-            Your future as a PhD scholar at a top university is closer than you
-            think.
+            Your next Delhi University interview can become the one that changes
+            your academic journey.
           </p>
           <p className="mb-12 text-xl text-white/80">
-            Make sure your communication is ready to open that door.
+            Make sure your communication is strong enough to open that door.
           </p>
           <motion.a
-            href={phdFullPrepHref}
+            href={assistantProfessorFullPrepHref}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-block rounded-full bg-white px-12 py-5 text-xl font-bold shadow-2xl transition-all"
+            className="inline-block rounded-full bg-white px-12 py-5 text-xl font-bold text-black shadow-2xl transition-all"
             style={{ color: "#000000" }}
           >
             Start Preparing Today
@@ -599,17 +567,5 @@ function SkillCard({
         />
       </motion.div>
     </motion.div>
-  );
-}
-
-export default function PhDInterviewPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Header />
-      <HeroSection />
-      <InterviewContent />
-      <OnlineCourseHighlights />
-      <CoursePageFooter />
-    </div>
   );
 }

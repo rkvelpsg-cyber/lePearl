@@ -168,15 +168,6 @@ export function SiteFooter() {
               </li>
               <li>
                 <a
-                  href="/interview-preparation/du-interview"
-                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
-                >
-                  <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="truncate">Interview Prep - DU</span>
-                </a>
-              </li>
-              <li>
-                <a
                   href="/interview-preparation/phd-interview"
                   className="flex items-center gap-2 text-xs sm:text-sm text-gray-200 transition-all duration-200 hover:translate-x-1 hover:text-white min-w-0"
                 >

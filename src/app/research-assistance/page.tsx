@@ -509,6 +509,19 @@ const tabFees: Record<TabId, string> = {
   mentoring: "For one hour- 1000/- | For 30 minutes- 750/-",
 };
 
+const researchAssistanceEnrollmentHrefs: Record<TabId, string> = {
+  "research-paper":
+    "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=research-paper",
+  thesis:
+    "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=thesis",
+  "phd-proposal":
+    "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=phd-proposal",
+  "mla-apa":
+    "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=mla-apa",
+  mentoring:
+    "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=mentoring-one-hour",
+};
+
 function ProgramTabsPanel({
   activeTab,
   onTabChange,
@@ -889,6 +902,32 @@ function EnrollmentSection({ activeTab }: { activeTab: TabId }) {
   };
 
   const card = feeCardsByTab[activeTab];
+  const mentoringFeeCards = [
+    {
+      title: "Guidance and Mentoring for Research Paper Writing",
+      subtitle: "Fee Plan",
+      price: "For one hour: 1000/-",
+      href: "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=mentoring-one-hour",
+      features: [
+        "Personalized one-to-one mentoring",
+        "Draft review and live corrective feedback",
+        "Flexible slot-based guidance",
+      ],
+      badge: "MENTORING",
+    },
+    {
+      title: "Guidance and Mentoring for Research Paper Writing",
+      subtitle: "Fee Plan",
+      price: "For 30 minutes: 750/-",
+      href: "/student-registration?mode=paid&course=Research%20Assistance&researchAssistanceFeeType=mentoring-thirty-minutes",
+      features: [
+        "Personalized one-to-one mentoring",
+        "Draft review and live corrective feedback",
+        "Flexible slot-based guidance",
+      ],
+      badge: "MENTORING",
+    },
+  ];
 
   return (
     <section
@@ -906,54 +945,77 @@ function EnrollmentSection({ activeTab }: { activeTab: TabId }) {
           </p>
         </div>
 
-        <div className="max-w-xl mx-auto">
-          <div
-            key={card.title}
-            className={`bg-white text-gray-900 rounded-2xl p-8 shadow-2xl hover:scale-105 transition-transform relative ${
-              card.featured ? "border-4 border-amber-400" : ""
-            }`}
-          >
+        <div
+          className={`mx-auto grid gap-8 ${
+            activeTab === "mentoring"
+              ? "max-w-5xl md:grid-cols-2"
+              : "max-w-xl grid-cols-1"
+          }`}
+        >
+          {(activeTab === "mentoring"
+            ? mentoringFeeCards
+            : [
+                {
+                  title: card.title,
+                  subtitle: "Fee Plan",
+                  price: card.price,
+                  href: researchAssistanceEnrollmentHrefs[activeTab],
+                  features: card.features,
+                  badge: card.badge,
+                  featured: card.featured,
+                },
+              ]
+          ).map((feeCard) => (
             <div
-              className={`absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg ${
-                card.featured
-                  ? "bg-amber-500 text-white"
-                  : "bg-teal-800 text-white"
+              key={`${activeTab}-${feeCard.price}`}
+              className={`bg-white text-gray-900 rounded-2xl p-8 shadow-2xl hover:scale-105 transition-transform relative ${
+                "featured" in feeCard && feeCard.featured
+                  ? "border-4 border-amber-400"
+                  : ""
               }`}
             >
-              <Sparkles className="w-4 h-4" />
-              {card.badge}
+              <div
+                className={`absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg ${
+                  "featured" in feeCard && feeCard.featured
+                    ? "bg-amber-500 text-white"
+                    : "bg-teal-800 text-white"
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                {feeCard.badge}
+              </div>
+
+              <h3 className="text-2xl font-bold text-teal-800 mb-2 mt-4">
+                {feeCard.title}
+              </h3>
+              <p className="text-gray-600 mb-4">{feeCard.subtitle}</p>
+              <div className="mb-6 flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-teal-900">
+                  {feeCard.price}
+                </span>
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                {feeCard.features.map((item) => (
+                  <li key={item} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href={feeCard.href}
+                className={`block w-full py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center !text-white hover:!text-white ${
+                  "featured" in feeCard && feeCard.featured
+                    ? "bg-amber-500 hover:bg-amber-600"
+                    : "bg-teal-800 hover:bg-teal-700"
+                }`}
+              >
+                Enroll Now
+              </a>
             </div>
-
-            <h3 className="text-2xl font-bold text-teal-800 mb-2 mt-4">
-              {card.title}
-            </h3>
-            <p className="text-gray-600 mb-4">Fee Plan</p>
-            <div className="mb-6 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-teal-900">
-                {card.price}
-              </span>
-            </div>
-
-            <ul className="space-y-3 mb-8">
-              {card.features.map((item) => (
-                <li key={item} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-
-            <a
-              href="/student-registration?mode=paid&course=Research%20Assistance"
-              className={`block w-full py-4 rounded-lg font-bold text-lg transition-colors shadow-lg text-center !text-white hover:!text-white ${
-                card.featured
-                  ? "bg-amber-500 hover:bg-amber-600"
-                  : "bg-teal-800 hover:bg-teal-700"
-              }`}
-            >
-              Enroll Now
-            </a>
-          </div>
+          ))}
         </div>
 
         <div className="text-center mt-10">

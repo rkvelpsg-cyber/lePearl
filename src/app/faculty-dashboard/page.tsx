@@ -4,7 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
-import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import {
+  clearScopedAuthStorage,
+  createClient as createSupabaseClient,
+} from "@/lib/supabase/client";
 import {
   formatDateIST,
   istDateTimeInputToUtcIso,
@@ -413,6 +416,58 @@ export default function FacultyDashboardPage() {
   const router = useRouter();
   const createClient = () => createSupabaseClient("faculty");
 
+  function isMissingRefreshTokenError(error: unknown) {
+    const message =
+      error instanceof Error ? error.message : String(error || "");
+    const normalized = message.toLowerCase();
+    return (
+      normalized.includes("refresh token not found") ||
+      normalized.includes("invalid refresh token")
+    );
+  }
+
+  async function resetInvalidFacultySession() {
+    clearScopedAuthStorage("faculty");
+    await signOut("faculty");
+    router.push("/faculty-login");
+  }
+
+  async function getFacultyUserSafe(supabase = createClient()) {
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error) throw error;
+      return user;
+    } catch (error) {
+      if (isMissingRefreshTokenError(error)) {
+        await resetInvalidFacultySession();
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async function getFacultyAccessTokenSafe(supabase = createClient()) {
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) throw error;
+      return session?.access_token ?? null;
+    } catch (error) {
+      if (isMissingRefreshTokenError(error)) {
+        await resetInvalidFacultySession();
+        return null;
+      }
+      throw error;
+    }
+  }
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("dashboard");
@@ -695,9 +750,7 @@ export default function FacultyDashboardPage() {
       setTotalStudents(0);
       setActiveTasksCount(0);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) {
         router.push("/login-portal");
         return;
@@ -1221,9 +1274,7 @@ export default function FacultyDashboardPage() {
     setAttendanceSubmitting(true);
     setAttendanceMsg(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) return;
       const rows = sessionStudents.map((s) => ({
         session_id: selectedSession.id,
@@ -1404,9 +1455,7 @@ export default function FacultyDashboardPage() {
     setMcqSubmitting(true);
     setMcqMsg(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) return;
       const batchId = parseInt(mcqForm.batchId, 10);
       const totalMarks = parseInt(mcqForm.totalMarks, 10);
@@ -1661,10 +1710,7 @@ export default function FacultyDashboardPage() {
     }
 
     const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
+    const accessToken = await getFacultyAccessTokenSafe(supabase);
 
     if (!accessToken) {
       setQuestionPaperMsg({
@@ -1815,9 +1861,7 @@ export default function FacultyDashboardPage() {
   async function loadDescriptiveTests() {
     const supabase = createClient();
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) return;
 
       const { data: facultyBatches, error: batchesError } = await supabase
@@ -1868,8 +1912,7 @@ export default function FacultyDashboardPage() {
   async function loadSubmissions(testId: number) {
     const supabase = createClient();
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      const accessToken = await getFacultyAccessTokenSafe(supabase);
       if (!accessToken) {
         throw new Error("Session expired. Please sign in again.");
       }
@@ -1920,8 +1963,7 @@ export default function FacultyDashboardPage() {
     }
 
     const supabase = createClient();
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData.session?.access_token;
+    const accessToken = await getFacultyAccessTokenSafe(supabase);
     if (!accessToken) {
       setEvaluatedSheetMsg({
         type: "err",
@@ -2011,9 +2053,7 @@ export default function FacultyDashboardPage() {
     setClassSubmitting(true);
     setClassMsg(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) return;
 
       const batchId = parseInt(classForm.batchId, 10);
@@ -2236,9 +2276,7 @@ export default function FacultyDashboardPage() {
     setLectureSubmitting(true);
     setLectureMsg(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) return;
       const batchId = parseInt(lectureForm.batchId, 10);
       if (!Number.isFinite(batchId)) {
@@ -2287,9 +2325,7 @@ export default function FacultyDashboardPage() {
     setTaskSubmitting(true);
     setTaskMsg(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getFacultyUserSafe(supabase);
       if (!user) return;
       const { error } = await supabase.from("faculty_tasks").insert({
         faculty_user_id: user.id,

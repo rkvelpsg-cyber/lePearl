@@ -158,10 +158,6 @@ export function Header() {
                 label="Assistant Professor"
               />
               <DrawerLink
-                href="/interview-preparation/du-interview"
-                label="DU Interview"
-              />
-              <DrawerLink
                 href="/interview-preparation/phd-interview"
                 label="PhD Interview"
               />
@@ -425,10 +421,6 @@ function DesktopHeader() {
                     {
                       label: "Assistant Professor",
                       href: "/interview-preparation/assistant-professor-1",
-                    },
-                    {
-                      label: "DU Interview",
-                      href: "/interview-preparation/du-interview",
                     },
                     {
                       label: "PhD Interview",

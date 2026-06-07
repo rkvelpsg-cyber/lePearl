@@ -142,6 +142,7 @@ function LevelsSection() {
   const levels = [
     {
       title: "Beginner Level",
+      href: "/student-registration?mode=paid&course=Communication%20Skills&communicationSkillsFeeOption=beginner",
       meta: "Duration: 1 Month | Total Hours: 25 Hours | Fee: \u20B93,995/-",
       fee: "₹3,995",
       intro:
@@ -158,6 +159,7 @@ function LevelsSection() {
     },
     {
       title: "Intermediate Level",
+      href: "/student-registration?mode=paid&course=Communication%20Skills&communicationSkillsFeeOption=intermediate",
       meta: "Duration: 1 Month | Total Hours: 25 Hours | Fee: \u20B94,995/-",
       fee: "₹4,995",
       intro:
@@ -174,6 +176,7 @@ function LevelsSection() {
     },
     {
       title: "Advanced Level",
+      href: "/student-registration?mode=paid&course=Communication%20Skills&communicationSkillsFeeOption=advanced",
       meta: "Duration: 1 Month | Total Hours: 25 Hours | Fee: \u20B95,995/-",
       fee: "₹5,995",
       intro:
@@ -253,7 +256,7 @@ function LevelsSection() {
                 </ul>
 
                 <a
-                  href="/student-registration?mode=paid&course=Communication%20Skills"
+                  href={level.href}
                   className={`block w-full rounded-lg py-3 text-center text-base font-bold transition-colors ${
                     level.featured
                       ? "bg-amber-500 text-white hover:bg-amber-600"

@@ -379,10 +379,6 @@ export default async function Home() {
                   label: "Assistant Professor Interview",
                 },
                 {
-                  href: "/interview-preparation/du-interview",
-                  label: "DU Interview",
-                },
-                {
                   href: "/interview-preparation/phd-interview",
                   label: "Ph.D Interview",
                 },
@@ -405,10 +401,6 @@ export default async function Home() {
                   {
                     href: "/interview-preparation/assistant-professor-1",
                     label: "Assistant Professor Interview",
-                  },
-                  {
-                    href: "/interview-preparation/du-interview",
-                    label: "DU Interview",
                   },
                   {
                     href: "/interview-preparation/phd-interview",

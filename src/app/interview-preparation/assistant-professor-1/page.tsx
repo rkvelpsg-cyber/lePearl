@@ -1,30 +1,59 @@
 ﻿"use client";
 
+import { useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
+  ChevronRight,
   MessageCircle,
   Users,
   Eye,
   Lightbulb,
   CheckCircle,
   AlertTriangle,
-  ArrowRight,
   ClipboardCheck,
   Mic,
 } from "lucide-react";
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
+import { DUInterviewMergedContent } from "@/components/DUInterviewMergedContent";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+
+type InterviewPanelId = "assistant-professor" | "du-interview";
+
+const pricingSectionId = "payment-plans";
+
+const interviewPanels: {
+  id: InterviewPanelId;
+  label: string;
+  summary: string;
+}[] = [
+  {
+    id: "assistant-professor",
+    label: "Assistant Professor Interview Preparation",
+    summary: "Core interview communication, presence, and mock interview prep.",
+  },
+  {
+    id: "du-interview",
+    label: "Delhi University Interview Preparation",
+    summary:
+      "Teaching-focused DU panel guidance and classroom-ready responses.",
+  },
+];
 
 function Header() {
   const scrollToEnrollment = () => {
     document
-      .getElementById("enrollment")
-      ?.scrollIntoView({ behavior: "smooth" });
+      .getElementById(pricingSectionId)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  return <CoursePageHeader onEnroll={scrollToEnrollment} />;
+  return (
+    <CoursePageHeader
+      onEnroll={scrollToEnrollment}
+      enrollHref={`#${pricingSectionId}`}
+    />
+  );
 }
 
 function HeroSection() {
@@ -44,11 +73,12 @@ function HeroSection() {
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-            Assistant Professor Interview Preparation Course
+            Interview Preparation Hub
           </h1>
           <p className="mx-auto mb-10 max-w-3xl text-lg text-cyan-100 sm:text-xl">
-            Communication Skills: The Secret Weapon That Turns Knowledge into
-            Selection
+            Expert preparation tracks for Assistant Professor and Delhi
+            University interviews, built to turn subject knowledge into final
+            selection.
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
@@ -206,7 +236,7 @@ function InterviewContent() {
       </Section>
 
       {/* The Three Pillars */}
-      <Section>
+      <Section id={pricingSectionId}>
         <motion.h2
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -371,7 +401,7 @@ function InterviewContent() {
               turn every answer into something memorable?
             </p>
             <motion.a
-              href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
+              href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor&interviewPrepFeeOption=full-preparation"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-full shadow-xl transition-all"
@@ -436,7 +466,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor&interviewPrepFeeOption=full-preparation"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full bg-white text-black py-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all text-center"
@@ -469,6 +499,9 @@ function InterviewContent() {
                   </span>
                   <span className="text-slate-600">/-</span>
                 </div>
+                <p className="text-base font-semibold text-indigo-700">
+                  Per Mock Test
+                </p>
               </div>
               <div className="space-y-4 mb-8 text-left">
                 {[
@@ -484,7 +517,7 @@ function InterviewContent() {
                 ))}
               </div>
               <motion.a
-                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
+                href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor&interviewPrepFeeOption=mock-interview"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-full font-bold shadow-xl hover:shadow-2xl transition-all text-center"
@@ -517,7 +550,7 @@ function InterviewContent() {
             Make sure your communication is ready to open every door.
           </p>
           <motion.a
-            href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor"
+            href="/student-registration?mode=paid&course=Interview%20Preparation%20-%20Assistant%20Professor&interviewPrepFeeOption=full-preparation"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block bg-white text-black px-12 py-5 rounded-full text-xl font-bold shadow-2xl transition-all"
@@ -535,12 +568,14 @@ function InterviewContent() {
 function Section({
   children,
   className = "",
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
-    <section className={`py-20 px-6 ${className}`}>
+    <section id={id} className={`py-20 px-6 scroll-mt-28 ${className}`}>
       <div className="max-w-7xl mx-auto">{children}</div>
     </section>
   );
@@ -597,15 +632,104 @@ function SkillCard({
   );
 }
 export default function AssistantProfessorInterviewPage() {
+  const [activePanel, setActivePanel] = useState<InterviewPanelId>(
+    "assistant-professor",
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header />
       <HeroSection />
-      <InterviewContent />
+
+      <section className="bg-gray-50 py-12 lg:py-16">
+        <div className="w-full max-w-none px-0">
+          <div className="lg:flex lg:items-start">
+            <aside className="hidden lg:block w-72 flex-shrink-0 sticky top-20 self-start pl-0 pr-4 pt-2 pb-8">
+              <div className="rounded-2xl border border-teal-100 bg-white p-4 shadow-lg">
+                <p className="mb-3 px-2 text-xs font-bold uppercase tracking-widest text-teal-600">
+                  Interview Tracks
+                </p>
+                <nav className="flex flex-col gap-2">
+                  {interviewPanels.map((panel) => {
+                    const isActive = activePanel === panel.id;
+                    return (
+                      <button
+                        key={panel.id}
+                        type="button"
+                        onClick={() => setActivePanel(panel.id)}
+                        className={`w-full rounded-xl px-4 py-3 text-left transition-all duration-200 ${
+                          isActive
+                            ? "bg-teal-800 text-white shadow-md"
+                            : "bg-teal-50 text-teal-900 hover:bg-teal-100"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
+                              isActive ? "bg-white/20" : "bg-white"
+                            }`}
+                          >
+                            <ChevronRight
+                              className={`h-4 w-4 ${
+                                isActive ? "text-amber-300" : "text-teal-700"
+                              }`}
+                            />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold leading-tight">
+                              {panel.label}
+                            </p>
+                            <p
+                              className={`mt-1 text-xs leading-relaxed ${
+                                isActive ? "text-teal-50" : "text-teal-700"
+                              }`}
+                            >
+                              {panel.summary}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+            </aside>
+
+            <div className="lg:hidden overflow-x-auto border-y border-teal-100 bg-white px-3 py-3">
+              <div className="flex gap-2">
+                {interviewPanels.map((panel) => {
+                  const isActive = activePanel === panel.id;
+                  return (
+                    <button
+                      key={panel.id}
+                      type="button"
+                      onClick={() => setActivePanel(panel.id)}
+                      className={`rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition-all ${
+                        isActive
+                          ? "bg-teal-800 text-white"
+                          : "bg-teal-50 text-teal-700"
+                      }`}
+                    >
+                      {panel.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1">
+              {activePanel === "assistant-professor" ? (
+                <InterviewContent />
+              ) : (
+                <DUInterviewMergedContent />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <OnlineCourseHighlights />
       <CoursePageFooter />
     </div>
   );
 }
-
-

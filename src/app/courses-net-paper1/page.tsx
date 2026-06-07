@@ -28,7 +28,8 @@ import {
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
-import { NtaNetSuccessCarousel } from "@/components/NtaNetSuccessCarousel";
+import { SuccessStoriesVideoCarousel } from "@/components/SuccessStoriesVideoCarousel";
+import { getNtaNetSuccessStories } from "@/data/successStories";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -272,127 +273,7 @@ function SyllabusCoverage() {
   );
 }
 
-const netAchievers = [
-  {
-    name: "Nidhi Shukla",
-    examName: "NTA-NET Dec 2025",
-    imageUrl: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg",
-    quote:
-      "The NET course at LePearl helped me build confidence and score high in both teaching and research aptitude.",
-  },
-  {
-    name: "Richa Singh",
-    examName: "NTA-NET Dec 2026",
-    imageUrl: "/Richa%20Singh_NET_Dec_2026.jpeg",
-    quote:
-      "Mock tests, live sessions, and expert mentorship made the NET exam preparation clear and strong.",
-  },
-  {
-    name: "Kanika Sharma",
-    examName: "NTA-NET Dec 2025",
-    imageUrl: "/Kanika%20Sharma.jpeg",
-    quote:
-      "LePearl's structured NET training gave me the discipline I needed to clear the exam.",
-  },
-  {
-    name: "Abhishesh Verma",
-    examName: "NTA-NET Jun 2025",
-    imageUrl: "/Abhishesh%20Verma.jpeg",
-    quote:
-      "Strategic practice and personalized guidance made all the difference for my NET success.",
-  },
-  {
-    name: "Rashmita Sahoo",
-    examName: "NTA-NET Dec 2024",
-    imageUrl: "/Rashmita%20Sahoo.jpeg",
-    quote:
-      "The clarity and confidence I gained at LePearl helped me excel in NET English.",
-  },
-  {
-    name: "Hemlata",
-    examName: "NTA-NET Jun 2023",
-    imageUrl: "/Hemlata.jpeg",
-    quote:
-      "Focused revision and regular doubt clearing sessions made NET prep far easier.",
-  },
-  {
-    name: "Shabnam Khatun",
-    examName: "NTA-NET Jun 2023",
-    imageUrl: "/Shabnam%20Khatun.jpeg",
-    quote:
-      "LePearl's approach made concepts stick and helped me perform confidently in NET.",
-  },
-  {
-    name: "Shivani Tiwari",
-    examName: "NTA-NET JRF Dec 2024",
-    imageUrl: "/Shivani%20Tiwari.jpeg",
-    quote:
-      "Expert coaching and mocks helped me secure JRF with a strong NET score.",
-  },
-  {
-    name: "Vineeta Vijay Sharma",
-    examName: "NTA-NET Dec 2022",
-    imageUrl: "/Vineeta%20Vijay%20Sharma.jpeg",
-    quote:
-      "Structured preparation and support from LePearl were key to my NET success.",
-  },
-  {
-    name: "Alvina Parveen",
-    examName: "NTA-NET Jun 2025",
-    imageUrl: "/Alvina%20Parveen.jpeg",
-    quote:
-      "LePearl's teaching made even difficult NET topics easy to understand.",
-  },
-  {
-    name: "Brijesh Kumar Pal",
-    examName: "NTA-NET Jan 2025",
-    imageUrl: "/Brijesh%20Kumar%20Pal.jpeg",
-    quote:
-      "Regular tests and expert feedback gave me the edge in NET preparation.",
-  },
-  {
-    name: "Akanksha Singham",
-    examName: "NTA-NET Jan 2025",
-    imageUrl: "/Akanksha%20Singham.jpeg",
-    quote:
-      "The NET course kept me focused and confident all the way through exam day.",
-  },
-  {
-    name: "Neelu Patel",
-    examName: "NTA-NET Jun 2023",
-    imageUrl: "/Neelu%20Patel.jpeg",
-    quote:
-      "My NET success was built on LePearl's strong concept clarity and practice.",
-  },
-  {
-    name: "Deepti Dwivedi",
-    examName: "NTA-NET Jun 2023",
-    imageUrl: "/Deepti%20Dwivedi.jpeg",
-    quote:
-      "Supportive faculty and structured mock tests helped me clear NET with confidence.",
-  },
-  {
-    name: "Revathy",
-    examName: "NTA-NET Dec 2022",
-    imageUrl: "/Revathy.jpeg",
-    quote:
-      "The NET course gave me the right strategy, practice, and motivation to clear the exam.",
-  },
-  {
-    name: "Namit Kumar",
-    examName: "NTA-NET 2020",
-    imageUrl: "/Namit%20Kumar.jpeg",
-    quote:
-      "LePearl helped me build a strong foundation and finish NET preparation on time.",
-  },
-  {
-    name: "Shyam Pal Singh",
-    examName: "NTA-NET 2020",
-    imageUrl: "/Shyam%20Pal%20Singh.jpeg",
-    quote:
-      "Consistent practice and expert guidance made the NET exam achievable.",
-  },
-];
+const netAchieverVideos = getNtaNetSuccessStories();
 
 const oneTimeFeatures = [
   "Full course access",
@@ -504,6 +385,7 @@ function EnrollmentSection() {
             <a
               href="/student-registration?mode=paid&course=NET%20Paper%201"
               className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -522,7 +404,11 @@ export default function NETPaper1CoursePage() {
       <CourseOverview />
       <FeaturesBenefits />
       <SyllabusCoverage />
-      <NtaNetSuccessCarousel stories={netAchievers} />
+      <SuccessStoriesVideoCarousel
+        stories={netAchieverVideos}
+        heading="NTA NET Success Stories"
+        description="Watch real success stories from NTA NET achievers who cleared NET/JRF through focused preparation and expert mentorship at LePearl."
+      />
       <EnrollmentSection />
       <OnlineCourseHighlights />
       <CoursePageFooter />

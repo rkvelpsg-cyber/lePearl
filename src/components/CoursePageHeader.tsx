@@ -13,6 +13,7 @@ import { VideoPrefetcher } from "@/components/VideoPrefetcher";
 
 type CoursePageHeaderProps = {
   onEnroll: () => void;
+  enrollHref?: string;
 };
 
 const socialLinks = [
@@ -43,7 +44,10 @@ const socialLinks = [
   },
 ];
 
-export function CoursePageHeader({ onEnroll }: CoursePageHeaderProps) {
+export function CoursePageHeader({
+  onEnroll,
+  enrollHref = "#enrollment",
+}: CoursePageHeaderProps) {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm overflow-x-hidden">
@@ -164,7 +168,7 @@ export function CoursePageHeader({ onEnroll }: CoursePageHeaderProps) {
                 Demo Class
               </a>
               <a
-                href="#enrollment"
+                href={enrollHref}
                 onClick={(event) => {
                   event.preventDefault();
                   onEnroll();

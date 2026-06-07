@@ -129,18 +129,6 @@ const courses: CourseCard[] = [
     ],
   },
   {
-    id: "du-interview",
-    title: "Delhi University Interview",
-    track: "Interview Preparation",
-    duration: "4-6 Weeks",
-    href: "/interview-preparation/du-interview",
-    highlights: [
-      "Teaching-focused answers",
-      "Mock panel practice",
-      "Classroom presence",
-    ],
-  },
-  {
     id: "phd-interview",
     title: "PhD Interview Preparation",
     track: "Interview Preparation",

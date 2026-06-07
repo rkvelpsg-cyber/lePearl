@@ -914,46 +914,79 @@ function UPGDCPage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
-          <div className="max-w-3xl">
-            <h2 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-              Excel in UP GDC Assistant Professor Exam, Ignite Your Teaching
-              Career
-            </h2>
-            <p className="mb-8 text-lg text-blue-100 sm:text-xl">
-              Proven course: Deep dive into syllabus, mock tests, and winning
-              strategies for Government Degree College placements.
-            </p>
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-16">
+            <div className="max-w-3xl">
+              <h2 className="mb-6 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+                Excel in UP GDC Assistant Professor Exam, Ignite Your Teaching
+                Career
+              </h2>
+              <p className="mb-8 text-lg text-blue-100 sm:text-xl">
+                Proven course: Deep dive into syllabus, mock tests, and winning
+                strategies for Government Degree College placements.
+              </p>
 
-            <div className="mb-10 flex flex-wrap gap-4">
-              <a
-                href="/student-registration?mode=paid&course=UP%20GDC"
-                className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
-              >
-                Enroll Now
-              </a>
-              <button
-                type="button"
-                onClick={downloadSyllabus}
-                className="rounded-lg border-2 border-white bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20"
-              >
-                Download Syllabus
-              </button>
+              <div className="mb-10 flex flex-wrap gap-4">
+                <a
+                  href="/student-registration?mode=paid&course=UP%20GDC"
+                  className="rounded-lg bg-yellow-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:bg-yellow-600 hover:shadow-xl"
+                >
+                  Enroll Now
+                </a>
+                <button
+                  type="button"
+                  onClick={downloadSyllabus}
+                  className="rounded-lg border-2 border-white bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20"
+                >
+                  Download Syllabus
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <Video className="h-5 w-5 text-yellow-400" />
+                  <span>Recorded Lectures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-yellow-400" />
+                  <span>Mock Tests</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-yellow-400" />
+                  <span>Live Doubt Sessions</span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Video className="h-5 w-5 text-yellow-400" />
-                <span>Recorded Lectures</span>
+            <a
+              href="https://youtu.be/_ltiw8VuJH4"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mx-auto block w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-3 shadow-2xl backdrop-blur-sm transition-transform duration-300 hover:scale-[1.02]"
+              aria-label="Watch UP GDC course video on YouTube"
+            >
+              <div className="relative overflow-hidden rounded-2xl">
+                <ImageWithFallback
+                  src="https://i.ytimg.com/vi/_ltiw8VuJH4/hqdefault.jpg"
+                  alt="UP GDC course video thumbnail"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-950/80 via-blue-900/10 to-transparent" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/90 shadow-xl transition-transform duration-300 group-hover:scale-110">
+                    <div className="ml-1 h-0 w-0 border-y-[14px] border-y-transparent border-l-[22px] border-l-blue-900" />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-yellow-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-blue-950">
+                    <Video className="h-3.5 w-3.5" />
+                    Watch Video
+                  </div>
+                  <p className="mt-3 text-lg font-semibold text-white sm:text-xl">
+                    UPGDC Preparation Guidance by LePearl Education
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-yellow-400" />
-                <span>Mock Tests</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-yellow-400" />
-                <span>Live Doubt Sessions</span>
-              </div>
-            </div>
+            </a>
           </div>
         </div>
       </section>

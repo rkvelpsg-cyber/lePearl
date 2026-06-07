@@ -120,6 +120,7 @@ function ProgramTabsPanel() {
             <a
               href="/student-registration?mode=paid&course=GIC&gicFeeOption=prelims-only"
               className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -174,6 +175,7 @@ function ProgramTabsPanel() {
             <a
               href="/student-registration?mode=paid&course=GIC&gicFeeOption=mains-without-material"
               className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -191,6 +193,7 @@ function ProgramTabsPanel() {
             <a
               href="/student-registration?mode=paid&course=GIC&gicFeeOption=mains-with-material"
               className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -245,6 +248,7 @@ function ProgramTabsPanel() {
             <a
               href="/student-registration?mode=paid&course=GIC&gicFeeOption=combined-full"
               className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
@@ -265,6 +269,7 @@ function ProgramTabsPanel() {
             <a
               href="/student-registration?mode=paid&course=GIC&gicFeeOption=combined-instalment"
               className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl"
+              style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>

@@ -28,7 +28,8 @@ import {
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
-import { NtaNetSuccessCarousel } from "@/components/NtaNetSuccessCarousel";
+import { SuccessStoriesVideoCarousel } from "@/components/SuccessStoriesVideoCarousel";
+import { getNtaNetSuccessStories } from "@/data/successStories";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -315,46 +316,16 @@ function SyllabusCoverage() {
   );
 }
 
-const netSuccessStories = [
-  {
-    name: "Nidhi Shukla",
-    examName: "NTA-NET Dec 2025",
-    imageUrl: "/Nidhi%20Shukla,%20NTA-NET%20Dec%202025.jpeg",
-    quote:
-      "LePearl's structured NET coaching helped me build confidence and score high in both teaching and research aptitude.",
-  },
-  {
-    name: "Ms Alvina Parveen",
-    examName: "NTA-NET Jun 2025",
-    imageUrl: "/Alvina%20Parveen.jpeg",
-    quote:
-      "Weekly doubts, mock tests, and expert guidance turned a difficult syllabus into a clear success path.",
-  },
-  {
-    name: "Richa Singh",
-    examName: "NTA-NET Dec 2026",
-    imageUrl: "/Richa%20Singh_NET_Dec_2026.jpeg",
-    quote:
-      "The course made literature preparation logical, memorable, and aligned with the NET exam pattern.",
-  },
-  {
-    name: "Ms Kanika Sharma",
-    examName: "NTA-NET Dec 2025",
-    imageUrl: "/Kanika%20Sharma.jpeg",
-    quote:
-      "Focused revision strategies and live mentorship helped me clear NET with confidence.",
-  },
-  {
-    name: "Mr Abhishesh Verma",
-    examName: "NTA-NET Jun 2025",
-    imageUrl: "/Abhishesh%20Verma.jpeg",
-    quote:
-      "Practical teaching methods and constant evaluation made all the difference in my NET journey.",
-  },
-];
+const netAchieverVideos = getNtaNetSuccessStories();
 
 function SuccessStories() {
-  return <NtaNetSuccessCarousel stories={netSuccessStories} />;
+  return (
+    <SuccessStoriesVideoCarousel
+      stories={netAchieverVideos}
+      heading="NTA NET Success Stories"
+      description="Watch real success stories from NTA NET achievers who cleared NET/JRF through focused preparation and expert mentorship at LePearl."
+    />
+  );
 }
 
 const oneTimeFeatures = [
@@ -405,8 +376,8 @@ function EnrollmentSection() {
           </p>
         </div>
 
-        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-          <div className="relative overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 justify-items-center gap-8">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
             <div className="absolute right-0 top-0 bg-amber-500 px-4 py-1 text-sm font-bold text-white">
               SAVE ₹3,001
             </div>
@@ -416,9 +387,21 @@ function EnrollmentSection() {
                 One-Time Payment
               </h3>
               <div className="mb-1 flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-blue-900">₹8,999</span>
+                <span className="text-4xl font-bold text-blue-900">
+                  Rs. 15,495/-
+                </span>
               </div>
               <p className="text-gray-500 line-through">₹12,000</p>
+            </div>
+
+            <div className="net-paper2-scholarship-blink mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="font-semibold text-amber-700">
+                Scholarship upto 100%
+              </p>
+              <p className="mt-1 text-sm font-medium text-blue-900">
+                After UGC NET qualification - one year Free access to all the
+                courses
+              </p>
             </div>
 
             <div className="mb-8">
@@ -441,45 +424,23 @@ function EnrollmentSection() {
               Enroll Now
             </a>
           </div>
-
-          <div className="relative rounded-2xl border-4 border-amber-400 bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
-            <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-amber-500 px-6 py-2 text-sm font-bold text-white shadow-lg">
-              <Sparkles className="h-4 w-4" />
-              POPULAR
-            </div>
-
-            <div className="mb-6 mt-4">
-              <h3 className="mb-2 text-2xl font-bold text-blue-900">
-                Installment Plan
-              </h3>
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-blue-900">
-                  5 Instalments of ₹2,000
-                </span>
-              </div>
-              <p className="text-gray-600">Total Cost: ₹10,000</p>
-            </div>
-
-            <div className="mb-8">
-              <p className="mb-4 font-semibold text-blue-900">Includes:</p>
-              <ul className="space-y-3">
-                {installmentFeatures.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3">
-                    <Check className="h-5 w-5 flex-shrink-0 text-green-600" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <a
-              href="/student-registration?mode=paid&course=NET%20Paper%202%20(English)"
-              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
-            >
-              Enroll Now
-            </a>
-          </div>
         </div>
+
+        <style jsx>{`
+          @keyframes scholarshipBlink {
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.35;
+            }
+          }
+
+          .net-paper2-scholarship-blink {
+            animation: scholarshipBlink 1.2s ease-in-out infinite;
+          }
+        `}</style>
       </div>
     </section>
   );

@@ -44,6 +44,8 @@ type RegistrationRequestBody = Partial<StudentRegistrationPayload> & {
   researchAssistanceFeeLabel?: string;
   upgdcFeeLabel?: string;
   gicFeeLabel?: string;
+  ltGradeFeeLabel?: string;
+  interviewPrepFeeLabel?: string;
   heardAboutUs?: string;
 };
 
@@ -160,7 +162,6 @@ function getDefaultFacultyForCourse(course: string) {
   if (
     normalized.includes("uphesc") ||
     normalized.includes("interviewpreparationassistantprofessor") ||
-    normalized.includes("interviewpreparationduinterview") ||
     normalized.includes("interviewpreparationphdinterview") ||
     normalized.includes("communicationskills") ||
     normalized.includes("researchassistance")
@@ -287,7 +288,7 @@ function buildModeAwareAdminEmail(
       `Registration No: ${body.registrationNo ?? "N/A"}`,
       `User ID / Username: ${body.username ?? "N/A"}`,
       `Temporary Password: ${body.password ?? "N/A"}`,
-      `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? "N/A"}`,
+      `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? "N/A"}`,
       `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
       `Accepted Terms: ${body.acceptedTerms ? "Yes" : "No"}`,
       `Accepted Privacy: ${body.acceptedPrivacy ? "Yes" : "No"}`,
@@ -342,7 +343,7 @@ function buildStudentPaidPaymentEmail(
     `Registration No: ${body.registrationNo ?? "N/A"}`,
     `User ID / Username: ${body.username ?? "N/A"}`,
     `Temporary Password: ${body.password ?? "N/A"}`,
-    `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? "N/A"}`,
+    `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? "N/A"}`,
     `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
     `Amount Paid: Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}`,
     `Payment Mode: ${body.paymentMode ?? "razorpay"}`,
@@ -366,7 +367,7 @@ function buildStudentPaidPaymentEmail(
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Registration No</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.registrationNo ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">User ID / Username</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.username ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Temporary Password</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.password ?? "N/A"}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Selected Fee Plan</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? "N/A"}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Selected Fee Plan</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Payment Tenure</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.paymentTenure ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Amount Paid</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Payment Mode</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.paymentMode ?? "razorpay"}</td></tr>
@@ -909,6 +910,8 @@ export async function POST(req: NextRequest) {
                 body.researchAssistanceFeeLabel ??
                   body.upgdcFeeLabel ??
                   body.gicFeeLabel ??
+                  body.ltGradeFeeLabel ??
+                  body.interviewPrepFeeLabel ??
                   "",
               ) || null
             : null,

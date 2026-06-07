@@ -608,28 +608,26 @@ function InterviewCard() {
           marginBottom: "1rem",
         }}
       >
-        Expert coaching for Assistant Professor, DU interviews, Ph.D vivas, and
+        Expert coaching for Assistant Professor interviews, Ph.D vivas, and
         academic position interviews.
       </p>
       <ul className="space-y-2">
-        {["Assistant Professor", "DU Interview", "Ph.D Interview"].map(
-          (item) => (
-            <li
-              key={item}
-              style={{
-                fontFamily: "DM Sans, sans-serif",
-                fontSize: "0.75rem",
-                color: "rgba(255,255,255,0.9)",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <Check style={{ width: 13, height: 13, color: "#22D3EE" }} />
-              {item}
-            </li>
-          ),
-        )}
+        {["Assistant Professor", "Ph.D Interview"].map((item) => (
+          <li
+            key={item}
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: "0.75rem",
+              color: "rgba(255,255,255,0.9)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <Check style={{ width: 13, height: 13, color: "#22D3EE" }} />
+            {item}
+          </li>
+        ))}
       </ul>
 
       <div
@@ -660,10 +658,6 @@ function InterviewCard() {
             {
               label: "Asst. Professor",
               href: "/interview-preparation/assistant-professor-1",
-            },
-            {
-              label: "DU Interview",
-              href: "/interview-preparation/du-interview",
             },
             {
               label: "Ph.D Interview",
