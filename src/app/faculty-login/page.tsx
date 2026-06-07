@@ -81,14 +81,14 @@ export default function FacultyLoginPage() {
         .maybeSingle();
 
       if (!profileFlagError && profileFlag?.must_reset_password) {
-        router.push(
+        router.replace(
           "/reset-password?role=faculty&firstLogin=1&next=/faculty-dashboard",
         );
         return;
       }
 
       // Faculty redirect
-      router.push("/faculty-dashboard");
+      router.replace("/faculty-dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);

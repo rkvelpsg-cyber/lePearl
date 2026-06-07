@@ -34,7 +34,7 @@ export const paidRegistrationCourseFees: Partial<
   "UP GDC": 13995,
   "NET Paper 1": 8995,
   "NET Paper 2 (English)": 15495,
-  GIC: 9995,
+  GIC: 5,
   "LT Grade": 9995,
   "Interview Preparation - Assistant Professor": 7495,
   "Interview Preparation - Ph.D Interview": 7495,
@@ -139,7 +139,7 @@ export const coursePaymentPlans: Record<
     fullAmount: 15495,
   },
   GIC: {
-    fullAmount: 9995,
+    fullAmount: 5,
   },
   "LT Grade": {
     fullAmount: 9995,

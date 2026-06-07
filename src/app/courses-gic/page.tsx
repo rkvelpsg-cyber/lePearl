@@ -114,7 +114,7 @@ function ProgramTabsPanel() {
             </h4>
             <div className="mb-6">
               <span className="text-4xl font-bold text-blue-900 sm:text-6xl">
-                Rs 9,995/-
+                Rs 5/-
               </span>
             </div>
             <a

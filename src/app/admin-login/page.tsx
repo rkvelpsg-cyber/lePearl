@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
       }
 
       // Admin redirect
-      router.push("/admin-dashboard");
+      router.replace("/admin-dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);

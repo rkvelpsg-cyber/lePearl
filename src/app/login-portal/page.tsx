@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft, GraduationCap, ShieldCheck, Users } from "lucide-react";
 
@@ -71,11 +72,12 @@ const roles = [
 ];
 
 export default function LoginPortal() {
+  const router = useRouter();
   const [comingSoon, setComingSoon] = useState<string | null>(null);
 
   function handleRoleClick(role: (typeof roles)[0]) {
     if (role.href) {
-      window.location.href = role.href;
+      router.replace(role.href);
     } else {
       setComingSoon(role.key);
       setTimeout(() => setComingSoon(null), 2500);

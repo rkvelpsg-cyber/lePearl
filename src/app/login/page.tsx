@@ -88,13 +88,13 @@ export default function LoginPage() {
       }
 
       if (!profileFlagError && profileFlag?.must_reset_password) {
-        router.push(
+        router.replace(
           "/reset-password?role=student&firstLogin=1&next=/student-dashboard",
         );
         return;
       }
 
-      router.push("/student-dashboard");
+      router.replace("/student-dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);

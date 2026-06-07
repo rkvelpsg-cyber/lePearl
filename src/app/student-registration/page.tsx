@@ -425,7 +425,7 @@ const gicFeeOptions: {
   {
     id: "prelims-only",
     title: "Prelims only",
-    totalAmount: 9995,
+    totalAmount: 5,
     tenure: "full",
     note: "One-time payment for GIC Prelims track",
   },
