@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft, GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { clearAllAuthStorage } from "@/lib/supabase/client";
 
 const roles = [
   {
@@ -74,6 +75,12 @@ const roles = [
 export default function LoginPortal() {
   const router = useRouter();
   const [comingSoon, setComingSoon] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Recover from stale/invalid refresh tokens that can trigger AuthApiError
+    // when users navigate back to the login portal.
+    clearAllAuthStorage();
+  }, []);
 
   function handleRoleClick(role: (typeof roles)[0]) {
     if (role.href) {

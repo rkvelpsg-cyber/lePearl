@@ -530,6 +530,9 @@ export default function FacultyDashboardPage() {
   const [selectedTest, setSelectedTest] = useState<McqTestFaculty | null>(null);
   const [editingTestId, setEditingTestId] = useState<number | null>(null);
   const [editingTestWasPublished, setEditingTestWasPublished] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<number | null>(
+    null,
+  );
   const [testQuestions, setTestQuestions] = useState<McqQuestion[]>([]);
   const [showMcqForm, setShowMcqForm] = useState(false);
   const [showQForm, setShowQForm] = useState(false);
@@ -602,6 +605,8 @@ export default function FacultyDashboardPage() {
     type: "ok" | "err";
     text: string;
   } | null>(null);
+  const [evaluatedSheetFileName, setEvaluatedSheetFileName] =
+    useState("No file chosen");
 
   /* classes */
   const [showClassForm, setShowClassForm] = useState(false);
@@ -1477,6 +1482,38 @@ export default function FacultyDashboardPage() {
     });
   }
 
+  function resetQuestionForm() {
+    setEditingQuestionId(null);
+    setShowQForm(false);
+    setQForm({
+      language: "English",
+      questionFormat: "standard",
+      questionText: "",
+      optionA: "",
+      optionB: "",
+      optionC: "",
+      optionD: "",
+      correctOption: "A",
+      marks: "1",
+    });
+  }
+
+  function startEditingQuestion(question: McqQuestion) {
+    setEditingQuestionId(question.id);
+    setShowQForm(true);
+    setQForm({
+      language: "English",
+      questionFormat: "standard",
+      questionText: question.question_text,
+      optionA: question.option_a,
+      optionB: question.option_b,
+      optionC: question.option_c,
+      optionD: question.option_d,
+      correctOption: question.correct_option,
+      marks: String(question.marks),
+    });
+  }
+
   function startEditingTest(test: McqTestFaculty) {
     const selectedBatch = batches.find((b) => b.id === test.batch_id);
     const selectedBatchCourse = unwrapOne(
@@ -1657,7 +1694,7 @@ export default function FacultyDashboardPage() {
         type: "ok",
         text: editingTestId
           ? "Test updated successfully."
-          : "Test created! Add questions now.",
+          : "Test created successfully.",
       });
       resetMcqForm();
       load();
@@ -1691,84 +1728,50 @@ export default function FacultyDashboardPage() {
         .order("question_order", { ascending: true });
       setTestQuestions((data ?? []) as McqQuestion[]);
     } else {
-      // For descriptive tests, fetch from descriptive_questions table
-      const { data } = await supabase
-        .from("descriptive_questions")
-        .select("*")
-        .eq("mock_test_id", test.id)
-        .order("question_order", { ascending: true });
-      // Convert descriptive questions to a format compatible with testQuestions
-      setTestQuestions(
-        (data ?? []).map((q: any) => ({
-          id: q.id,
-          question_text: q.question_text,
-          marks: q.marks,
-          question_order: q.question_order,
-          category: q.category,
-          option_a: "",
-          option_b: "",
-          option_c: "",
-          option_d: "",
-          correct_option: "",
-        })) as unknown as McqQuestion[],
-      );
+      setTestQuestions([]);
     }
   }
 
   async function addQuestion() {
-    if (!selectedTest) return;
+    if (!selectedTest || selectedTest.test_type !== "mcq") return;
     const supabase = createClient();
     setMcqSubmitting(true);
     try {
-      // Handle MCQ questions
-      if (selectedTest.test_type === "mcq") {
-        const { error } = await supabase.from("mcq_questions").insert({
-          mock_test_id: selectedTest.id,
-          question_text: qForm.questionText,
-          option_a: qForm.optionA,
-          option_b: qForm.optionB,
-          option_c: qForm.optionC,
-          option_d: qForm.optionD,
-          correct_option: qForm.correctOption,
-          marks: parseInt(qForm.marks),
-          question_order: testQuestions.length + 1,
-        });
-        if (error) throw error;
-        setQForm({
-          language: "English",
-          questionFormat: "standard",
-          questionText: "",
-          optionA: "",
-          optionB: "",
-          optionC: "",
-          optionD: "",
-          correctOption: "A",
-          marks: "1",
-        });
-      } else {
-        // Handle Descriptive questions
-        const { error } = await supabase.from("descriptive_questions").insert({
-          mock_test_id: selectedTest.id,
-          question_text: descriptiveQForm.questionText,
-          marks: parseInt(descriptiveQForm.marks),
-          category: descriptiveQForm.category || null,
-          question_order: testQuestions.length + 1,
-        });
-        if (error) throw error;
-        setDescriptiveQForm({
-          language: "English",
-          questionText: "",
-          marks: "5",
-          category: "",
-        });
-      }
-      setShowQForm(false);
-      loadQuestions(selectedTest);
+      const payload = {
+        question_text: qForm.questionText,
+        option_a: qForm.optionA,
+        option_b: qForm.optionB,
+        option_c: qForm.optionC,
+        option_d: qForm.optionD,
+        correct_option: qForm.correctOption,
+        marks: parseInt(qForm.marks),
+      };
+
+      const { error } = editingQuestionId
+        ? await supabase
+            .from("mcq_questions")
+            .update(payload)
+            .eq("id", editingQuestionId)
+        : await supabase.from("mcq_questions").insert({
+            mock_test_id: selectedTest.id,
+            ...payload,
+            question_order: testQuestions.length + 1,
+          });
+
+      if (error) throw error;
+      resetQuestionForm();
+      setMcqMsg({
+        type: "ok",
+        text: editingQuestionId
+          ? "Question updated successfully."
+          : "Question added successfully.",
+      });
+      await loadQuestions(selectedTest);
     } catch (err: any) {
       console.error(err);
       setMcqMsg({
         type: "err",
-        text: err?.message || "Failed to add question.",
+        text: err?.message || "Failed to save question.",
       });
     } finally {
       setMcqSubmitting(false);
@@ -1880,6 +1883,54 @@ export default function FacultyDashboardPage() {
     }
   }
 
+  async function handleRemoveDescriptiveQuestionPaper() {
+    if (!selectedTest || selectedTest.test_type !== "descriptive") return;
+
+    const shouldRemove = confirm(
+      "Remove the current descriptive question paper? You can upload a new file after removing it.",
+    );
+    if (!shouldRemove) return;
+
+    const supabase = createClient();
+    setQuestionPaperUploading(true);
+    setQuestionPaperMsg(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from("mock_tests")
+        .update({ question_paper_file_url: null })
+        .eq("id", selectedTest.id);
+
+      if (updateError) throw updateError;
+
+      setSelectedTest((current) =>
+        current ? { ...current, question_paper_file_url: null } : current,
+      );
+      setMcqTests((current) =>
+        current.map((test) =>
+          test.id === selectedTest.id
+            ? { ...test, question_paper_file_url: null }
+            : test,
+        ),
+      );
+      setQuestionPaperFileName("No file chosen");
+      setQuestionPaperMsg({
+        type: "ok",
+        text: "Existing question paper removed. Upload a new file when ready.",
+      });
+    } catch (error) {
+      setQuestionPaperMsg({
+        type: "err",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to remove existing question paper.",
+      });
+    } finally {
+      setQuestionPaperUploading(false);
+    }
+  }
+
   async function togglePublish(test: McqTestFaculty) {
     const supabase = createClient();
     setMcqMsg(null);
@@ -1944,6 +1995,9 @@ export default function FacultyDashboardPage() {
     if (!confirm("Delete this question?")) return;
     const supabase = createClient();
     await supabase.from("mcq_questions").delete().eq("id", qId);
+    if (editingQuestionId === qId) {
+      resetQuestionForm();
+    }
     if (selectedTest) loadQuestions(selectedTest);
   }
 
@@ -2040,10 +2094,13 @@ export default function FacultyDashboardPage() {
   async function handleEvaluatedSheetUpload(file: File | null) {
     if (!file || !selectedSubmission || !selectedEvalTest) return;
 
+    setEvaluatedSheetFileName(file.name);
+
     const isPdf =
       file.type === "application/pdf" ||
       file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) {
+      setEvaluatedSheetFileName("No file chosen");
       setEvaluatedSheetMsg({
         type: "err",
         text: "Please upload only a PDF file.",
@@ -2130,6 +2187,67 @@ export default function FacultyDashboardPage() {
           err instanceof Error
             ? err.message
             : "Failed to upload corrected answer sheet.",
+      });
+    } finally {
+      setEvaluatedSheetUploading(false);
+    }
+  }
+
+  async function handleRemoveEvaluatedSheet() {
+    if (!selectedSubmission) return;
+
+    const shouldRemove = confirm(
+      "Remove the currently uploaded corrected sheet? You can upload a new PDF after this.",
+    );
+    if (!shouldRemove) return;
+
+    const supabase = createClient();
+    setEvaluatedSheetUploading(true);
+    setEvaluatedSheetMsg(null);
+
+    try {
+      const { error } = await supabase
+        .from("descriptive_student_answers")
+        .update({
+          evaluated_answer_file_url: null,
+          evaluated_at: null,
+        })
+        .eq("id", selectedSubmission.id);
+
+      if (error) throw error;
+
+      setSelectedSubmission((prev) =>
+        prev
+          ? {
+              ...prev,
+              evaluated_answer_file_url: null,
+              evaluated_at: null,
+            }
+          : prev,
+      );
+      setStudentSubmissions((prev) =>
+        prev.map((submission) =>
+          submission.id === selectedSubmission.id
+            ? {
+                ...submission,
+                evaluated_answer_file_url: null,
+                evaluated_at: null,
+              }
+            : submission,
+        ),
+      );
+      setEvaluatedSheetFileName("No file chosen");
+      setEvaluatedSheetMsg({
+        type: "ok",
+        text: "Corrected sheet removed. Upload a new file now.",
+      });
+    } catch (err) {
+      setEvaluatedSheetMsg({
+        type: "err",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Failed to remove corrected answer sheet.",
       });
     } finally {
       setEvaluatedSheetUploading(false);
@@ -3558,7 +3676,9 @@ export default function FacultyDashboardPage() {
                           </span>
                         </div>
                         <p className="text-xs text-gray-500">
-                          {testQuestions.length} questions |{" "}
+                          {selectedTest.test_type === "mcq"
+                            ? `${testQuestions.length} questions | `
+                            : ""}
                           {selectedTest.total_marks} marks |{" "}
                           {selectedTest.time_limit_minutes} min
                         </p>
@@ -3581,15 +3701,28 @@ export default function FacultyDashboardPage() {
                         </p>
 
                         {selectedTest.question_paper_file_url && (
-                          <a
-                            href={selectedTest.question_paper_file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" /> View
-                            Current Question Paper
-                          </a>
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <a
+                              href={selectedTest.question_paper_file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" /> View
+                              Current Question Paper
+                            </a>
+                            <button
+                              type="button"
+                              disabled={questionPaperUploading}
+                              onClick={() => {
+                                void handleRemoveDescriptiveQuestionPaper();
+                              }}
+                              className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${questionPaperUploading ? "cursor-not-allowed bg-gray-200 text-gray-500" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Remove Existing
+                              File
+                            </button>
+                          </div>
                         )}
 
                         <div className="mt-3 flex items-center gap-3">
@@ -3640,336 +3773,280 @@ export default function FacultyDashboardPage() {
                         )}
                       </div>
                     )}
-                    {/* add question */}
-                    {showQForm ? (
-                      <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 mb-4 space-y-3">
-                        <h3 className="text-sm font-bold text-gray-900">
-                          Add{" "}
-                          {selectedTest?.test_type === "mcq"
-                            ? "MCQ"
-                            : "Descriptive"}{" "}
-                          Question
-                        </h3>
+                    {selectedTest.test_type === "mcq" && (
+                      <>
+                        {/* add question */}
+                        {showQForm ? (
+                          <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 mb-4 space-y-3">
+                            <h3 className="text-sm font-bold text-gray-900">
+                              {editingQuestionId ? "Edit" : "Add"} MCQ Question
+                            </h3>
 
-                        {/* MCQ QUESTION FORM */}
-                        {selectedTest?.test_type === "mcq" ? (
-                          <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  Question Language
-                                </label>
-                                <select
-                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                  value={qForm.language}
-                                  onChange={(e) =>
-                                    setQForm((p) => ({
-                                      ...p,
-                                      language: e.target.value,
-                                    }))
-                                  }
-                                >
-                                  {QUESTION_LANGUAGE_OPTIONS.map((language) => (
-                                    <option key={language} value={language}>
-                                      {language}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  MCQ Format
-                                </label>
-                                <div className="flex gap-2">
+                            {/* MCQ QUESTION FORM */}
+                            <>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                    Question Language
+                                  </label>
                                   <select
                                     className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                    value={qForm.questionFormat}
+                                    value={qForm.language}
                                     onChange={(e) =>
                                       setQForm((p) => ({
                                         ...p,
-                                        questionFormat: e.target.value,
+                                        language: e.target.value,
                                       }))
                                     }
                                   >
-                                    {MCQ_FORMAT_OPTIONS.map((format) => (
-                                      <option
-                                        key={format.value}
-                                        value={format.value}
-                                      >
-                                        {format.label}
+                                    {QUESTION_LANGUAGE_OPTIONS.map(
+                                      (language) => (
+                                        <option key={language} value={language}>
+                                          {language}
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                    MCQ Format
+                                  </label>
+                                  <div className="flex gap-2">
+                                    <select
+                                      className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                      value={qForm.questionFormat}
+                                      onChange={(e) =>
+                                        setQForm((p) => ({
+                                          ...p,
+                                          questionFormat: e.target.value,
+                                        }))
+                                      }
+                                    >
+                                      {MCQ_FORMAT_OPTIONS.map((format) => (
+                                        <option
+                                          key={format.value}
+                                          value={format.value}
+                                        >
+                                          {format.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const template = getMcqFormatTemplate(
+                                          qForm.questionFormat,
+                                        );
+                                        setQForm((p) => ({
+                                          ...p,
+                                          questionText:
+                                            p.questionText ||
+                                            template.questionText,
+                                          optionA:
+                                            p.optionA || template.optionA,
+                                          optionB:
+                                            p.optionB || template.optionB,
+                                          optionC:
+                                            p.optionC || template.optionC,
+                                          optionD:
+                                            p.optionD || template.optionD,
+                                        }));
+                                      }}
+                                      className="px-3 py-2 rounded-xl bg-purple-100 text-purple-700 text-xs font-semibold hover:bg-purple-200"
+                                    >
+                                      Apply
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <textarea
+                                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                                rows={4}
+                                placeholder="Question text (supports English, Hindi, Telugu, Tamil, Odiya, Kannada, and Devanagari scripts)"
+                                value={qForm.questionText}
+                                onChange={(e) =>
+                                  setQForm((p) => ({
+                                    ...p,
+                                    questionText: e.target.value,
+                                  }))
+                                }
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                {(["A", "B", "C", "D"] as const).map((opt) => (
+                                  <textarea
+                                    key={opt}
+                                    rows={2}
+                                    className="border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none"
+                                    placeholder={`Option ${opt}`}
+                                    value={
+                                      qForm[
+                                        `option${opt}` as
+                                          | "optionA"
+                                          | "optionB"
+                                          | "optionC"
+                                          | "optionD"
+                                      ]
+                                    }
+                                    onChange={(e) =>
+                                      setQForm((p) => ({
+                                        ...p,
+                                        [`option${opt}`]: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex gap-4">
+                                <div className="flex-1">
+                                  <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                    Correct Answer
+                                  </label>
+                                  <select
+                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                    value={qForm.correctOption}
+                                    onChange={(e) =>
+                                      setQForm((p) => ({
+                                        ...p,
+                                        correctOption: e.target.value,
+                                      }))
+                                    }
+                                  >
+                                    {["A", "B", "C", "D"].map((o) => (
+                                      <option key={o} value={o}>
+                                        {o}
                                       </option>
                                     ))}
                                   </select>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const template = getMcqFormatTemplate(
-                                        qForm.questionFormat,
-                                      );
+                                </div>
+                                <div className="flex-1">
+                                  <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                                    Marks
+                                  </label>
+                                  <input
+                                    type="number"
+                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                                    value={qForm.marks}
+                                    onChange={(e) =>
                                       setQForm((p) => ({
                                         ...p,
-                                        questionText:
-                                          p.questionText ||
-                                          template.questionText,
-                                        optionA: p.optionA || template.optionA,
-                                        optionB: p.optionB || template.optionB,
-                                        optionC: p.optionC || template.optionC,
-                                        optionD: p.optionD || template.optionD,
-                                      }));
-                                    }}
-                                    className="px-3 py-2 rounded-xl bg-purple-100 text-purple-700 text-xs font-semibold hover:bg-purple-200"
+                                        marks: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </>
+
+                            <div className="flex gap-2">
+                              <button
+                                onClick={addQuestion}
+                                disabled={
+                                  mcqSubmitting ||
+                                  !(
+                                    selectedTest?.test_type === "mcq" &&
+                                    qForm.questionText
+                                  )
+                                }
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-semibold disabled:opacity-60"
+                              >
+                                {mcqSubmitting ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Edit3 className="w-4 h-4" />
+                                )}
+                                {editingQuestionId ? "Save Changes" : "Add"}
+                              </button>
+                              <button
+                                onClick={resetQuestionForm}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingQuestionId(null);
+                              setShowQForm(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-xl text-sm font-semibold mb-4 hover:bg-purple-200"
+                          >
+                            <Plus className="w-4 h-4" /> Add Question
+                          </button>
+                        )}
+                        {/* questions list */}
+                        <div className="space-y-3">
+                          {testQuestions.map((q, idx) => (
+                            <div
+                              key={q.id}
+                              className="bg-gray-50 rounded-xl p-4 border border-gray-200"
+                            >
+                              <div className="flex items-start justify-between">
+                                <p className="text-sm font-semibold text-gray-900 leading-6">
+                                  <span className="text-purple-600 mr-2">
+                                    Q{idx + 1}.
+                                  </span>
+                                  {isIndentedQuestionType(
+                                    selectedTest?.test_type,
+                                  ) ? (
+                                    <span className="block pl-7 whitespace-pre-line">
+                                      {q.question_text}
+                                    </span>
+                                  ) : (
+                                    q.question_text
+                                  )}
+                                </p>
+                                <div className="ml-2 flex items-center gap-2 flex-shrink-0">
+                                  <button
+                                    onClick={() => startEditingQuestion(q)}
+                                    className="text-purple-400 hover:text-purple-600"
+                                    title="Edit question"
                                   >
-                                    Apply
+                                    <Edit3 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteQuestion(q.id)}
+                                    className="text-red-400 hover:text-red-600"
+                                    title="Delete question"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
                               </div>
-                            </div>
-
-                            <textarea
-                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-purple-400 focus:outline-none"
-                              rows={4}
-                              placeholder="Question text (supports English, Hindi, Telugu, Tamil, Odiya, Kannada, and Devanagari scripts)"
-                              value={qForm.questionText}
-                              onChange={(e) =>
-                                setQForm((p) => ({
-                                  ...p,
-                                  questionText: e.target.value,
-                                }))
-                              }
-                            />
-                            <div className="grid grid-cols-2 gap-2">
-                              {(["A", "B", "C", "D"] as const).map((opt) => (
-                                <textarea
-                                  key={opt}
-                                  rows={2}
-                                  className="border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none"
-                                  placeholder={`Option ${opt}`}
-                                  value={
-                                    qForm[
-                                      `option${opt}` as
-                                        | "optionA"
-                                        | "optionB"
-                                        | "optionC"
-                                        | "optionD"
-                                    ]
-                                  }
-                                  onChange={(e) =>
-                                    setQForm((p) => ({
-                                      ...p,
-                                      [`option${opt}`]: e.target.value,
-                                    }))
-                                  }
-                                />
-                              ))}
-                            </div>
-                            <div className="flex gap-4">
-                              <div className="flex-1">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  Correct Answer
-                                </label>
-                                <select
-                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                  value={qForm.correctOption}
-                                  onChange={(e) =>
-                                    setQForm((p) => ({
-                                      ...p,
-                                      correctOption: e.target.value,
-                                    }))
-                                  }
-                                >
-                                  {["A", "B", "C", "D"].map((o) => (
-                                    <option key={o} value={o}>
-                                      {o}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div className="flex-1">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  Marks
-                                </label>
-                                <input
-                                  type="number"
-                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                  value={qForm.marks}
-                                  onChange={(e) =>
-                                    setQForm((p) => ({
-                                      ...p,
-                                      marks: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {/* DESCRIPTIVE QUESTION FORM */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  Question Language
-                                </label>
-                                <select
-                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                  value={descriptiveQForm.language}
-                                  onChange={(e) =>
-                                    setDescriptiveQForm((p) => ({
-                                      ...p,
-                                      language: e.target.value,
-                                    }))
-                                  }
-                                >
-                                  {QUESTION_LANGUAGE_OPTIONS.map((language) => (
-                                    <option key={language} value={language}>
-                                      {language}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                            <textarea
-                              rows={4}
-                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                              placeholder="Enter descriptive question (supports multilingual text and multi-line format)"
-                              value={descriptiveQForm.questionText}
-                              onChange={(e) =>
-                                setDescriptiveQForm((p) => ({
-                                  ...p,
-                                  questionText: e.target.value,
-                                }))
-                              }
-                            />
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  Marks
-                                </label>
-                                <input
-                                  type="number"
-                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                  value={descriptiveQForm.marks}
-                                  onChange={(e) =>
-                                    setDescriptiveQForm((p) => ({
-                                      ...p,
-                                      marks: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                                  Category (Optional)
-                                </label>
-                                <input
-                                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
-                                  placeholder="e.g., History, Essay"
-                                  value={descriptiveQForm.category}
-                                  onChange={(e) =>
-                                    setDescriptiveQForm((p) => ({
-                                      ...p,
-                                      category: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={addQuestion}
-                            disabled={
-                              mcqSubmitting ||
-                              !(
-                                (selectedTest?.test_type === "mcq" &&
-                                  qForm.questionText) ||
-                                (selectedTest?.test_type !== "mcq" &&
-                                  descriptiveQForm.questionText)
-                              )
-                            }
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-semibold disabled:opacity-60"
-                          >
-                            {mcqSubmitting ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Plus className="w-4 h-4" />
-                            )}
-                            Add
-                          </button>
-                          <button
-                            onClick={() => setShowQForm(false)}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setShowQForm(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-xl text-sm font-semibold mb-4 hover:bg-purple-200"
-                      >
-                        <Plus className="w-4 h-4" /> Add Question
-                      </button>
-                    )}
-                    {/* questions list */}
-                    <div className="space-y-3">
-                      {testQuestions.map((q, idx) => (
-                        <div
-                          key={q.id}
-                          className="bg-gray-50 rounded-xl p-4 border border-gray-200"
-                        >
-                          <div className="flex items-start justify-between">
-                            <p className="text-sm font-semibold text-gray-900 leading-6">
-                              <span className="text-purple-600 mr-2">
-                                Q{idx + 1}.
-                              </span>
-                              {isIndentedQuestionType(
-                                selectedTest?.test_type,
-                              ) ? (
-                                <span className="block pl-7 whitespace-pre-line">
-                                  {q.question_text}
-                                </span>
-                              ) : (
-                                q.question_text
+                              {selectedTest?.test_type === "mcq" && (
+                                <div className="grid grid-cols-2 gap-1 mt-2">
+                                  {(["A", "B", "C", "D"] as const).map(
+                                    (opt) => (
+                                      <p
+                                        key={opt}
+                                        className={`text-xs px-2 py-1 rounded-lg ${q.correct_option === opt ? "bg-green-100 text-green-700 font-semibold" : "text-gray-500"}`}
+                                      >
+                                        {opt}.{" "}
+                                        {
+                                          q[
+                                            `option_${opt.toLowerCase()}` as
+                                              | "option_a"
+                                              | "option_b"
+                                              | "option_c"
+                                              | "option_d"
+                                          ]
+                                        }
+                                      </p>
+                                    ),
+                                  )}
+                                </div>
                               )}
-                            </p>
-                            <button
-                              onClick={() => deleteQuestion(q.id)}
-                              className="ml-2 text-red-400 hover:text-red-600 flex-shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                          {selectedTest?.test_type === "mcq" && (
-                            <div className="grid grid-cols-2 gap-1 mt-2">
-                              {(["A", "B", "C", "D"] as const).map((opt) => (
-                                <p
-                                  key={opt}
-                                  className={`text-xs px-2 py-1 rounded-lg ${q.correct_option === opt ? "bg-green-100 text-green-700 font-semibold" : "text-gray-500"}`}
-                                >
-                                  {opt}.{" "}
-                                  {
-                                    q[
-                                      `option_${opt.toLowerCase()}` as
-                                        | "option_a"
-                                        | "option_b"
-                                        | "option_c"
-                                        | "option_d"
-                                    ]
-                                  }
-                                </p>
-                              ))}
+                              <p className="text-xs text-gray-400 mt-1">
+                                {q.marks} mark{q.marks > 1 ? "s" : ""}
+                              </p>
                             </div>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1">
-                            {q.marks} mark{q.marks > 1 ? "s" : ""}
-                          </p>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    )}
                     <button
                       onClick={() => togglePublish(selectedTest)}
                       className={`mt-4 px-6 py-2.5 rounded-xl text-sm font-semibold ${selectedTest.is_published ? "bg-gray-200 text-gray-700" : "bg-green-600 text-white hover:bg-green-700"}`}
@@ -4168,7 +4245,7 @@ export default function FacultyDashboardPage() {
                             (q) => q.id === s.question_id,
                           );
                           return (
-                            <button
+                            <div
                               key={s.id}
                               onClick={() => {
                                 setSelectedSubmission(s);
@@ -4178,8 +4255,24 @@ export default function FacultyDashboardPage() {
                                   facultyNotes: s.faculty_notes || "",
                                 });
                                 setEvaluatedSheetMsg(null);
+                                setEvaluatedSheetFileName("No file chosen");
                               }}
-                              className={`w-full text-left p-4 border rounded-xl transition-colors ${
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setSelectedSubmission(s);
+                                  setEvaluationForm({
+                                    marksObtained:
+                                      s.marks_obtained?.toString() || "",
+                                    facultyNotes: s.faculty_notes || "",
+                                  });
+                                  setEvaluatedSheetMsg(null);
+                                  setEvaluatedSheetFileName("No file chosen");
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              className={`w-full text-left p-4 border rounded-xl transition-colors cursor-pointer ${
                                 s.marks_obtained !== null
                                   ? "bg-green-50 border-green-200"
                                   : "bg-yellow-50 border-yellow-200"
@@ -4190,11 +4283,43 @@ export default function FacultyDashboardPage() {
                                   <p className="font-semibold text-gray-900 text-sm">
                                     {s.student_name || "Unknown Student"}
                                   </p>
-                                  <p className="text-xs text-gray-600 mt-1">
-                                    {question
-                                      ? `Q${question.question_order}: ${question.question_text}`
-                                      : "Full Answer Sheet"}
-                                  </p>
+                                  {question ? (
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {`Q${question.question_order}: ${question.question_text}`}
+                                    </p>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedSubmission(s);
+                                        setEvaluationForm({
+                                          marksObtained:
+                                            s.marks_obtained?.toString() || "",
+                                          facultyNotes: s.faculty_notes || "",
+                                        });
+                                        setEvaluatedSheetMsg(null);
+                                        setEvaluatedSheetFileName(
+                                          "No file chosen",
+                                        );
+                                      }}
+                                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700"
+                                    >
+                                      Faculty Evaluation
+                                    </button>
+                                  )}
+                                  {s.answer_file_url && (
+                                    <a
+                                      href={s.answer_file_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="mt-2 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold !text-white hover:!text-white hover:bg-blue-700"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                      Student Answer Paper
+                                    </a>
+                                  )}
                                   {s.submitted_at && (
                                     <p className="text-xs text-gray-500 mt-1">
                                       Submitted:{" "}
@@ -4221,7 +4346,7 @@ export default function FacultyDashboardPage() {
                                   )}
                                 </div>
                               </div>
-                            </button>
+                            </div>
                           );
                         })}
                       </div>
@@ -4235,7 +4360,7 @@ export default function FacultyDashboardPage() {
                         &mdash;{" "}
                         {selectedSubmission.question_id != null
                           ? `Q${descriptiveQuestions.find((q) => q.id === selectedSubmission.question_id)?.question_order ?? ""}`
-                          : "Full Answer Sheet"}
+                          : "Faculty Evaluation"}
                       </h2>
                       <button
                         onClick={() => {
@@ -4245,6 +4370,7 @@ export default function FacultyDashboardPage() {
                             facultyNotes: "",
                           });
                           setEvaluatedSheetMsg(null);
+                          setEvaluatedSheetFileName("No file chosen");
                         }}
                         className="text-gray-400 hover:text-gray-600"
                       >
@@ -4312,17 +4438,44 @@ export default function FacultyDashboardPage() {
                         tool, annotate it, then upload the corrected version
                         here.
                       </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label
+                          htmlFor="evaluated-answer-sheet-upload"
+                          className={`inline-flex items-center rounded-lg px-3 py-2 text-xs font-semibold text-white ${evaluatedSheetUploading ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 cursor-pointer"}`}
+                        >
+                          Upload Corrected Sheet
+                        </label>
+                        <span className="text-xs text-gray-700 truncate">
+                          {evaluatedSheetFileName}
+                        </span>
+                        {selectedSubmission.evaluated_answer_file_url && (
+                          <button
+                            type="button"
+                            disabled={evaluatedSheetUploading}
+                            onClick={() => {
+                              void handleRemoveEvaluatedSheet();
+                            }}
+                            className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${evaluatedSheetUploading ? "cursor-not-allowed bg-gray-200 text-gray-500" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Remove Existing
+                            File
+                          </button>
+                        )}
+                      </div>
                       <input
+                        id="evaluated-answer-sheet-upload"
                         type="file"
                         accept=".pdf,application/pdf"
                         disabled={evaluatedSheetUploading}
                         onChange={(e) => {
                           if (e.target.files?.[0]) {
                             void handleEvaluatedSheetUpload(e.target.files[0]);
-                            e.currentTarget.value = "";
+                          } else {
+                            setEvaluatedSheetFileName("No file chosen");
                           }
+                          e.currentTarget.value = "";
                         }}
-                        className="text-xs"
+                        className="hidden"
                       />
                       {evaluatedSheetUploading && (
                         <div className="flex items-center gap-2 mt-2 text-xs text-gray-700">
@@ -4386,6 +4539,13 @@ export default function FacultyDashboardPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={async () => {
+                            if (!selectedSubmission.evaluated_answer_file_url) {
+                              setEvaluationMsg({
+                                type: "err",
+                                text: "Please upload corrected answer sheet before saving evaluation.",
+                              });
+                              return;
+                            }
                             if (!evaluationForm.marksObtained) {
                               setEvaluationMsg({
                                 type: "err",
@@ -4397,17 +4557,24 @@ export default function FacultyDashboardPage() {
                             setEvaluationMsg(null);
                             try {
                               const supabase = createClient();
+                              const descriptiveScore = parseInt(
+                                evaluationForm.marksObtained,
+                              );
                               const { error } = await supabase
                                 .from("descriptive_student_answers")
                                 .update({
-                                  marks_obtained: parseInt(
-                                    evaluationForm.marksObtained,
-                                  ),
+                                  marks_obtained: descriptiveScore,
                                   faculty_notes: evaluationForm.facultyNotes,
                                   evaluated_at: new Date().toISOString(),
                                 })
                                 .eq("id", selectedSubmission.id);
                               if (error) throw error;
+                              await saveExamScore(
+                                selectedSubmission.mock_test_id,
+                                selectedSubmission.student_user_id,
+                                null,
+                                descriptiveScore,
+                              );
                               setEvaluationMsg({
                                 type: "ok",
                                 text: "Evaluation saved!",
@@ -4445,6 +4612,7 @@ export default function FacultyDashboardPage() {
                               facultyNotes: "",
                             });
                             setEvaluatedSheetMsg(null);
+                            setEvaluatedSheetFileName("No file chosen");
                           }}
                           className="flex-1 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-semibold rounded-xl transition-colors"
                         >

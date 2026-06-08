@@ -33,3 +33,28 @@ export function clearScopedAuthStorage(scope: AuthScope = "default") {
 
   window.sessionStorage.removeItem(storageKeyByScope[scope]);
 }
+
+export function clearAllAuthStorage() {
+  if (typeof window === "undefined") return;
+
+  const scopedKeys = Object.values(storageKeyByScope);
+  for (const key of scopedKeys) {
+    window.sessionStorage.removeItem(key);
+    window.localStorage.removeItem(key);
+  }
+
+  const legacyKeyPattern = /^sb-.*-auth-token$/;
+  for (let i = window.localStorage.length - 1; i >= 0; i -= 1) {
+    const key = window.localStorage.key(i);
+    if (key && legacyKeyPattern.test(key)) {
+      window.localStorage.removeItem(key);
+    }
+  }
+
+  for (let i = window.sessionStorage.length - 1; i >= 0; i -= 1) {
+    const key = window.sessionStorage.key(i);
+    if (key && legacyKeyPattern.test(key)) {
+      window.sessionStorage.removeItem(key);
+    }
+  }
+}

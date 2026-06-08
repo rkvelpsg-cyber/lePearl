@@ -125,26 +125,41 @@ export async function POST(req: NextRequest) {
       testTypeById.set(test.id, test.test_type ?? null);
     });
 
-    const [ownAttemptsRes, allAttemptsRes, scoreRowsRes] = await Promise.all([
-      service
-        .from("mock_test_attempts")
-        .select("mock_test_id, scored_marks")
-        .eq("student_user_id", tokenStudent.userId)
-        .in("mock_test_id", accessibleTestIds),
-      service
-        .from("mock_test_attempts")
-        .select("mock_test_id, student_user_id, scored_marks, attempted_at")
-        .in("mock_test_id", accessibleTestIds),
-      service
-        .from("student_mock_test_scores")
-        .select(
-          "mock_test_id, student_user_id, mcq_score, descriptive_score, updated_at",
-        )
-        .in("mock_test_id", accessibleTestIds),
-    ]);
+    const descriptiveTestIds = accessibleTests
+      .filter((test) => test.test_type === "descriptive")
+      .map((test) => test.id);
+
+    const [ownAttemptsRes, allAttemptsRes, scoreRowsRes, descriptiveRowsRes] =
+      await Promise.all([
+        service
+          .from("mock_test_attempts")
+          .select("mock_test_id, scored_marks")
+          .eq("student_user_id", tokenStudent.userId)
+          .in("mock_test_id", accessibleTestIds),
+        service
+          .from("mock_test_attempts")
+          .select("mock_test_id, student_user_id, scored_marks, attempted_at")
+          .in("mock_test_id", accessibleTestIds),
+        service
+          .from("student_mock_test_scores")
+          .select(
+            "mock_test_id, student_user_id, mcq_score, descriptive_score, updated_at",
+          )
+          .in("mock_test_id", accessibleTestIds),
+        descriptiveTestIds.length > 0
+          ? service
+              .from("descriptive_student_answers")
+              .select(
+                "mock_test_id, student_user_id, marks_obtained, evaluated_at",
+              )
+              .in("mock_test_id", descriptiveTestIds)
+              .not("marks_obtained", "is", null)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
 
     if (ownAttemptsRes.error) throw ownAttemptsRes.error;
     if (allAttemptsRes.error) throw allAttemptsRes.error;
+    if (descriptiveRowsRes.error) throw descriptiveRowsRes.error;
 
     // Table may not exist in older DB snapshots. In that case, rank with attempts only.
     if (
@@ -206,6 +221,42 @@ export async function POST(req: NextRequest) {
         scored_marks: Number(selectedScore),
         attempted_at: row.updated_at,
       });
+    });
+
+    const descriptiveAggregates = new Map<
+      string,
+      {
+        mock_test_id: number;
+        student_user_id: string;
+        scored_marks: number;
+        attempted_at: string | null;
+      }
+    >();
+
+    (
+      ((descriptiveRowsRes.data ?? []) as Array<{
+        mock_test_id: number;
+        student_user_id: string;
+        marks_obtained: number | null;
+        evaluated_at: string | null;
+      }>) ?? []
+    ).forEach((row) => {
+      const key = `${row.mock_test_id}:${row.student_user_id}`;
+      const existing = descriptiveAggregates.get(key);
+      descriptiveAggregates.set(key, {
+        mock_test_id: row.mock_test_id,
+        student_user_id: row.student_user_id,
+        scored_marks:
+          Number(existing?.scored_marks ?? 0) + Number(row.marks_obtained ?? 0),
+        attempted_at: row.evaluated_at ?? existing?.attempted_at ?? null,
+      });
+    });
+
+    descriptiveAggregates.forEach((row, key) => {
+      const existing = mergedByTestAndStudent.get(key);
+      if (!existing || testTypeById.get(row.mock_test_id) === "descriptive") {
+        mergedByTestAndStudent.set(key, row);
+      }
     });
 
     const attemptsByTest = new Map<

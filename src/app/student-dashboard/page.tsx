@@ -31,6 +31,7 @@ import {
   BookMarked,
   FileQuestion,
   Timer,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -575,6 +576,18 @@ export default function StudentDashboardPage() {
     reader.readAsDataURL(file);
   }
 
+  function handleRemoveProfilePhoto() {
+    if (!userId) return;
+
+    setProfilePhotoPreview(null);
+    setProfilePhotoFileName("No File Choosen");
+    setProfilePhotoMsg("Profile picture removed.");
+    window.localStorage.removeItem(`${PROFILE_PHOTO_KEY_PREFIX}-${userId}`);
+    window.localStorage.removeItem(
+      `${PROFILE_PHOTO_NAME_KEY_PREFIX}-${userId}`,
+    );
+  }
+
   /* â”€â”€ load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
     try {
@@ -843,6 +856,7 @@ export default function StudentDashboardPage() {
         setFacultyTasks(tasksRes.data as unknown as StudentTask[]);
 
       let attemptedTestIds: number[] = [];
+      let accessTokenForResults: string | null = null;
       if (mockRes.data && mockRes.data.length > 0) {
         const scored = mockRes.data.reduce(
           (s, r) => s + Number(r.scored_marks),
@@ -871,6 +885,7 @@ export default function StudentDashboardPage() {
           data: { session },
         } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
+        accessTokenForResults = accessToken ?? null;
 
         if (accessToken) {
           const response = await fetch("/api/student/test-results", {
@@ -1025,6 +1040,50 @@ export default function StudentDashboardPage() {
               setDescriptiveAnswers(
                 answersData as unknown as DescriptiveAnswer[],
               );
+
+            const descriptiveResultTestIds = Array.from(
+              new Set(
+                (answersData as unknown as DescriptiveAnswer[])
+                  .filter((answer) => answer.marks_obtained !== null)
+                  .map((answer) => answer.mock_test_id),
+              ),
+            );
+
+            if (descriptiveResultTestIds.length > 0) {
+              const accessToken =
+                accessTokenForResults ??
+                (await supabase.auth.getSession()).data.session?.access_token ??
+                null;
+
+              if (accessToken) {
+                const response = await fetch("/api/student/test-results", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                  },
+                  body: JSON.stringify({ testIds: descriptiveResultTestIds }),
+                });
+
+                if (response.ok) {
+                  const data = (await response.json()) as {
+                    summaries?: Record<string, McqResultSummary>;
+                  };
+
+                  const summaryMap: Record<number, McqResultSummary> = {};
+                  Object.entries(data.summaries ?? {}).forEach(
+                    ([key, value]) => {
+                      summaryMap[Number(key)] = value;
+                    },
+                  );
+
+                  setMcqResultsByTest((prev) => ({
+                    ...prev,
+                    ...summaryMap,
+                  }));
+                }
+              }
+            }
           }
         }
       }
@@ -1038,6 +1097,14 @@ export default function StudentDashboardPage() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void load();
+    }, 15 * 1000);
+
+    return () => clearInterval(intervalId);
   }, [load]);
 
   async function handleLogout() {
@@ -1303,7 +1370,6 @@ export default function StudentDashboardPage() {
   }
 
   async function loadDescriptiveQuestions(test: McqTest) {
-    const supabase = createClient();
     const now = new Date();
     setUploadMsg(null);
 
@@ -1331,30 +1397,9 @@ export default function StudentDashboardPage() {
       }
     }
 
-    const { data: qData, error: qError } = await supabase
-      .from("descriptive_questions")
-      .select("*")
-      .eq("mock_test_id", test.id)
-      .order("question_order", { ascending: true });
-
-    if (qError) {
-      setUploadMsg({
-        type: "err",
-        text: qError.message || "Failed to load descriptive questions.",
-      });
-      return;
-    }
-
-    setDescriptiveQuestions((qData || []) as unknown as DescriptiveQuestion[]);
+    setDescriptiveQuestions([]);
     setSelectedDescriptiveTest(test);
     setFullSheetFileName("No File Choosen");
-
-    if (!qData || qData.length === 0) {
-      setUploadMsg({
-        type: "err",
-        text: "No descriptive questions have been added for this test yet.",
-      });
-    }
   }
 
   async function handleFullSheetUpload(file: File | null) {
@@ -1412,45 +1457,25 @@ export default function StudentDashboardPage() {
 
       const submittedAt = new Date().toISOString();
 
-      if (descriptiveQuestions.length > 0) {
-        // Test has individual questions — upsert one row per question
-        const rows = descriptiveQuestions.map((q) => ({
+      // PDF-only descriptive flow: one combined answer sheet per student per test.
+      await supabase
+        .from("descriptive_student_answers")
+        .delete()
+        .eq("mock_test_id", selectedDescriptiveTest.id)
+        .eq("student_user_id", user.user!.id)
+        .is("question_id", null);
+
+      const { error: answerError } = await supabase
+        .from("descriptive_student_answers")
+        .insert({
           mock_test_id: selectedDescriptiveTest.id,
           student_user_id: user.user!.id,
-          question_id: q.id,
+          question_id: null,
           answer_file_url: uploadJson.publicUrl,
           submitted_at: submittedAt,
-        }));
+        });
 
-        const { error: answerError } = await supabase
-          .from("descriptive_student_answers")
-          .upsert(rows, {
-            onConflict: "mock_test_id,student_user_id,question_id",
-          });
-
-        if (answerError) throw answerError;
-      } else {
-        // Full-sheet test with no individual questions — one row, question_id = null
-        // Delete any previous full-sheet submission for this test+student first
-        await supabase
-          .from("descriptive_student_answers")
-          .delete()
-          .eq("mock_test_id", selectedDescriptiveTest.id)
-          .eq("student_user_id", user.user!.id)
-          .is("question_id", null);
-
-        const { error: answerError } = await supabase
-          .from("descriptive_student_answers")
-          .insert({
-            mock_test_id: selectedDescriptiveTest.id,
-            student_user_id: user.user!.id,
-            question_id: null,
-            answer_file_url: uploadJson.publicUrl,
-            submitted_at: submittedAt,
-          });
-
-        if (answerError) throw answerError;
-      }
+      if (answerError) throw answerError;
 
       const { data: updatedAnswers } = await supabase
         .from("descriptive_student_answers")
@@ -1459,7 +1484,10 @@ export default function StudentDashboardPage() {
         .eq("mock_test_id", selectedDescriptiveTest.id);
 
       if (updatedAnswers) {
-        setDescriptiveAnswers(updatedAnswers as unknown as DescriptiveAnswer[]);
+        setDescriptiveAnswers((prev) => [
+          ...prev.filter((a) => a.mock_test_id !== selectedDescriptiveTest.id),
+          ...(updatedAnswers as unknown as DescriptiveAnswer[]),
+        ]);
       }
 
       setFullSheetFileName("No File Choosen");
@@ -1468,15 +1496,78 @@ export default function StudentDashboardPage() {
         text: "Answer sheet submitted successfully! Your faculty will review it shortly.",
       });
     } catch (err) {
-      console.error(err);
+      const fallback = "Failed to upload full answer sheet.";
+      const messageFromObject =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: unknown }).message || "")
+          : "";
       const message =
         err instanceof Error
-          ? err.message
-          : "Failed to upload full answer sheet.";
+          ? err.message || fallback
+          : messageFromObject || fallback;
       setUploadMsg({
         type: "err",
         text: message,
       });
+    } finally {
+      setUploadingFullSheet(false);
+    }
+  }
+
+  async function handleRemoveFullSheetUpload() {
+    if (!selectedDescriptiveTest) return;
+
+    const shouldRemove = confirm(
+      "Remove your current uploaded answer sheet? You can upload a new PDF after removing it.",
+    );
+    if (!shouldRemove) return;
+
+    const supabase = createClient();
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) {
+      setUploadMsg({
+        type: "err",
+        text: "Session expired. Please sign in again.",
+      });
+      return;
+    }
+
+    setUploadingFullSheet(true);
+    setUploadMsg(null);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("descriptive_student_answers")
+        .delete()
+        .eq("student_user_id", user.user.id)
+        .eq("mock_test_id", selectedDescriptiveTest.id);
+
+      if (deleteError) throw deleteError;
+
+      const { data: updatedAnswers, error: reloadError } = await supabase
+        .from("descriptive_student_answers")
+        .select("*")
+        .eq("student_user_id", user.user.id)
+        .eq("mock_test_id", selectedDescriptiveTest.id);
+
+      if (reloadError) throw reloadError;
+
+      setDescriptiveAnswers((prev) => [
+        ...prev.filter((a) => a.mock_test_id !== selectedDescriptiveTest.id),
+        ...((updatedAnswers || []) as unknown as DescriptiveAnswer[]),
+      ]);
+
+      setFullSheetFileName("No File Choosen");
+      setUploadMsg({
+        type: "ok",
+        text: "Existing answer sheet removed. You can upload a new PDF now.",
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to remove existing answer sheet.";
+      setUploadMsg({ type: "err", text: message });
     } finally {
       setUploadingFullSheet(false);
     }
@@ -2198,6 +2289,15 @@ export default function StudentDashboardPage() {
                         >
                           Upload Picture
                         </label>
+                        {profilePhotoPreview && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveProfilePhoto}
+                            className="inline-flex items-center rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-200"
+                          >
+                            Remove Picture
+                          </button>
+                        )}
                         <span className="text-xs text-gray-600 truncate">
                           {profilePhotoFileName || "No File Choosen"}
                         </span>
@@ -2466,6 +2566,86 @@ export default function StudentDashboardPage() {
                       </div>
 
                       <div className="space-y-4">
+                        {(() => {
+                          const currentSubmission = descriptiveAnswers.find(
+                            (a) =>
+                              a.mock_test_id === selectedDescriptiveTest.id &&
+                              !!a.answer_file_url,
+                          );
+
+                          if (!currentSubmission?.answer_file_url) {
+                            return null;
+                          }
+
+                          return (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                              <div className="flex flex-wrap items-center gap-3">
+                                <a
+                                  href={currentSubmission.answer_file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  View Current Uploaded Answer Sheet
+                                </a>
+                                <button
+                                  type="button"
+                                  disabled={uploadingFullSheet}
+                                  onClick={() => {
+                                    void handleRemoveFullSheetUpload();
+                                  }}
+                                  className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${uploadingFullSheet ? "cursor-not-allowed bg-gray-200 text-gray-500" : "bg-red-100 text-red-700 hover:bg-red-200"}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" /> Remove
+                                  Existing File
+                                </button>
+                              </div>
+
+                              {(currentSubmission.evaluated_answer_file_url ||
+                                currentSubmission.marks_obtained !== null ||
+                                currentSubmission.faculty_notes) && (
+                                <div className="mt-3 rounded-lg border border-emerald-200 bg-white p-3">
+                                  <p className="text-xs font-semibold text-emerald-700">
+                                    Faculty Evaluation
+                                  </p>
+                                  {currentSubmission.evaluated_answer_file_url && (
+                                    <a
+                                      href={
+                                        currentSubmission.evaluated_answer_file_url
+                                      }
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                      View Evaluated Answer Sheet
+                                    </a>
+                                  )}
+                                  {currentSubmission.marks_obtained !==
+                                    null && (
+                                    <p className="mt-2 text-xs text-gray-700">
+                                      <span className="font-semibold">
+                                        Marks Obtained:
+                                      </span>{" "}
+                                      {currentSubmission.marks_obtained}/
+                                      {selectedDescriptiveTest.total_marks}
+                                    </p>
+                                  )}
+                                  {currentSubmission.faculty_notes && (
+                                    <p className="mt-1 text-xs text-gray-700">
+                                      <span className="font-semibold">
+                                        Faculty Feedback:
+                                      </span>{" "}
+                                      {currentSubmission.faculty_notes}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {uploadMsg && (
                           <div
                             className={`p-3 rounded-lg text-sm ${uploadMsg.type === "ok" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}
@@ -2485,7 +2665,7 @@ export default function StudentDashboardPage() {
                               }
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
+                              className="mt-2 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-emerald-600 to-slate-700 px-3 py-1.5 text-xs font-semibold !text-white hover:from-emerald-700 hover:to-slate-800 hover:!text-white"
                             >
                               <ExternalLink className="h-3.5 w-3.5" /> View /
                               Download Question Paper
@@ -2497,97 +2677,10 @@ export default function StudentDashboardPage() {
                           )}
                         </div>
 
-                        {descriptiveQuestions.length === 0 && (
-                          <div className="border border-dashed border-gray-300 rounded-xl p-4 text-sm text-gray-600">
-                            No descriptive questions are available in this test
-                            right now.
-                          </div>
-                        )}
-
-                        {descriptiveQuestions.map((q) => {
-                          const answer = descriptiveAnswers.find(
-                            (a) => a.question_id === q.id,
-                          );
-                          return (
-                            <div
-                              key={q.id}
-                              className="border border-gray-200 rounded-xl p-4"
-                            >
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <p className="text-sm font-semibold text-gray-900">
-                                    Q{q.question_order}: {q.question_text}
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                                      {q.marks} marks
-                                    </span>
-                                    {q.category && (
-                                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
-                                        {q.category}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                {answer?.marks_obtained !== null && (
-                                  <div className="text-right">
-                                    <p className="text-xs text-gray-500">
-                                      Marks
-                                    </p>
-                                    <p className="text-lg font-bold text-green-600">
-                                      {answer?.marks_obtained}/{q.marks}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-
-                              {answer?.submitted_at ? (
-                                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                                  <p className="text-xs text-blue-700 font-semibold mb-2">
-                                    ✓ Submitted
-                                  </p>
-                                  {answer.answer_file_url && (
-                                    <a
-                                      href={answer.answer_file_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                                    >
-                                      <ExternalLink className="w-3 h-3" /> View
-                                      Submission
-                                    </a>
-                                  )}
-                                  {answer.evaluated_answer_file_url && (
-                                    <a
-                                      href={answer.evaluated_answer_file_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="mt-2 text-xs text-emerald-700 hover:underline flex items-center gap-1"
-                                    >
-                                      <ExternalLink className="w-3 h-3" />
-                                      View Evaluated Sheet
-                                    </a>
-                                  )}
-                                  {answer.faculty_notes && (
-                                    <p className="text-xs text-gray-700 mt-2">
-                                      <span className="font-semibold">
-                                        Faculty Feedback:
-                                      </span>{" "}
-                                      {answer.faculty_notes}
-                                    </p>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                  <p className="text-xs text-gray-600">
-                                    Upload your combined answer PDF using the
-                                    "Upload Full Answer Sheet" section below.
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                        <div className="border border-dashed border-gray-300 rounded-xl p-4 text-sm text-gray-600">
+                          Read the question paper and upload one combined PDF
+                          answer sheet using the section below.
+                        </div>
 
                         <div className="mt-2 border border-gray-200 rounded-xl p-4 bg-gray-50">
                           <p className="text-sm font-semibold text-gray-900">
@@ -2758,17 +2851,25 @@ export default function StudentDashboardPage() {
                           </h2>
                           <div className="grid gap-4 sm:grid-cols-2">
                             {descriptiveTests.map((t) => {
+                              const result = mcqResultsByTest[t.id];
                               const testAnswers = descriptiveAnswers.filter(
                                 (a) => a.mock_test_id === t.id,
                               );
-                              const evaluatedAnswers = testAnswers.filter(
+                              const submittedAnswers = testAnswers.filter(
+                                (a) => !!a.answer_file_url || !!a.submitted_at,
+                              );
+                              const currentSubmission = submittedAnswers.find(
+                                (a) => !!a.answer_file_url,
+                              );
+                              const evaluatedAnswers = submittedAnswers.filter(
                                 (a) => a.marks_obtained !== null,
                               );
                               const isEvaluated =
-                                testAnswers.length > 0 &&
-                                evaluatedAnswers.length === testAnswers.length;
+                                submittedAnswers.length > 0 &&
+                                evaluatedAnswers.length ===
+                                  submittedAnswers.length;
                               const isSubmitted =
-                                testAnswers.length > 0 && !isEvaluated;
+                                submittedAnswers.length > 0 && !isEvaluated;
                               const totalObtained = evaluatedAnswers.reduce(
                                 (sum, a) => sum + (a.marks_obtained ?? 0),
                                 0,
@@ -2812,9 +2913,44 @@ export default function StudentDashboardPage() {
                                     </span>
                                   </div>
                                   {isEvaluated ? (
-                                    <div className="w-full py-2 bg-green-100 text-green-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-                                      <CheckCircle className="w-4 h-4" />{" "}
-                                      Completed
+                                    <div className="space-y-3">
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div className="rounded-xl bg-white/80 border border-green-200 p-3">
+                                          <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                                            Score
+                                          </p>
+                                          <p className="text-base font-bold text-gray-900 mt-1">
+                                            {totalObtained}/{t.total_marks}
+                                          </p>
+                                        </div>
+                                        <div className="rounded-xl bg-white/80 border border-green-200 p-3">
+                                          <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                                            Rank
+                                          </p>
+                                          <p className="text-base font-bold text-gray-900 mt-1">
+                                            {result?.rank != null
+                                              ? `${result.rank}/${result.participantCount}`
+                                              : "-"}
+                                          </p>
+                                        </div>
+                                      </div>
+                                      {currentSubmission?.evaluated_answer_file_url && (
+                                        <a
+                                          href={
+                                            currentSubmission.evaluated_answer_file_url
+                                          }
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="w-full py-2 bg-gradient-to-r from-emerald-600 to-slate-700 !text-white hover:!text-white text-sm font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                        >
+                                          <ExternalLink className="w-4 h-4" />
+                                          Evaluated Answer Sheet
+                                        </a>
+                                      )}
+                                      <div className="w-full py-2 bg-green-100 text-green-700 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+                                        <CheckCircle className="w-4 h-4" />{" "}
+                                        Completed
+                                      </div>
                                     </div>
                                   ) : isSubmitted ? (
                                     <div className="flex gap-2">

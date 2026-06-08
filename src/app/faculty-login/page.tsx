@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
+import { clearAllAuthStorage, createClient } from "@/lib/supabase/client";
 import { signInWithEmail, signOutIfRoleMismatch } from "@/lib/supabase/auth";
 import { AlertCircle, Eye, EyeOff, LogIn, Loader2, X } from "lucide-react";
 
@@ -21,6 +21,10 @@ export default function FacultyLoginPage() {
     type: "ok" | "err";
     text: string;
   } | null>(null);
+
+  useEffect(() => {
+    clearAllAuthStorage();
+  }, []);
 
   async function resolveFacultyEmail(value: string) {
     const res = await fetch("/api/auth/faculty-login-lookup", {
