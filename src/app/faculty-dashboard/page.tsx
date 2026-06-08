@@ -153,6 +153,14 @@ type DescriptiveAnswer = {
   evaluated_at: string | null;
   student_name?: string; // For display purposes
 };
+type McqSubmission = {
+  id: number;
+  mock_test_id: number;
+  student_user_id: string;
+  submitted_at: string | null;
+  scored_marks: number | null;
+  student_name?: string;
+};
 type RecordedLectureFaculty = {
   id: number;
   title: string;
@@ -186,6 +194,17 @@ type StudentAttendance = { student_user_id: string; status: string };
 function unwrapOne<T>(v: T | T[] | null | undefined): T | null {
   if (!v) return null;
   return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+async function readJsonSafe<T>(response: Response): Promise<T | null> {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return null;
+  }
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
 }
 function fmtDate(s: string | null) {
   return formatDateIST(s);
@@ -577,7 +596,7 @@ export default function FacultyDashboardPage() {
     category: "",
   });
 
-  /* evaluations - descriptive test grading */
+  /* evaluations - test grading/results */
   const [descriptiveTests, setDescriptiveTests] = useState<McqTestFaculty[]>(
     [],
   );
@@ -589,6 +608,7 @@ export default function FacultyDashboardPage() {
   const [studentSubmissions, setStudentSubmissions] = useState<
     DescriptiveAnswer[]
   >([]);
+  const [mcqSubmissions, setMcqSubmissions] = useState<McqSubmission[]>([]);
   const [selectedSubmission, setSelectedSubmission] =
     useState<DescriptiveAnswer | null>(null);
   const [evaluationForm, setEvaluationForm] = useState({
@@ -2023,7 +2043,6 @@ export default function FacultyDashboardPage() {
       const { data, error } = await supabase
         .from("mock_tests")
         .select("*,batches(batch_name),courses(title)")
-        .eq("test_type", "descriptive")
         .in("batch_id", batchIds)
         .order("created_at", { ascending: false });
 
@@ -2069,13 +2088,19 @@ export default function FacultyDashboardPage() {
         body: JSON.stringify({ testId }),
       });
 
-      const payload = (await response.json()) as {
+      const payload = await readJsonSafe<{
         submissions?: DescriptiveAnswer[];
         error?: string;
-      };
+      }>(response);
 
       if (!response.ok) {
-        throw new Error(payload.error || "Failed to load submissions.");
+        throw new Error(payload?.error || "Failed to load submissions.");
+      }
+
+      if (!payload) {
+        throw new Error(
+          "Unexpected server response while loading submissions.",
+        );
       }
 
       setStudentSubmissions(payload.submissions || []);
@@ -2087,6 +2112,49 @@ export default function FacultyDashboardPage() {
           err instanceof Error
             ? err.message
             : "Failed to load student submissions.",
+      });
+    }
+  }
+
+  async function loadMcqSubmissions(testId: number) {
+    const supabase = createClient();
+    try {
+      const accessToken = await getFacultyAccessTokenSafe(supabase);
+      if (!accessToken) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
+      const response = await fetch("/api/faculty/mcq-submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ testId }),
+      });
+
+      const payload = await readJsonSafe<{
+        submissions?: McqSubmission[];
+        error?: string;
+      }>(response);
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Failed to load MCQ results.");
+      }
+
+      if (!payload) {
+        throw new Error(
+          "Unexpected server response while loading MCQ results.",
+        );
+      }
+
+      setMcqSubmissions(payload.submissions || []);
+    } catch (err) {
+      console.error("Error loading MCQ submissions:", err);
+      setEvaluationMsg({
+        type: "err",
+        text:
+          err instanceof Error ? err.message : "Failed to load MCQ results.",
       });
     }
   }
@@ -4142,15 +4210,13 @@ export default function FacultyDashboardPage() {
               </>
             )}
 
-            {/* Evaluations - Descriptive Test Grading */}
+            {/* Evaluations - Descriptive + MCQ */}
             {activeSection === "evaluations" && (
               <>
                 <div className="bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-6 text-white">
-                  <h1 className="text-xl font-bold mb-1">
-                    Descriptive Test Evaluations
-                  </h1>
+                  <h1 className="text-xl font-bold mb-1">Test Evaluations</h1>
                   <p className="text-amber-100 text-sm">
-                    Review student submissions and provide marks &amp; feedback
+                    Review descriptive submissions and track MCQ test results
                   </p>
                 </div>
 
@@ -4173,7 +4239,7 @@ export default function FacultyDashboardPage() {
                       <div className="text-center py-12">
                         <FileQuestion className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500">
-                          No descriptive tests available to evaluate
+                          No tests available to evaluate
                         </p>
                       </div>
                     ) : (
@@ -4187,15 +4253,34 @@ export default function FacultyDashboardPage() {
                               key={t.id}
                               onClick={() => {
                                 setSelectedEvalTest(t);
-                                loadDescriptiveQuestions(t);
+                                setSelectedSubmission(null);
+                                setStudentSubmissions([]);
+                                setMcqSubmissions([]);
+                                if (t.test_type === "descriptive") {
+                                  loadDescriptiveQuestions(t);
+                                } else {
+                                  setDescriptiveQuestions([]);
+                                  loadMcqSubmissions(t.id);
+                                }
                               }}
                               className="w-full text-left p-4 border border-gray-200 rounded-xl hover:border-amber-300 hover:bg-amber-50 transition-colors"
                             >
                               <div className="flex items-start justify-between">
                                 <div>
-                                  <h3 className="font-semibold text-gray-900">
-                                    {t.title}
-                                  </h3>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-gray-900">
+                                      {t.title}
+                                    </h3>
+                                    <span
+                                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                        t.test_type === "descriptive"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : "bg-indigo-100 text-indigo-700"
+                                      }`}
+                                    >
+                                      {(t.test_type || "mcq").toUpperCase()}
+                                    </span>
+                                  </div>
                                   <p className="text-xs text-gray-500 mt-1">
                                     {t.batches?.batch_name} | {t.total_marks}{" "}
                                     marks
@@ -4207,6 +4292,71 @@ export default function FacultyDashboardPage() {
                           ))}
                         </div>
                       </>
+                    )}
+                  </div>
+                ) : selectedEvalTest.test_type !== "descriptive" ? (
+                  <div className="bg-white rounded-2xl shadow-sm p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="font-bold text-gray-900">
+                          {selectedEvalTest.title}
+                        </h2>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {selectedEvalTest.batches?.batch_name} | Max Marks:{" "}
+                          {selectedEvalTest.total_marks}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedEvalTest(null);
+                          setMcqSubmissions([]);
+                          setStudentSubmissions([]);
+                          setDescriptiveQuestions([]);
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {mcqSubmissions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 text-sm">
+                          No MCQ submissions yet
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {mcqSubmissions.map((s) => (
+                          <div
+                            key={s.id}
+                            className="w-full text-left p-4 border border-indigo-200 bg-indigo-50 rounded-xl"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-900 text-sm">
+                                  {s.student_name || "Unknown Student"}
+                                </p>
+                                {s.submitted_at && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Submitted:{" "}
+                                    {new Date(s.submitted_at).toLocaleString()}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right ml-4">
+                                <p className="text-lg font-bold text-indigo-700">
+                                  {Number(s.scored_marks ?? 0)}/
+                                  {selectedEvalTest.total_marks}
+                                </p>
+                                <p className="text-xs text-indigo-700">
+                                  MCQ Score
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 ) : !selectedSubmission ? (
@@ -4223,6 +4373,7 @@ export default function FacultyDashboardPage() {
                       <button
                         onClick={() => {
                           setSelectedEvalTest(null);
+                          setMcqSubmissions([]);
                           setStudentSubmissions([]);
                           setDescriptiveQuestions([]);
                         }}

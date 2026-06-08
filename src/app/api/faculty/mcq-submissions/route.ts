@@ -4,18 +4,26 @@ import { createServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-type SubmissionRow = {
+type McqSubmissionRow = {
   id: number;
   mock_test_id: number;
   student_user_id: string;
-  question_id: number;
-  answer_file_url: string | null;
-  evaluated_answer_file_url: string | null;
-  submitted_at: string | null;
-  marks_obtained: number | null;
-  faculty_notes: string | null;
-  evaluated_at: string | null;
+  attempted_at: string | null;
+  scored_marks: number | null;
 };
+
+function toErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+  return fallback;
+}
 
 async function getFacultyUserIdFromToken(token: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -112,17 +120,15 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: submissionsData, error: submissionsError } = await service
-      .from("descriptive_student_answers")
-      .select(
-        "id, mock_test_id, student_user_id, question_id, answer_file_url, evaluated_answer_file_url, submitted_at, marks_obtained, faculty_notes, evaluated_at",
-      )
+      .from("mock_test_attempts")
+      .select("id, mock_test_id, student_user_id, attempted_at, scored_marks")
       .eq("mock_test_id", testId)
       .in("student_user_id", allowedStudentIds)
-      .order("submitted_at", { ascending: false });
+      .order("attempted_at", { ascending: false });
 
     if (submissionsError) throw submissionsError;
 
-    const submissions = (submissionsData ?? []) as SubmissionRow[];
+    const submissions = (submissionsData ?? []) as McqSubmissionRow[];
     const studentIdsInSubmissions = [
       ...new Set(submissions.map((row) => row.student_user_id).filter(Boolean)),
     ];
@@ -165,18 +171,16 @@ export async function POST(req: NextRequest) {
 
     const rows = submissions.map((row) => ({
       ...row,
+      submitted_at: row.attempted_at,
       student_name: nameMap[row.student_user_id] || "Student",
     }));
 
     return NextResponse.json({ submissions: rows });
   } catch (error) {
-    console.error("faculty descriptive submissions error:", error);
+    console.error("faculty mcq submissions error:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to load descriptive submissions.",
+        error: toErrorMessage(error, "Failed to load MCQ submissions."),
       },
       { status: 500 },
     );
