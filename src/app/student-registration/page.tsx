@@ -315,7 +315,7 @@ const upgdcFeeOptions: {
   {
     id: "combined-full",
     title: "One-time payment for both Prelims + Mains",
-    totalAmount: 19995,
+    totalAmount: 5,
     tenure: "full",
     note: "Best value · Discounts eligible",
   },
@@ -377,7 +377,7 @@ const upgdcFeeOptions: {
   {
     id: "mains-without-material",
     title: "GDC Mains (Without Study Material)",
-    totalAmount: 6995,
+    totalAmount: 5,
     tenure: "full",
     note: "Mains-only access without study material",
   },
@@ -715,7 +715,7 @@ function StudentRegistrationContent() {
   const currentPlan = coursePaymentPlans[safePaidFormData.course];
   const researchAssistanceBaseFee =
     selectedResearchAssistanceFee?.amount ?? 2995;
-  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 19995;
+  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 5;
   const gicBaseFee = selectedGICFee?.totalAmount ?? 9995;
   const ltGradeBaseFee = selectedLTGradeFee?.totalAmount ?? 9995;
   const communicationSkillsBaseFee =

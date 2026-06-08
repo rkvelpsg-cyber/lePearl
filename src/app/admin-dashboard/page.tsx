@@ -249,7 +249,7 @@ function getDefaultFacultyByCourse(courseName: string) {
     return "Ms Sadhana";
   }
   if (normalized.includes("mppsc")) return "Ms Neelu Patel";
-  if (normalized.includes("gic")) return "Dr Babli Mallick";
+  if (normalized.includes("gic")) return "Ms Sadhana";
 
   return "";
 }

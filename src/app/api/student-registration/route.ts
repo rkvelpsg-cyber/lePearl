@@ -184,7 +184,7 @@ function getDefaultFacultyForCourse(course: string) {
   }
 
   if (normalized.includes("gic")) {
-    return "Dr Babli Mallick";
+    return "Ms Sadhana";
   }
 
   return null;
