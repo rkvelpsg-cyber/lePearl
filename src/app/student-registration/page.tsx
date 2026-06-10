@@ -50,6 +50,8 @@ type UPGDCFeeOptionId =
   | "combined-instalment"
   | "prelims-full"
   | "prelims-instalment"
+  | "general-studies-full"
+  | "general-studies-instalment"
   | "mains-without-material"
   | "mains-with-material"
   | "mains-with-material-instalment";
@@ -315,7 +317,7 @@ const upgdcFeeOptions: {
   {
     id: "combined-full",
     title: "One-time payment for both Prelims + Mains",
-    totalAmount: 5,
+    totalAmount: 19995,
     tenure: "full",
     note: "Best value · Discounts eligible",
   },
@@ -375,9 +377,35 @@ const upgdcFeeOptions: {
     ],
   },
   {
+    id: "general-studies-full",
+    title: "General Studies (Full Payment)",
+    totalAmount: 5495,
+    tenure: "full",
+    note: "One-time payment for General Studies",
+  },
+  {
+    id: "general-studies-instalment",
+    title: "General Studies (2 Instalments)",
+    totalAmount: 5990,
+    tenure: "instalment",
+    note: "Pay Rs. 2,995 now · split across 2 payments",
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 2995,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 2995,
+        note: "Due 30 days after enrolment",
+      },
+    ],
+  },
+  {
     id: "mains-without-material",
     title: "GDC Mains (Without Study Material)",
-    totalAmount: 5,
+    totalAmount: 6995,
     tenure: "full",
     note: "Mains-only access without study material",
   },
@@ -425,7 +453,7 @@ const gicFeeOptions: {
   {
     id: "prelims-only",
     title: "Prelims only",
-    totalAmount: 5,
+    totalAmount: 9995,
     tenure: "full",
     note: "One-time payment for GIC Prelims track",
   },
@@ -715,7 +743,7 @@ function StudentRegistrationContent() {
   const currentPlan = coursePaymentPlans[safePaidFormData.course];
   const researchAssistanceBaseFee =
     selectedResearchAssistanceFee?.amount ?? 2995;
-  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 5;
+  const upgdcBaseFee = selectedUPGDCFee?.totalAmount ?? 19995;
   const gicBaseFee = selectedGICFee?.totalAmount ?? 9995;
   const ltGradeBaseFee = selectedLTGradeFee?.totalAmount ?? 9995;
   const communicationSkillsBaseFee =

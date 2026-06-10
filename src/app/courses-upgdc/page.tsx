@@ -56,22 +56,25 @@ const testimonials: Testimonial[] = [
   },
 ];
 
-type TabId = "general-studies" | "prelims" | "mains";
+type TabId = "general-studies" | "prelims-mains" | "prelims" | "mains";
 
 const tabItems: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "general-studies", label: "General Studies", icon: GraduationCap },
+  { id: "prelims-mains", label: "Prelims+Mains", icon: Video },
   { id: "prelims", label: "Prelims", icon: FileText },
   { id: "mains", label: "Mains", icon: MessageCircle },
 ];
 
 const tabTitles: Record<TabId, string> = {
   "general-studies": "GENERAL STUDIES",
+  "prelims-mains": "PRELIMS + MAINS",
   prelims: "PRELIMS",
   mains: "MAINS",
 };
 
 const tabBg: Record<TabId, string> = {
   "general-studies": "bg-gradient-to-b from-blue-50 via-blue-50/70 to-white",
+  "prelims-mains": "bg-gradient-to-b from-emerald-50 via-white to-blue-50",
   prelims: "bg-gradient-to-b from-white via-white to-blue-50",
   mains: "bg-gradient-to-b from-yellow-50 via-yellow-50/70 to-white",
 };
@@ -79,7 +82,7 @@ const tabBg: Record<TabId, string> = {
 const mainsFeePlans = [
   {
     title: "GDC Mains (Without Study Material)",
-    amount: "Rs.5",
+    amount: "Rs.6,995",
     badge: "BEST VALUE",
     cta: "Enroll Now",
     ctaClass:
@@ -167,10 +170,10 @@ const prelimsFeePlans = [
   },
 ];
 
-const generalStudiesFeePlans = [
+const prelimsMainsFeePlans = [
   {
     title: "One-time payment for both Prelims + Mains",
-    amount: "Rs.5",
+    amount: "Rs.19,995",
     badge: "BEST VALUE",
     cta: "Enroll Now",
     ctaClass:
@@ -203,6 +206,41 @@ const generalStudiesFeePlans = [
       "Answer writing practice",
     ],
     href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=combined-instalment",
+  },
+];
+
+const generalStudiesFeePlans = [
+  {
+    title: "General Studies (Full Payment)",
+    amount: "Rs.5,495",
+    badge: "BEST VALUE",
+    cta: "Enroll Now",
+    ctaClass:
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
+    cardClass:
+      "relative overflow-hidden rounded-2xl border-2 border-blue-900 bg-white p-8 shadow-xl",
+    features: [
+      "Complete GS syllabus coverage",
+      "Live + recorded video classes",
+      "Weekly live doubt-clearing support",
+      "One-year access to all study resources",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=general-studies-full",
+  },
+  {
+    title: "General Studies (2 Instalments)",
+    amount: "Rs.2,995 x 2",
+    cta: "Enroll Now",
+    ctaClass:
+      "block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white shadow-lg transition-all duration-300 hover:bg-blue-800 hover:shadow-xl",
+    cardClass: "rounded-2xl border-2 border-gray-200 bg-white p-8 shadow-xl",
+    features: [
+      "Complete GS syllabus coverage",
+      "Live + recorded video classes",
+      "Weekly live doubt-clearing support",
+      "Flexible 2-instalment payment option",
+    ],
+    href: "/student-registration?mode=paid&course=UP%20GDC&upgdcFeeOption=general-studies-instalment",
   },
 ];
 
@@ -372,6 +410,99 @@ function ProgramTabsPanel() {
             throughout the preparation journey.
           </li>
         </ul>
+      </div>
+    ),
+    "prelims-mains": (
+      <div className="w-full rounded-2xl border border-blue-100 bg-white p-6 shadow-md sm:p-8">
+        <div className="mb-8 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-700 to-blue-900 p-6 text-white sm:p-8">
+          <h3 className="text-2xl font-bold sm:text-3xl">
+            Ignite Your Teaching Career
+          </h3>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-emerald-50 sm:text-base">
+            Proven course with deep syllabus coverage, expert guidance, and
+            result-oriented strategies for Government Degree College placements.
+          </p>
+        </div>
+
+        <h3 className="mb-3 text-xl font-bold text-blue-900">
+          Course Overview
+        </h3>
+        <p className="mb-5 text-gray-700 leading-relaxed">
+          Tailored specifically for UP GDC aspirants, this program combines
+          Prelims and Mains preparation in one integrated course.
+        </p>
+        <ul className="mb-8 list-disc space-y-2 pl-6 text-gray-700 marker:text-yellow-500">
+          <li>Live video lectures + comprehensive PDFs</li>
+          <li>One-year access to all recorded content</li>
+          <li>
+            Flipped Live Classes with real-time question solving and
+            explanations
+          </li>
+          <li>
+            Taught by subject experts with 15+ years of teaching experience
+          </li>
+          <li>
+            Focus on first-attempt success through proven strategies (no
+            shortcuts)
+          </li>
+        </ul>
+
+        <h3 className="mb-3 text-xl font-bold text-blue-900">
+          Key Features &amp; Benefits
+        </h3>
+
+        <div className="mb-8 rounded-xl border border-blue-100 bg-blue-50/60 p-5">
+          <h4 className="text-lg font-bold text-blue-900">
+            Prelims Preparation
+          </h4>
+          <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700 marker:text-yellow-500">
+            <li>Complete coverage of Prelims + Mains syllabus</li>
+            <li>
+              In-depth video lectures simplifying complex topics as per UP GDC
+              syllabus
+            </li>
+            <li>50+ Mock Tests with detailed performance analysis</li>
+            <li>
+              Concise PDFs, recorded lectures, and decoded previous year papers
+            </li>
+            <li>Weekly live doubt-clearing sessions</li>
+            <li>One-to-one attention and holistic student development</li>
+            <li>
+              Important points of every topic highlighted for quick revision
+            </li>
+          </ul>
+        </div>
+
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50/70 p-5">
+          <h4 className="text-lg font-bold text-blue-900">
+            Mains Answer Writing Program
+          </h4>
+          <p className="mt-2 text-sm font-semibold text-blue-800">
+            Master the Art of Descriptive Writing: From Draft to Distinction
+          </p>
+          <ul className="mt-4 list-disc space-y-2 pl-6 text-gray-700 marker:text-yellow-500">
+            <li>
+              Dedicated mentor for every student who tracks progress on every
+              answer script
+            </li>
+            <li>
+              Structured answer writing training: impactful introductions,
+              data-backed body, and balanced conclusions
+            </li>
+            <li>
+              Use of &ldquo;High-Yield Keywords&rdquo; preferred by UPPSC
+              evaluators
+            </li>
+            <li>
+              Detailed evaluation of every mock answer with specific annotations
+              for score improvement
+            </li>
+            <li>
+              Real-time model answer building sessions based on previous year
+              questions
+            </li>
+          </ul>
+        </div>
       </div>
     ),
     prelims: (
@@ -729,6 +860,56 @@ function ProgramTabsPanel() {
               </div>
             )}
 
+            {activeTab === "prelims-mains" && (
+              <div
+                id="upgdc-prelims-mains-fee-details"
+                className="mx-auto mt-8 w-full max-w-5xl scroll-mt-24"
+              >
+                <div className="grid gap-8 md:grid-cols-2">
+                  {prelimsMainsFeePlans.map((plan) => (
+                    <div key={plan.title} className={plan.cardClass}>
+                      {plan.badge && (
+                        <div className="absolute right-0 top-0 bg-yellow-500 px-4 py-1 text-sm font-bold text-blue-900">
+                          {plan.badge}
+                        </div>
+                      )}
+
+                      <h4 className="mb-2 text-2xl font-bold text-blue-900 sm:text-5xl">
+                        {plan.title}
+                      </h4>
+
+                      <div className="mb-6">
+                        <span className="text-4xl font-bold text-blue-900 sm:text-6xl">
+                          {plan.amount}
+                        </span>
+                      </div>
+
+                      <ul className="mb-8 space-y-3">
+                        {plan.features.map((item) => (
+                          <li key={item} className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
+                            <span className="text-gray-700">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <a
+                        href={plan.href}
+                        className={plan.ctaClass}
+                        style={
+                          plan.cta === "Enroll Now"
+                            ? { color: "#ffffff" }
+                            : undefined
+                        }
+                      >
+                        {plan.cta}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeTab === "prelims" && (
               <div
                 id="upgdc-prelims-fee-details"
@@ -852,6 +1033,7 @@ function UPGDCPage() {
   const scrollToEnroll = () => {
     const targetId = [
       "upgdc-general-fee-details",
+      "upgdc-prelims-mains-fee-details",
       "upgdc-prelims-fee-details",
       "upgdc-mains-fee-details",
     ].find((id) => document.getElementById(id));
