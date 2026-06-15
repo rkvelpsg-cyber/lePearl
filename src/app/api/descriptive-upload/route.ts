@@ -69,21 +69,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { data: profileRow, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      return NextResponse.json(
+        { error: "Unable to verify uploader role" },
+        { status: 403 },
+      );
+    }
+
+    const role = (profileRow as { role?: string } | null)?.role;
+
     if (scope === "question-paper") {
-      const { data: profileRow, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        return NextResponse.json(
-          { error: "Unable to verify uploader role" },
-          { status: 403 },
-        );
-      }
-
-      const role = (profileRow as { role?: string } | null)?.role;
       if (role !== "faculty" && role !== "admin") {
         return NextResponse.json(
           { error: "Only faculty/admin can upload question papers" },
@@ -107,6 +108,76 @@ export async function POST(req: NextRequest) {
             error: "Question paper must be PDF, DOC, or DOCX format for upload",
           },
           { status: 400 },
+        );
+      }
+    } else {
+      if (role !== "student") {
+        return NextResponse.json(
+          { error: "Only students can upload descriptive answer sheets" },
+          { status: 403 },
+        );
+      }
+
+      const numericTestId = Number(mockTestId);
+      if (!Number.isFinite(numericTestId) || numericTestId <= 0) {
+        return NextResponse.json(
+          { error: "Invalid mock test id" },
+          { status: 400 },
+        );
+      }
+
+      const { data: testRow, error: testError } = await supabase
+        .from("mock_tests")
+        .select("id, batch_id, test_type, is_published")
+        .eq("id", numericTestId)
+        .maybeSingle();
+
+      if (testError) {
+        return NextResponse.json(
+          { error: "Unable to verify descriptive test" },
+          { status: 400 },
+        );
+      }
+
+      const test = testRow as {
+        id: number;
+        batch_id: number | null;
+        test_type: string | null;
+        is_published: boolean | null;
+      } | null;
+
+      if (
+        !test ||
+        test.test_type !== "descriptive" ||
+        test.is_published !== true
+      ) {
+        return NextResponse.json(
+          { error: "Descriptive test is unavailable" },
+          { status: 403 },
+        );
+      }
+
+      if (!test.batch_id) {
+        return NextResponse.json(
+          { error: "Descriptive test batch is not configured" },
+          { status: 403 },
+        );
+      }
+
+      const { data: enrollmentRow, error: enrollmentError } = await supabase
+        .from("enrollments")
+        .select("batch_id")
+        .eq("student_user_id", user.id)
+        .eq("batch_id", test.batch_id)
+        .maybeSingle();
+
+      if (enrollmentError || !enrollmentRow) {
+        return NextResponse.json(
+          {
+            error:
+              "You are not enrolled in the batch assigned to this descriptive test",
+          },
+          { status: 403 },
         );
       }
     }

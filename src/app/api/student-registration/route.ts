@@ -138,6 +138,27 @@ function normalizeForMatch(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function buildCourseScopedAuthEmail(params: {
+  contactEmail: string;
+  username: string;
+  registrationNo: string;
+}) {
+  const [localRaw, domainRaw] = params.contactEmail.toLowerCase().split("@");
+  const local = (localRaw ?? "student")
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 20);
+  const domain = (domainRaw ?? "lepearleducation.com")
+    .replace(/[^a-z0-9.-]/g, "")
+    .slice(0, 50);
+
+  const token = normalizeForMatch(
+    `${params.username}-${params.registrationNo}`,
+  ).slice(0, 18);
+  const fallbackToken = Date.now().toString(36);
+
+  return `${local || "student"}+lp-${token || fallbackToken}-${Date.now().toString(36)}@${domain || "lepearleducation.com"}`;
+}
+
 function normalizeCode(value: string) {
   const cleaned = value
     .toUpperCase()
@@ -462,17 +483,6 @@ async function ensurePaidStudentAccount(params: {
 
   const service = createServerClient();
 
-  const { data: existingProfileByEmail } = await service
-    .from("profiles")
-    .select("user_id, username")
-    .eq("role", "student")
-    .ilike("email", payload.email)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let studentUserId = existingProfileByEmail?.user_id ?? null;
-
   const { data: existingUsername } = await service
     .from("profiles")
     .select("user_id")
@@ -480,67 +490,63 @@ async function ensurePaidStudentAccount(params: {
     .ilike("username", username)
     .maybeSingle();
 
-  if (
-    existingUsername?.user_id &&
-    (!studentUserId || existingUsername.user_id !== studentUserId)
-  ) {
+  if (existingUsername?.user_id) {
     return { ensured: false, reason: "Username already exists" };
   }
 
-  if (!studentUserId) {
-    const { data: createdAuthUser, error: createUserError } =
-      await service.auth.admin.createUser({
-        email: payload.email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: payload.fullName,
-          username,
-        },
-      });
+  const { data: existingRegistrationNo } = await service
+    .from("student_profiles")
+    .select("user_id")
+    .ilike("registration_no", registrationNo)
+    .maybeSingle();
 
-    if (createUserError || !createdAuthUser.user) {
-      return {
-        ensured: false,
-        reason: createUserError?.message || "Failed to create auth user",
-      };
-    }
+  if (existingRegistrationNo?.user_id) {
+    return {
+      ensured: false,
+      reason: "Registration number already exists",
+    };
+  }
 
-    studentUserId = createdAuthUser.user.id;
+  const authEmail = buildCourseScopedAuthEmail({
+    contactEmail: payload.email,
+    username,
+    registrationNo,
+  });
 
-    const { error: profileInsertError } = await service
-      .from("profiles")
-      .insert({
-        user_id: studentUserId,
-        role: "student",
+  const { data: createdAuthUser, error: createUserError } =
+    await service.auth.admin.createUser({
+      email: authEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
         full_name: payload.fullName,
-        registration_no: registrationNo,
-        email: payload.email,
-        phone: payload.phone,
-        is_active: true,
         username,
-      });
+        contact_email: payload.email,
+      },
+    });
 
-    if (profileInsertError) {
-      return { ensured: false, reason: profileInsertError.message };
-    }
-  } else {
-    const { error: profileUpdateError } = await service
-      .from("profiles")
-      .update({
-        full_name: payload.fullName,
-        registration_no: registrationNo,
-        email: payload.email,
-        phone: payload.phone,
-        username,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", studentUserId)
-      .eq("role", "student");
+  if (createUserError || !createdAuthUser.user) {
+    return {
+      ensured: false,
+      reason: createUserError?.message || "Failed to create auth user",
+    };
+  }
 
-    if (profileUpdateError) {
-      return { ensured: false, reason: profileUpdateError.message };
-    }
+  const studentUserId = createdAuthUser.user.id;
+
+  const { error: profileInsertError } = await service.from("profiles").insert({
+    user_id: studentUserId,
+    role: "student",
+    full_name: payload.fullName,
+    registration_no: registrationNo,
+    email: payload.email,
+    phone: payload.phone,
+    is_active: true,
+    username,
+  });
+
+  if (profileInsertError) {
+    return { ensured: false, reason: profileInsertError.message };
   }
 
   const { error: authUpdateError } = await service.auth.admin.updateUserById(
@@ -550,6 +556,7 @@ async function ensurePaidStudentAccount(params: {
       user_metadata: {
         full_name: payload.fullName,
         username,
+        contact_email: payload.email,
       },
     },
   );

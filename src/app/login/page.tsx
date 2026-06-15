@@ -195,13 +195,13 @@ export default function LoginPage() {
                 htmlFor="login-id"
                 className="block text-sm font-semibold text-gray-700 mb-2"
               >
-                Username or Email
+                Username (recommended) or Email
               </label>
               <input
                 id="login-id"
                 type="text"
                 required
-                placeholder="Enter username or email"
+                placeholder="Enter username (or email if single account)"
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
                 disabled={loading}
@@ -339,8 +339,8 @@ export default function LoginPage() {
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
-              Enter your username or registered email to receive a password
-              reset link.
+              Enter your username (preferred) or registered email to receive a
+              password reset link.
             </p>
 
             {forgotMsg && (
@@ -357,7 +357,7 @@ export default function LoginPage() {
                 required
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="Enter username or registered email"
+                placeholder="Enter username (or registered email)"
                 disabled={forgotLoading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none disabled:bg-gray-100"
               />

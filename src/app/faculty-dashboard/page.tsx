@@ -774,6 +774,31 @@ export default function FacultyDashboardPage() {
     filteredBatchStudents.map((s) => s.student_user_id),
   ).size;
 
+  const assignedCourseBatches = [...batches]
+    .map((batch) => {
+      const courseObj = unwrapOne(
+        batch.courses as
+          | { id: number; title: string }
+          | { id: number; title: string }[]
+          | null,
+      );
+
+      return {
+        batchId: batch.id,
+        batchName: batch.batch_name,
+        courseTitle: courseObj?.title ?? "Course",
+      };
+    })
+    .sort((a, b) => {
+      const byCourse = a.courseTitle.localeCompare(b.courseTitle);
+      if (byCourse !== 0) return byCourse;
+      return a.batchName.localeCompare(b.batchName);
+    });
+
+  const assignedCourseCount = new Set(
+    assignedCourseBatches.map((entry) => entry.courseTitle),
+  ).size;
+
   const mcqFormCourseOptions = Array.from(
     new Map(
       filteredBatches
@@ -800,6 +825,55 @@ export default function FacultyDashboardPage() {
     );
     return courseObj?.id === parseInt(mcqForm.courseId, 10);
   });
+
+  const selectedMcqBatch = batches.find(
+    (b) => b.id === parseInt(mcqForm.batchId || "0", 10),
+  );
+  const selectedMcqBatchCourse = unwrapOne(
+    selectedMcqBatch?.courses as
+      | { id: number; title: string }
+      | { id: number; title: string }[]
+      | null,
+  );
+  const selectedMcqCourse = courses.find(
+    (c) => c.id === parseInt(mcqForm.courseId || "0", 10),
+  );
+  const selectedClassBatch = batches.find(
+    (b) => b.id === parseInt(classForm.batchId || "0", 10),
+  );
+  const selectedClassBatchCourse = unwrapOne(
+    selectedClassBatch?.courses as
+      | { id: number; title: string }
+      | { id: number; title: string }[]
+      | null,
+  );
+  const selectedLectureBatch = batches.find(
+    (b) => b.id === parseInt(lectureForm.batchId || "0", 10),
+  );
+  const selectedLectureBatchCourse = unwrapOne(
+    selectedLectureBatch?.courses as
+      | { id: number; title: string }
+      | { id: number; title: string }[]
+      | null,
+  );
+  const selectedStudyMaterialBatch = batches.find(
+    (b) => b.id === parseInt(studyMaterialForm.batchId || "0", 10),
+  );
+  const selectedStudyMaterialBatchCourse = unwrapOne(
+    selectedStudyMaterialBatch?.courses as
+      | { id: number; title: string }
+      | { id: number; title: string }[]
+      | null,
+  );
+  const selectedTaskBatch = batches.find(
+    (b) => b.id === parseInt(taskForm.batchId || "0", 10),
+  );
+  const selectedTaskBatchCourse = unwrapOne(
+    selectedTaskBatch?.courses as
+      | { id: number; title: string }
+      | { id: number; title: string }[]
+      | null,
+  );
 
   /* â”€â”€ load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const load = useCallback(async () => {
@@ -2558,6 +2632,23 @@ export default function FacultyDashboardPage() {
         setLectureMsg({ type: "err", text: "Please select a valid batch." });
         return;
       }
+
+      const { data: ownBatch, error: ownBatchError } = await supabase
+        .from("batches")
+        .select("id")
+        .eq("id", batchId)
+        .eq("faculty_user_id", user.id)
+        .maybeSingle();
+
+      if (ownBatchError) throw ownBatchError;
+      if (!ownBatch) {
+        setLectureMsg({
+          type: "err",
+          text: "You can add recorded lectures only for your assigned batches.",
+        });
+        return;
+      }
+
       const payload = {
         batch_id: batchId,
         faculty_user_id: user.id,
@@ -2653,6 +2744,23 @@ export default function FacultyDashboardPage() {
         });
         return;
       }
+
+      const { data: ownBatch, error: ownBatchError } = await supabase
+        .from("batches")
+        .select("id")
+        .eq("id", batchId)
+        .eq("faculty_user_id", user.id)
+        .maybeSingle();
+
+      if (ownBatchError) throw ownBatchError;
+      if (!ownBatch) {
+        setStudyMaterialMsg({
+          type: "err",
+          text: "You can add study material only for your assigned batches.",
+        });
+        return;
+      }
+
       const payload = {
         batch_id: batchId,
         faculty_user_id: user.id,
@@ -2743,10 +2851,53 @@ export default function FacultyDashboardPage() {
     try {
       const user = await getFacultyUserSafe(supabase);
       if (!user) return;
+
+      const batchId = parseInt(taskForm.batchId, 10);
+      if (!Number.isFinite(batchId)) {
+        setTaskMsg({ type: "err", text: "Please select a valid batch." });
+        return;
+      }
+
+      const { data: ownBatch, error: ownBatchError } = await supabase
+        .from("batches")
+        .select("id")
+        .eq("id", batchId)
+        .eq("faculty_user_id", user.id)
+        .maybeSingle();
+
+      if (ownBatchError) throw ownBatchError;
+      if (!ownBatch) {
+        setTaskMsg({
+          type: "err",
+          text: "You can assign tasks only for your assigned batches.",
+        });
+        return;
+      }
+
+      const studentUserId = taskForm.studentId || null;
+      if (studentUserId) {
+        const { data: enrolledStudent, error: enrolledStudentError } =
+          await supabase
+            .from("enrollments")
+            .select("student_user_id")
+            .eq("batch_id", batchId)
+            .eq("student_user_id", studentUserId)
+            .maybeSingle();
+
+        if (enrolledStudentError) throw enrolledStudentError;
+        if (!enrolledStudent) {
+          setTaskMsg({
+            type: "err",
+            text: "Selected student is not enrolled in the chosen batch.",
+          });
+          return;
+        }
+      }
+
       const { error } = await supabase.from("faculty_tasks").insert({
         faculty_user_id: user.id,
-        batch_id: taskForm.batchId ? parseInt(taskForm.batchId) : null,
-        student_user_id: taskForm.studentId || null,
+        batch_id: batchId,
+        student_user_id: studentUserId,
         title: taskForm.title,
         description: taskForm.description || null,
         due_date: taskForm.dueDate || null,
@@ -3044,6 +3195,12 @@ export default function FacultyDashboardPage() {
                   </option>
                 ))}
               </select>
+              <p className="mt-2 text-[11px] text-emerald-700 font-semibold">
+                {assignedCourseCount} course
+                {assignedCourseCount !== 1 ? "s" : ""} •{" "}
+                {assignedCourseBatches.length} batch
+                {assignedCourseBatches.length !== 1 ? "es" : ""}
+              </p>
             </div>
 
             <nav className="mt-4 space-y-1.5">
@@ -3149,6 +3306,38 @@ export default function FacultyDashboardPage() {
                     iconBg="bg-amber-100"
                     iconColor="text-amber-600"
                   />
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 p-5">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <h2 className="text-base font-bold text-gray-900">
+                      Assigned Course Batches
+                    </h2>
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                      {assignedCourseBatches.length}
+                    </span>
+                  </div>
+                  {assignedCourseBatches.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No batch assigned yet.
+                    </p>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {assignedCourseBatches.map((entry) => (
+                        <div
+                          key={entry.batchId}
+                          className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2"
+                        >
+                          <p className="text-sm font-semibold text-gray-900">
+                            {entry.batchName}
+                          </p>
+                          <p className="text-xs text-emerald-800 mt-0.5">
+                            {entry.courseTitle}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-3 items-start">
@@ -3518,6 +3707,14 @@ export default function FacultyDashboardPage() {
                       >
                         <X className="w-5 h-5" />
                       </button>
+                    </div>
+                    <div className="mb-4 rounded-xl border border-purple-100 bg-purple-50 px-3 py-2 text-xs text-purple-800">
+                      <span className="font-semibold">Selected Context:</span>{" "}
+                      Course:{" "}
+                      {selectedMcqBatchCourse?.title ??
+                        selectedMcqCourse?.title ??
+                        "-"}{" "}
+                      | Batch: {selectedMcqBatch?.batch_name ?? "-"}
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
@@ -4828,6 +5025,11 @@ export default function FacultyDashboardPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
+                    <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                      <span className="font-semibold">Selected Context:</span>{" "}
+                      Course: {selectedClassBatchCourse?.title ?? "-"} | Batch:{" "}
+                      {selectedClassBatch?.batch_name ?? "-"}
+                    </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -5096,6 +5298,11 @@ export default function FacultyDashboardPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
+                    <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">
+                      <span className="font-semibold">Selected Context:</span>{" "}
+                      Course: {selectedLectureBatchCourse?.title ?? "-"} |
+                      Batch: {selectedLectureBatch?.batch_name ?? "-"}
+                    </div>
                     <div className="space-y-4">
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -5116,7 +5323,7 @@ export default function FacultyDashboardPage() {
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                            Batch (optional)
+                            Batch <span className="text-red-500">*</span>
                           </label>
                           <select
                             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
@@ -5128,7 +5335,7 @@ export default function FacultyDashboardPage() {
                               }))
                             }
                           >
-                            <option value="">All my students</option>
+                            <option value="">Select batch</option>
                             {filteredBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
@@ -5192,6 +5399,7 @@ export default function FacultyDashboardPage() {
                       onClick={addLecture}
                       disabled={
                         lectureSubmitting ||
+                        !lectureForm.batchId ||
                         !lectureForm.title ||
                         !lectureForm.driveLink
                       }
@@ -5327,6 +5535,11 @@ export default function FacultyDashboardPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
+                    <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                      <span className="font-semibold">Selected Context:</span>{" "}
+                      Course: {selectedStudyMaterialBatchCourse?.title ?? "-"} |
+                      Batch: {selectedStudyMaterialBatch?.batch_name ?? "-"}
+                    </div>
                     <div className="space-y-4">
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -5347,7 +5560,7 @@ export default function FacultyDashboardPage() {
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                            Batch (optional)
+                            Batch <span className="text-red-500">*</span>
                           </label>
                           <select
                             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
@@ -5359,7 +5572,7 @@ export default function FacultyDashboardPage() {
                               }))
                             }
                           >
-                            <option value="">All my students</option>
+                            <option value="">Select batch</option>
                             {filteredBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
@@ -5423,6 +5636,7 @@ export default function FacultyDashboardPage() {
                       onClick={addStudyMaterial}
                       disabled={
                         studyMaterialSubmitting ||
+                        !studyMaterialForm.batchId ||
                         !studyMaterialForm.title ||
                         !studyMaterialForm.driveLink
                       }
@@ -5555,11 +5769,16 @@ export default function FacultyDashboardPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
+                    <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      <span className="font-semibold">Selected Context:</span>{" "}
+                      Course: {selectedTaskBatchCourse?.title ?? "-"} | Batch:{" "}
+                      {selectedTaskBatch?.batch_name ?? "-"}
+                    </div>
                     <div className="space-y-4">
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
                           <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                            Batch (leave blank for individual)
+                            Batch <span className="text-red-500">*</span>
                           </label>
                           <select
                             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
@@ -5572,7 +5791,7 @@ export default function FacultyDashboardPage() {
                               }))
                             }
                           >
-                            <option value="">- Select batch -</option>
+                            <option value="">Select batch</option>
                             {filteredBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
@@ -5663,7 +5882,9 @@ export default function FacultyDashboardPage() {
                     </div>
                     <button
                       onClick={submitTask}
-                      disabled={taskSubmitting || !taskForm.title}
+                      disabled={
+                        taskSubmitting || !taskForm.batchId || !taskForm.title
+                      }
                       className="mt-4 flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-xl font-semibold text-sm disabled:opacity-60"
                     >
                       {taskSubmitting ? (

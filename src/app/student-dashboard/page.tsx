@@ -121,6 +121,7 @@ type McqTest = {
   scheduled_at: string | null;
   available_until: string | null;
   is_published: boolean;
+  batch_id: number | null;
   courses: { title: string } | null;
   batches: { batch_name: string } | null;
 };
@@ -769,12 +770,15 @@ export default function StudentDashboardPage() {
           .from("mock_test_attempts")
           .select("scored_marks, mock_test_id, mock_tests(total_marks)")
           .eq("student_user_id", uid),
-        supabase
-          .from("faculty_tasks")
-          .select(
-            "id, title, description, due_date, status, batches(batch_name), profiles(full_name)",
-          )
-          .order("due_date", { ascending: true }),
+        ids.length > 0
+          ? supabase
+              .from("faculty_tasks")
+              .select(
+                "id, title, description, due_date, status, batches(batch_name), profiles(full_name)",
+              )
+              .in("batch_id", ids)
+              .order("due_date", { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
         ids.length > 0
           ? supabase
               .from("recorded_lectures")
@@ -919,7 +923,7 @@ export default function StudentDashboardPage() {
         const fullTestsRes = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, available_until, is_published, courses(title), batches(batch_name)",
+            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, available_until, is_published, batch_id, courses(title), batches(batch_name)",
           )
           .in("batch_id", ids)
           .eq("is_published", true)
@@ -935,7 +939,7 @@ export default function StudentDashboardPage() {
           const fallbackTestsRes = await supabase
             .from("mock_tests")
             .select(
-              "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, courses(title), batches(batch_name)",
+              "id, title, total_marks, time_limit_minutes, exam_type, test_type, created_by, scheduled_at, is_published, batch_id, courses(title), batches(batch_name)",
             )
             .in("batch_id", ids)
             .eq("is_published", true)
@@ -966,9 +970,14 @@ export default function StudentDashboardPage() {
         if (testsData) {
           const now = new Date();
           const allPublishedTests = testsData as unknown as McqTest[];
+          const enrolledBatchIdSet = new Set(ids);
+          const batchScopedTests = allPublishedTests.filter(
+            (test) =>
+              test.batch_id != null && enrolledBatchIdSet.has(test.batch_id),
+          );
 
           // Filter tests based on availability window
-          const availableNow = allPublishedTests.filter((test) => {
+          const availableNow = batchScopedTests.filter((test) => {
             if (!test.scheduled_at) return true; // Tests without scheduled_at are always available
             const scheduledTime = new Date(test.scheduled_at);
             if (scheduledTime > now) return false; // Not started yet
@@ -982,12 +991,12 @@ export default function StudentDashboardPage() {
             return true;
           });
 
-          const upcoming = allPublishedTests.filter(
+          const upcoming = batchScopedTests.filter(
             (test) => !!test.scheduled_at && new Date(test.scheduled_at) > now,
           );
 
           // Expired tests (past their 48-hour window)
-          const expired = allPublishedTests.filter((test) => {
+          const expired = batchScopedTests.filter((test) => {
             if (!test.available_until) return false;
             return new Date(test.available_until) < now;
           });
@@ -1004,7 +1013,7 @@ export default function StudentDashboardPage() {
 
           const creatorIds = Array.from(
             new Set(
-              allPublishedTests.map((t) => t.created_by).filter((id) => !!id),
+              batchScopedTests.map((t) => t.created_by).filter((id) => !!id),
             ),
           );
           if (creatorIds.length > 0) {
@@ -1281,6 +1290,12 @@ export default function StudentDashboardPage() {
   }, [activeTest, testSubmitted, handleSubmitTest]);
 
   async function startTest(test: McqTest) {
+    const isAccessible = availableTests.some((t) => t.id === test.id);
+    if (!isAccessible) {
+      alert("This test is not available for your enrolled batch.");
+      return;
+    }
+
     const now = new Date();
 
     // Check if test hasn't started yet
@@ -1318,6 +1333,14 @@ export default function StudentDashboardPage() {
   }
 
   async function openMcqReview(test: McqTest) {
+    const isAccessibleNow =
+      availableTests.some((t) => t.id === test.id) ||
+      upcomingTests.some((t) => t.id === test.id);
+    if (!isAccessibleNow) {
+      alert("This test is not available for your enrolled batch.");
+      return;
+    }
+
     const supabase = createClient();
     const {
       data: { user },
@@ -1370,6 +1393,15 @@ export default function StudentDashboardPage() {
   }
 
   async function loadDescriptiveQuestions(test: McqTest) {
+    const isAccessible = descriptiveTests.some((t) => t.id === test.id);
+    if (!isAccessible) {
+      setUploadMsg({
+        type: "err",
+        text: "This descriptive test is not available for your enrolled batch.",
+      });
+      return;
+    }
+
     const now = new Date();
     setUploadMsg(null);
 
@@ -1404,6 +1436,17 @@ export default function StudentDashboardPage() {
 
   async function handleFullSheetUpload(file: File | null) {
     if (!file || !selectedDescriptiveTest) return;
+
+    const isAccessible = descriptiveTests.some(
+      (t) => t.id === selectedDescriptiveTest.id,
+    );
+    if (!isAccessible) {
+      setUploadMsg({
+        type: "err",
+        text: "This descriptive test is not available for your enrolled batch.",
+      });
+      return;
+    }
 
     setFullSheetFileName(file.name);
 
@@ -1516,6 +1559,17 @@ export default function StudentDashboardPage() {
 
   async function handleRemoveFullSheetUpload() {
     if (!selectedDescriptiveTest) return;
+
+    const isAccessible = descriptiveTests.some(
+      (t) => t.id === selectedDescriptiveTest.id,
+    );
+    if (!isAccessible) {
+      setUploadMsg({
+        type: "err",
+        text: "This descriptive test is not available for your enrolled batch.",
+      });
+      return;
+    }
 
     const shouldRemove = confirm(
       "Remove your current uploaded answer sheet? You can upload a new PDF after removing it.",
