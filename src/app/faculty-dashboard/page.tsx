@@ -447,19 +447,47 @@ export default function FacultyDashboardPage() {
   const createClient = () => createSupabaseClient("faculty");
 
   function isMissingRefreshTokenError(error: unknown) {
-    const message =
-      error instanceof Error ? error.message : String(error || "");
-    const normalized = message.toLowerCase();
+    if (!error) return false;
+
+    const parts: string[] = [];
+    if (error instanceof Error) {
+      parts.push(error.name, error.message);
+    }
+
+    if (typeof error === "object") {
+      const e = error as {
+        message?: unknown;
+        code?: unknown;
+        name?: unknown;
+        error_description?: unknown;
+      };
+      if (typeof e.message === "string") parts.push(e.message);
+      if (typeof e.code === "string") parts.push(e.code);
+      if (typeof e.name === "string") parts.push(e.name);
+      if (typeof e.error_description === "string") {
+        parts.push(e.error_description);
+      }
+    }
+
+    parts.push(String(error));
+    const normalized = parts.join(" ").toLowerCase();
     return (
       normalized.includes("refresh token not found") ||
-      normalized.includes("invalid refresh token")
+      normalized.includes("invalid refresh token") ||
+      normalized.includes("refresh_token_not_found")
     );
   }
 
   async function resetInvalidFacultySession() {
     clearScopedAuthStorage("faculty");
-    await signOut("faculty");
-    router.push("/faculty-login");
+    try {
+      // Local-only sign out avoids re-triggering refresh token API errors.
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // Storage is already cleared above; ignore sign out errors.
+    }
+    router.replace("/faculty-login");
   }
 
   async function getFacultyUserSafe(supabase = createClient()) {
@@ -750,17 +778,46 @@ export default function FacultyDashboardPage() {
         });
 
   const filteredBatchIds = new Set(filteredBatches.map((b) => b.id));
+  const filteredCourseIds = new Set(
+    filteredBatches
+      .map(
+        (b) =>
+          unwrapOne(
+            b.courses as
+              | { id: number; title: string }
+              | { id: number; title: string }[]
+              | null,
+          )?.id,
+      )
+      .filter((id): id is number => typeof id === "number"),
+  );
   const filteredBatchStudents = batchStudents.filter((s) =>
     filteredBatchIds.has(s.batch_id),
   );
   const filteredStudentIds = new Set(
     filteredBatchStudents.map((s) => s.student_user_id),
   );
+  const filteredStudentProgress = studentProgress.filter((p) => {
+    if (!filteredStudentIds.has(p.student_user_id)) return false;
+    if (selectedCourseId === "all") return true;
+    return filteredCourseIds.has(p.course_id);
+  });
   const filteredMcqTests = mcqTests.filter(
+    (t) => t.batch_id != null && filteredBatchIds.has(t.batch_id),
+  );
+  const filteredDescriptiveTests = descriptiveTests.filter(
     (t) => t.batch_id != null && filteredBatchIds.has(t.batch_id),
   );
   const filteredUpcomingClasses = upcomingClasses.filter((s) =>
     filteredBatchIds.has(s.batch_id),
+  );
+  const filteredLectures = lectures.filter(
+    (lecture) =>
+      lecture.batch_id != null && filteredBatchIds.has(lecture.batch_id),
+  );
+  const filteredStudyMaterials = studyMaterials.filter(
+    (material) =>
+      material.batch_id != null && filteredBatchIds.has(material.batch_id),
   );
   const filteredAttendanceSessions = attendanceSessions.filter((s) =>
     filteredBatchIds.has(s.batch_id),
@@ -1329,9 +1386,44 @@ export default function FacultyDashboardPage() {
     }
   }, [activeSection]);
 
-  const dashboardUpcomingClasses = upcomingClasses.filter((s) =>
-    isUpcomingSession(s.session_date, s.start_time),
-  );
+  useEffect(() => {
+    if (
+      selectedTest &&
+      !filteredMcqTests.some((test) => test.id === selectedTest.id)
+    ) {
+      setSelectedTest(null);
+      setTestQuestions([]);
+      setShowQForm(false);
+      setEditingQuestionId(null);
+    }
+  }, [filteredMcqTests, selectedTest]);
+
+  useEffect(() => {
+    if (
+      selectedEvalTest &&
+      !filteredDescriptiveTests.some((test) => test.id === selectedEvalTest.id)
+    ) {
+      setSelectedEvalTest(null);
+      setDescriptiveQuestions([]);
+      setStudentSubmissions([]);
+      setMcqSubmissions([]);
+      setSelectedSubmission(null);
+    }
+  }, [filteredDescriptiveTests, selectedEvalTest]);
+
+  useEffect(() => {
+    if (
+      selectedSession &&
+      !filteredAttendanceSessions.some(
+        (session) => session.id === selectedSession.id,
+      )
+    ) {
+      setSelectedSession(null);
+      setSessionStudents([]);
+      setAttendanceMap({});
+      setAttendanceMsg(null);
+    }
+  }, [filteredAttendanceSessions, selectedSession]);
 
   const dashboardStudents = [...filteredBatchStudents]
     .filter(
@@ -3016,16 +3108,16 @@ export default function FacultyDashboardPage() {
   }
 
   function exportProgressSectionWise() {
-    if (studentProgress.length === 0) {
+    if (filteredStudentProgress.length === 0) {
       setProgressMsg({ type: "err", text: "No progress data to export." });
       return;
     }
     const studentBatchMap: Record<string, string> = {};
-    batchStudents.forEach((s) => {
+    filteredBatchStudents.forEach((s) => {
       studentBatchMap[s.student_user_id] = s.batch_name;
     });
 
-    const rows = studentProgress.map((p) => [
+    const rows = filteredStudentProgress.map((p) => [
       p.full_name,
       studentBatchMap[p.student_user_id] ?? "-",
       p.course_title,
@@ -3041,12 +3133,12 @@ export default function FacultyDashboardPage() {
   }
 
   function exportProgressConsolidated() {
-    if (studentProgress.length === 0) {
+    if (filteredStudentProgress.length === 0) {
       setProgressMsg({ type: "err", text: "No progress data to export." });
       return;
     }
     const studentBatchMap: Record<string, string> = {};
-    batchStudents.forEach((s) => {
+    filteredBatchStudents.forEach((s) => {
       studentBatchMap[s.student_user_id] = s.batch_name;
     });
 
@@ -3055,7 +3147,7 @@ export default function FacultyDashboardPage() {
       { name: string; batch: string; total: number; count: number }
     >();
 
-    studentProgress.forEach((p) => {
+    filteredStudentProgress.forEach((p) => {
       const prev = grouped.get(p.student_user_id);
       if (!prev) {
         grouped.set(p.student_user_id, {
@@ -4432,7 +4524,7 @@ export default function FacultyDashboardPage() {
 
                 {!selectedEvalTest ? (
                   <div className="bg-white rounded-2xl shadow-sm p-5">
-                    {descriptiveTests.length === 0 ? (
+                    {filteredDescriptiveTests.length === 0 ? (
                       <div className="text-center py-12">
                         <FileQuestion className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500">
@@ -4445,7 +4537,7 @@ export default function FacultyDashboardPage() {
                           Select a Test
                         </h2>
                         <div className="space-y-3">
-                          {descriptiveTests.map((t) => (
+                          {filteredDescriptiveTests.map((t) => (
                             <button
                               key={t.id}
                               onClick={() => {
@@ -5425,7 +5517,7 @@ export default function FacultyDashboardPage() {
                   </button>
                 )}
 
-                {lectures.length === 0 ? (
+                {filteredLectures.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <PlayCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
@@ -5434,7 +5526,7 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {lectures.map((lec) => {
+                    {filteredLectures.map((lec) => {
                       const batch = unwrapOne(lec.batches);
                       return (
                         <div
@@ -5664,7 +5756,7 @@ export default function FacultyDashboardPage() {
                   </button>
                 )}
 
-                {studyMaterials.length === 0 ? (
+                {filteredStudyMaterials.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
@@ -5673,7 +5765,7 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {studyMaterials.map((material) => {
+                    {filteredStudyMaterials.map((material) => {
                       const batch = unwrapOne(material.batches);
                       return (
                         <div
@@ -5815,7 +5907,7 @@ export default function FacultyDashboardPage() {
                           >
                             <option value="">- Entire batch -</option>
                             {(taskForm.batchId
-                              ? batchStudents.filter(
+                              ? filteredBatchStudents.filter(
                                   (s) =>
                                     s.batch_id === parseInt(taskForm.batchId),
                                 )
@@ -6031,7 +6123,7 @@ export default function FacultyDashboardPage() {
                   </div>
                 )}
 
-                {batchStudents.length === 0 ? (
+                {filteredBatchStudents.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
@@ -6044,14 +6136,14 @@ export default function FacultyDashboardPage() {
                       Student Progress & Exam Scores
                     </h2>
                     <div className="space-y-4">
-                      {batchStudents.map((student) => {
-                        const progRows = studentProgress.filter(
+                      {filteredBatchStudents.map((student) => {
+                        const progRows = filteredStudentProgress.filter(
                           (p) => p.student_user_id === student.student_user_id,
                         );
                         const completedTestIds =
                           completedTestIdsByStudent[student.student_user_id] ??
                           [];
-                        const studentTests = mcqTests.filter((t) =>
+                        const studentTests = filteredMcqTests.filter((t) =>
                           completedTestIds.includes(t.id),
                         );
 
@@ -6080,7 +6172,7 @@ export default function FacultyDashboardPage() {
                               (() => {
                                 const key = `${student.student_user_id}_${student.course_id}`;
                                 const localPct =
-                                  studentProgress.find(
+                                  filteredStudentProgress.find(
                                     (sp) =>
                                       sp.student_user_id ===
                                         student.student_user_id &&
