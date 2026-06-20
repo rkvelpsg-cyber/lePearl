@@ -17,6 +17,9 @@ export const createClient = (scope: AuthScope = "default") => {
             storageKey: storageKeyByScope[scope],
             storage:
               typeof window !== "undefined" ? window.sessionStorage : undefined,
+            autoRefreshToken: scope === "admin" ? false : true,
+            persistSession: true,
+            detectSessionInUrl: false,
           },
         };
 

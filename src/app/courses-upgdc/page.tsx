@@ -212,7 +212,7 @@ const prelimsMainsFeePlans = [
 const generalStudiesFeePlans = [
   {
     title: "General Studies (Full Payment)",
-    amount: "Rs.5,495",
+    amount: "Rs.2",
     badge: "BEST VALUE",
     cta: "Enroll Now",
     ctaClass:

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import nodemailer from "nodemailer";
 import { createServerClient } from "@/lib/supabase/server";
 import {
   isValidStudentRegistrationCourse,
@@ -19,6 +20,7 @@ type CreateStudentCredentialBody = {
   studentPhone?: string;
   username?: string;
   defaultPassword?: string;
+  repairAllSameEmailEnrollments?: boolean;
 };
 
 const FACULTY_OPTIONS = [
@@ -53,6 +55,219 @@ function normalizeCode(value: string) {
   }
 
   return `COURSE-${Date.now()}`;
+}
+
+function buildCourseScopedAuthEmail(params: {
+  contactEmail: string;
+  username: string;
+  registrationNo: string;
+}) {
+  const [localRaw, domainRaw] = params.contactEmail.toLowerCase().split("@");
+  const local = (localRaw ?? "student")
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 20);
+  const domain = (domainRaw ?? "lepearleducation.com")
+    .replace(/[^a-z0-9.-]/g, "")
+    .slice(0, 50);
+
+  const token = `${params.username}-${params.registrationNo}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 18);
+  const fallbackToken = Date.now().toString(36);
+
+  return `${local || "student"}+lp-${token || fallbackToken}-${Date.now().toString(36)}@${domain || "lepearleducation.com"}`;
+}
+
+function normalizeUsernameBase(value: string) {
+  const cleaned = sanitizeRegistrationValue(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 20);
+
+  return cleaned || "student";
+}
+
+function buildCourseScopedUsername(params: {
+  baseUsername: string;
+  courseName: string;
+  registrationNo: string;
+}) {
+  const base = normalizeUsernameBase(params.baseUsername);
+  const courseToken = normalizeCode(params.courseName)
+    .toLowerCase()
+    .replace(/-/g, "")
+    .slice(0, 8);
+  const registrationToken = params.registrationNo
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(-6);
+
+  const tokenParts = [
+    base,
+    courseToken || "course",
+    registrationToken || "reg",
+  ];
+  return tokenParts.join("-").slice(0, 32).replace(/-+$/g, "");
+}
+
+function getDefaultFacultyForCourse(course: string) {
+  const normalized = normalizeLabel(course);
+
+  if (normalized.includes("upgdc")) {
+    return "Dr. Prem Shankar Pandey";
+  }
+
+  if (
+    normalized.includes("uphesc") ||
+    normalized.includes("interview preparation") ||
+    normalized.includes("interviewpreparation") ||
+    normalized.includes("communicationskills") ||
+    normalized.includes("researchassistance")
+  ) {
+    return "Dr. Prem Shankar Pandey";
+  }
+
+  if (
+    normalized.includes("netpaper1") ||
+    normalized.includes("netpaper2") ||
+    normalized.includes("ltgrade") ||
+    normalized.includes("set")
+  ) {
+    return "Ms Sadhana";
+  }
+
+  if (normalized.includes("mppsc")) {
+    return "Ms Neelu Patel";
+  }
+
+  if (normalized.includes("gic")) {
+    return "Ms Sadhana";
+  }
+
+  return null;
+}
+
+function getTransporter() {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+
+  if (gmailUser && gmailAppPassword) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: gmailUser,
+        pass: gmailAppPassword,
+      },
+    });
+  }
+
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT ?? "587");
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
+}
+
+function buildCredentialEmailContent(params: {
+  studentName: string;
+  courseName: string;
+  registrationNumber: string;
+  username: string;
+  temporaryPassword: string;
+}) {
+  const subject = `LePearl Login Credentials - ${params.courseName}`;
+  const text = [
+    `Dear ${params.studentName},`,
+    "",
+    "Your course-specific login credentials are ready.",
+    "",
+    `Course: ${params.courseName}`,
+    `Registration No: ${params.registrationNumber}`,
+    `Username: ${params.username}`,
+    `Temporary Password: ${params.temporaryPassword}`,
+    "",
+    "Use your username and temporary password to sign in. If you have multiple course enrolments, each course will have its own separate login credentials.",
+    "",
+    "Regards,",
+    "LePearl Education",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:680px;margin:0 auto;">
+      <p>Dear ${params.studentName},</p>
+      <p>Your course-specific login credentials are ready.</p>
+      <table style="width:100%;border-collapse:collapse;margin:24px 0;">
+        <tbody>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Course</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.courseName}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Registration No</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.registrationNumber}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Username</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.username}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Temporary Password</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.temporaryPassword}</td></tr>
+        </tbody>
+      </table>
+      <p>Use your username and temporary password to sign in. If you have multiple course enrolments, each course will have its own separate login credentials.</p>
+      <p>Regards,<br />LePearl Education</p>
+    </div>
+  `;
+
+  return { subject, text, html };
+}
+
+function buildRepairAdminEmailContent(params: {
+  studentName: string;
+  courseName: string;
+  registrationNumber: string;
+  username: string;
+  temporaryPassword: string;
+}) {
+  const subject = `Legacy paid enrolment repaired - ${params.studentName} - ${params.courseName}`;
+  const text = [
+    "Dear Admin,",
+    "",
+    "A legacy paid enrolment has been repaired and course-specific credentials were created.",
+    "",
+    `Student Name: ${params.studentName}`,
+    `Course: ${params.courseName}`,
+    `Registration No: ${params.registrationNumber}`,
+    `Username: ${params.username}`,
+    `Temporary Password: ${params.temporaryPassword}`,
+    "",
+    "Regards,",
+    "LePearl Education",
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;max-width:680px;margin:0 auto;">
+      <p>Dear Admin,</p>
+      <p>A legacy paid enrolment has been repaired and course-specific credentials were created.</p>
+      <table style="width:100%;border-collapse:collapse;margin:24px 0;">
+        <tbody>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Student Name</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.studentName}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Course</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.courseName}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Registration No</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.registrationNumber}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Username</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.username}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Temporary Password</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${params.temporaryPassword}</td></tr>
+        </tbody>
+      </table>
+      <p>Regards,<br />LePearl Education</p>
+    </div>
+  `;
+
+  return { subject, text, html };
 }
 
 function sanitizeEnv(value?: string) {
@@ -205,9 +420,356 @@ async function verifyAdminFromToken(token: string): Promise<AdminVerifyResult> {
   };
 }
 
+async function repairLegacySameEmailEnrollments(params: {
+  service: ReturnType<typeof createServerClient>;
+  adminUserId: string;
+  studentEmail: string;
+  defaultPassword: string;
+}) {
+  const { service, adminUserId, studentEmail, defaultPassword } = params;
+
+  const { data: registrations, error: registrationsError } = await service
+    .from("student_registrations")
+    .select(
+      "id, full_name, course, email, phone, registration_no, username, submitted_password, created_at, status, mode, payment_amount, final_payable, payment_status, payment_tenure, selected_fee_label",
+    )
+    .eq("mode", "paid")
+    .ilike("email", studentEmail)
+    .in("status", ["pending", "completed"])
+    .order("created_at", { ascending: true });
+
+  if (registrationsError) {
+    throw registrationsError;
+  }
+
+  const rows = (registrations ?? []) as {
+    id: string;
+    full_name: string;
+    course: string;
+    email: string;
+    phone: string | null;
+    registration_no: string | null;
+    username: string | null;
+    submitted_password: string | null;
+    created_at: string;
+    payment_amount: number | null;
+    final_payable: number | null;
+    payment_status: string | null;
+    payment_tenure: string | null;
+    selected_fee_label: string | null;
+  }[];
+
+  if (rows.length === 0) {
+    return {
+      repairedCount: 0,
+      skippedCount: 0,
+      message: `No paid enrolments were found for ${studentEmail}.`,
+      repairedCourses: [] as string[],
+    };
+  }
+
+  const transporter = getTransporter();
+  const adminPaymentRecipient =
+    process.env.ADMIN_PAYMENT_EMAIL ??
+    process.env.PAYMENT_EMAIL_TO ??
+    process.env.GMAIL_USER ??
+    process.env.SMTP_USER ??
+    "admin@lepearleducation.com";
+  const fromAddress =
+    process.env.PAYMENT_EMAIL_FROM ??
+    process.env.GMAIL_USER ??
+    process.env.SMTP_USER ??
+    adminPaymentRecipient;
+  const repairedCourses: string[] = [];
+  let repairedCount = 0;
+  let skippedCount = 0;
+
+  const { data: facultyProfiles, error: facultyError } = await service
+    .from("profiles")
+    .select("user_id, full_name")
+    .eq("role", "faculty");
+
+  if (facultyError) {
+    throw facultyError;
+  }
+
+  const { data: courseRows, error: courseError } = await service
+    .from("courses")
+    .select("id, title, code");
+
+  if (courseError) {
+    throw courseError;
+  }
+
+  for (const row of rows) {
+    const registrationNumber = sanitizeRegistrationValue(
+      row.registration_no ?? "",
+    );
+    const courseName = sanitizeRegistrationValue(row.course ?? "");
+    const studentName = sanitizeRegistrationValue(row.full_name ?? "");
+    const contactEmail = sanitizeRegistrationValue(
+      row.email ?? "",
+    ).toLowerCase();
+
+    if (!registrationNumber || !courseName || !studentName || !contactEmail) {
+      skippedCount += 1;
+      continue;
+    }
+
+    const { data: existingProfile, error: existingProfileError } = await service
+      .from("profiles")
+      .select("user_id")
+      .eq("role", "student")
+      .eq("registration_no", registrationNumber)
+      .maybeSingle();
+
+    if (existingProfileError) {
+      throw existingProfileError;
+    }
+
+    if (existingProfile?.user_id) {
+      skippedCount += 1;
+      continue;
+    }
+
+    const baseUsername = row.username?.trim()
+      ? row.username.trim().toLowerCase()
+      : contactEmail.split("@")[0] || "student";
+    const username = buildCourseScopedUsername({
+      baseUsername,
+      courseName,
+      registrationNo: registrationNumber,
+    });
+    const temporaryPassword =
+      row.submitted_password?.trim() || defaultPassword || "LePearl@123";
+    const authEmail = buildCourseScopedAuthEmail({
+      contactEmail,
+      username,
+      registrationNo: registrationNumber,
+    });
+
+    const defaultFacultyName = getDefaultFacultyForCourse(courseName);
+    if (!defaultFacultyName) {
+      throw new Error(
+        `Unable to resolve faculty for legacy course '${courseName}'.`,
+      );
+    }
+
+    const faculty = (facultyProfiles ?? []).find(
+      (f) => normalizeLabel(f.full_name) === normalizeLabel(defaultFacultyName),
+    );
+
+    if (!faculty?.user_id) {
+      throw new Error(
+        `Default faculty '${defaultFacultyName}' not found for '${courseName}'.`,
+      );
+    }
+
+    let matchedCourse = (courseRows ?? []).find(
+      (c) => normalizeLabel(c.title) === normalizeLabel(courseName),
+    );
+
+    if (!matchedCourse) {
+      const courseCode = `${normalizeCode(courseName)}-${Date.now().toString().slice(-5)}`;
+      const { data: createdCourse, error: createCourseError } = await service
+        .from("courses")
+        .insert({
+          code: courseCode,
+          title: courseName,
+          is_active: true,
+        })
+        .select("id, title, code")
+        .single();
+
+      if (createCourseError || !createdCourse) {
+        throw (
+          createCourseError ||
+          new Error(`Failed to create course '${courseName}'.`)
+        );
+      }
+
+      matchedCourse = createdCourse;
+      courseRows?.push(createdCourse);
+    }
+
+    const { data: createdAuthUser, error: createUserError } =
+      await service.auth.admin.createUser({
+        email: authEmail,
+        password: temporaryPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: studentName,
+          username,
+          contact_email: contactEmail,
+        },
+      });
+
+    if (createUserError || !createdAuthUser.user) {
+      throw createUserError || new Error("Failed to create auth user.");
+    }
+
+    const createdUserId = createdAuthUser.user.id;
+
+    const { error: profileInsertError } = await service
+      .from("profiles")
+      .insert({
+        user_id: createdUserId,
+        role: "student",
+        full_name: studentName,
+        registration_no: registrationNumber,
+        email: contactEmail,
+        phone: row.phone || null,
+        is_active: true,
+        username,
+      });
+
+    if (profileInsertError) {
+      await service.auth.admin.deleteUser(createdUserId);
+      throw profileInsertError;
+    }
+
+    const { error: studentProfileInsertError } = await service
+      .from("student_profiles")
+      .insert({
+        user_id: createdUserId,
+        registration_no: registrationNumber,
+        target_exam: courseName,
+        joined_on: new Date().toISOString().slice(0, 10),
+        must_reset_password: true,
+      });
+
+    if (studentProfileInsertError) {
+      await service.auth.admin.deleteUser(createdUserId);
+      throw studentProfileInsertError;
+    }
+
+    const { data: existingBatch } = await service
+      .from("batches")
+      .select("id")
+      .eq("course_id", matchedCourse.id)
+      .eq("faculty_user_id", faculty.user_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let batchId = existingBatch?.id ?? null;
+
+    if (!batchId) {
+      const batchName = `${normalizeCode(courseName).slice(0, 10)}-${faculty.full_name.split(" ").slice(-1)[0]}-A`;
+      const { data: createdBatch, error: batchCreateError } = await service
+        .from("batches")
+        .insert({
+          course_id: matchedCourse.id,
+          batch_name: batchName,
+          faculty_user_id: faculty.user_id,
+          start_date: new Date().toISOString().slice(0, 10),
+        })
+        .select("id")
+        .single();
+
+      if (batchCreateError || !createdBatch) {
+        await service.auth.admin.deleteUser(createdUserId);
+        throw (
+          batchCreateError ||
+          new Error(`Failed to create batch for ${courseName}.`)
+        );
+      }
+
+      batchId = createdBatch.id;
+    }
+
+    const { error: enrollmentError } = await service.from("enrollments").upsert(
+      {
+        student_user_id: createdUserId,
+        batch_id: batchId,
+        status: "active",
+      },
+      { onConflict: "student_user_id,batch_id" },
+    );
+
+    if (enrollmentError) {
+      await service.auth.admin.deleteUser(createdUserId);
+      throw enrollmentError;
+    }
+
+    await service
+      .from("student_registrations")
+      .update({ status: "completed" })
+      .eq("id", row.id);
+
+    await service.from("activity_logs").insert({
+      actor_user_id: adminUserId,
+      actor_role: "admin",
+      action: "repair_legacy_paid_enrolment_credentials",
+      entity_name: "student_registrations",
+      entity_id: row.id,
+      details: {
+        student_name: studentName,
+        student_email: contactEmail,
+        course: courseName,
+        registration_no: registrationNumber,
+        username,
+      },
+    });
+
+    if (transporter) {
+      const adminEmail = buildRepairAdminEmailContent({
+        studentName,
+        courseName,
+        registrationNumber,
+        username,
+        temporaryPassword,
+      });
+      const studentEmail = buildCredentialEmailContent({
+        studentName,
+        courseName,
+        registrationNumber,
+        username,
+        temporaryPassword,
+      });
+
+      try {
+        await transporter.sendMail({
+          from: `LePearl Education <${fromAddress}>`,
+          to: adminPaymentRecipient,
+          replyTo: contactEmail,
+          subject: adminEmail.subject,
+          text: adminEmail.text,
+          html: adminEmail.html,
+        });
+
+        await transporter.sendMail({
+          from: `LePearl Education <${fromAddress}>`,
+          to: contactEmail,
+          subject: studentEmail.subject,
+          text: studentEmail.text,
+          html: studentEmail.html,
+        });
+      } catch (emailError) {
+        console.warn(
+          "repair-legacy-paid-enrolments email send failed (non-critical):",
+          emailError instanceof Error ? emailError.message : emailError,
+        );
+      }
+    }
+
+    repairedCount += 1;
+    repairedCourses.push(courseName);
+  }
+
+  return {
+    repairedCount,
+    skippedCount,
+    repairedCourses,
+    message:
+      repairedCount > 0
+        ? `Repaired ${repairedCount} legacy paid enrolment${repairedCount === 1 ? "" : "s"} for ${studentEmail}.`
+        : `No missing course accounts were found for ${studentEmail}.`,
+  };
+}
+
 export async function POST(req: NextRequest) {
   let createdUserId: string | null = null;
-  let reusedExistingAccount = false;
 
   try {
     const body = (await req.json()) as CreateStudentCredentialBody;
@@ -283,6 +845,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const service = createServerClient();
+
+    if (body.repairAllSameEmailEnrollments) {
+      if (!studentEmail) {
+        return NextResponse.json(
+          { error: "Student Email ID is required for repair mode." },
+          { status: 400 },
+        );
+      }
+
+      const repairResult = await repairLegacySameEmailEnrollments({
+        service,
+        adminUserId,
+        studentEmail,
+        defaultPassword,
+      });
+
+      return NextResponse.json({ ok: true, ...repairResult });
+    }
+
     if (!isValidUsername(username)) {
       return NextResponse.json(
         {
@@ -300,32 +882,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const service = createServerClient();
-
-    if (studentEmail) {
-      const { data: existingStudent } = await service
-        .from("profiles")
-        .select("user_id, role, username")
-        .ilike("email", studentEmail)
-        .eq("role", "student")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (existingStudent?.user_id) {
-        reusedExistingAccount = true;
-        createdUserId = existingStudent.user_id;
-      }
-    }
-
     let usernameQuery = service
       .from("profiles")
       .select("user_id")
       .ilike("username", username);
-
-    if (createdUserId) {
-      usernameQuery = usernameQuery.neq("user_id", createdUserId);
-    }
 
     const { data: existingUsername } = await usernameQuery.maybeSingle();
 
@@ -383,85 +943,69 @@ export async function POST(req: NextRequest) {
       matchedCourse = createdCourse;
     }
 
-    if (!createdUserId) {
-      // Use provided email or generate a placeholder so Supabase Auth can create the account.
-      // Students log in via username + password, not email.
-      const authEmail =
-        studentEmail ||
-        `${registrationNumber.toLowerCase().replace(/[^a-z0-9]/g, "-")}@lepearl.internal`;
+    const authEmail = studentEmail
+      ? buildCourseScopedAuthEmail({
+          contactEmail: studentEmail,
+          username,
+          registrationNo: registrationNumber,
+        })
+      : `${registrationNumber.toLowerCase().replace(/[^a-z0-9]/g, "-")}@lepearl.internal`;
 
-      const { data: createdAuthUser, error: createUserError } =
-        await service.auth.admin.createUser({
-          email: authEmail,
-          password: defaultPassword,
-          email_confirm: true,
-          user_metadata: {
-            full_name: studentName,
-            username,
+    const { data: createdAuthUser, error: createUserError } =
+      await service.auth.admin.createUser({
+        email: authEmail,
+        password: defaultPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: studentName,
+          username,
+          contact_email: studentEmail || null,
+        },
+      });
+
+    if (createUserError || !createdAuthUser.user) {
+      const msg = createUserError?.message || "Failed to create auth user.";
+      if (msg.toLowerCase().includes("already exists")) {
+        return NextResponse.json(
+          {
+            error:
+              "This username or course-scoped login email already exists. Please choose a different username or registration number.",
           },
-        });
-
-      if (createUserError || !createdAuthUser.user) {
-        const msg = createUserError?.message || "Failed to create auth user.";
-        if (msg.toLowerCase().includes("already exists")) {
-          return NextResponse.json(
-            {
-              error:
-                "This email is already linked to an existing student account. Reuse that account and add the new course enrollment instead.",
-            },
-            { status: 409 },
-          );
-        }
-
-        return NextResponse.json({ error: msg }, { status: 400 });
+          { status: 409 },
+        );
       }
 
-      createdUserId = createdAuthUser.user.id;
-
-      const { error: profileInsertError } = await service
-        .from("profiles")
-        .insert({
-          user_id: createdUserId,
-          role: "student",
-          full_name: studentName,
-          registration_no: registrationNumber,
-          email: studentEmail || null,
-          phone: studentPhone || null,
-          is_active: true,
-          username,
-        });
-
-      if (profileInsertError) throw profileInsertError;
-
-      const { error: studentProfileInsertError } = await service
-        .from("student_profiles")
-        .insert({
-          user_id: createdUserId,
-          registration_no: registrationNumber,
-          target_exam: courseName,
-          joined_on: new Date().toISOString().slice(0, 10),
-          must_reset_password: true,
-        });
-
-      if (studentProfileInsertError) throw studentProfileInsertError;
-    } else {
-      // Existing account reused — only update fields that may have changed
-      // (phone, email). Do NOT overwrite username or target_exam since
-      // the student may already be enrolled in another course.
-      const profileUpdates: Record<string, unknown> = {
-        updated_at: new Date().toISOString(),
-      };
-      if (studentPhone) profileUpdates.phone = studentPhone;
-      if (studentEmail) profileUpdates.email = studentEmail;
-
-      const { error: profileUpdateError } = await service
-        .from("profiles")
-        .update(profileUpdates)
-        .eq("user_id", createdUserId)
-        .eq("role", "student");
-
-      if (profileUpdateError) throw profileUpdateError;
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
+
+    createdUserId = createdAuthUser.user.id;
+
+    const { error: profileInsertError } = await service
+      .from("profiles")
+      .insert({
+        user_id: createdUserId,
+        role: "student",
+        full_name: studentName,
+        registration_no: registrationNumber,
+        email: studentEmail || null,
+        phone: studentPhone || null,
+        is_active: true,
+        username,
+      });
+
+    if (profileInsertError) throw profileInsertError;
+
+    const { error: studentProfileInsertError } = await service
+      .from("student_profiles")
+      .insert({
+        user_id: createdUserId,
+        registration_no: registrationNumber,
+        target_exam: courseName,
+        joined_on: new Date().toISOString().slice(0, 10),
+        must_reset_password: true,
+      });
+
+    if (studentProfileInsertError) throw studentProfileInsertError;
 
     const { data: existingBatch } = await service
       .from("batches")
@@ -531,29 +1075,53 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const transporter = getTransporter();
+    if (transporter && studentEmail) {
+      try {
+        const fromAddress =
+          process.env.PAYMENT_EMAIL_FROM ??
+          process.env.GMAIL_USER ??
+          process.env.SMTP_USER ??
+          "admin@lepearleducation.com";
+        const credentialEmail = buildCredentialEmailContent({
+          studentName,
+          courseName,
+          registrationNumber,
+          username,
+          temporaryPassword: defaultPassword,
+        });
+
+        await transporter.sendMail({
+          from: `LePearl Education <${fromAddress}>`,
+          to: studentEmail,
+          subject: credentialEmail.subject,
+          text: credentialEmail.text,
+          html: credentialEmail.html,
+        });
+      } catch (emailError) {
+        console.warn(
+          "create-student-credentials email send failed (non-critical):",
+          emailError instanceof Error ? emailError.message : emailError,
+        );
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      message: reusedExistingAccount
-        ? "Existing student account reused and assigned to the selected course successfully."
-        : "Student credentials created and assigned successfully.",
+      message: "Student credentials created and assigned successfully.",
       data: {
         userId: createdUserId,
         username,
         email: studentEmail,
         course: courseName,
         faculty: faculty.full_name,
-        reusedExistingAccount,
       },
     });
   } catch (error) {
     if (createdUserId) {
       try {
         const service = createServerClient();
-        // Only delete the auth user if we just created it in this request.
-        // Never delete a pre-existing student account on rollback.
-        if (!reusedExistingAccount) {
-          await service.auth.admin.deleteUser(createdUserId);
-        }
+        await service.auth.admin.deleteUser(createdUserId);
       } catch (rollbackError) {
         console.error(
           "Rollback failed after create-student error:",

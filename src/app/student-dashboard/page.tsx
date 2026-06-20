@@ -603,6 +603,30 @@ export default function StudentDashboardPage() {
       const uid = user.id;
       setUserId(uid);
 
+      // Auto-heal legacy/missing batch enrollment mapping for paid accounts.
+      // Student dashboard data (tests/classes/materials/tasks) is batch-scoped.
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const accessToken = session?.access_token;
+        if (accessToken) {
+          await fetch("/api/student/ensure-enrollment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+        }
+      } catch (ensureError) {
+        console.warn(
+          "Failed to ensure enrollment mapping:",
+          ensureError instanceof Error ? ensureError.message : ensureError,
+        );
+      }
+
       /* stage 1 */
       const [profileRes, spRes, enrollRes] = await Promise.all([
         supabase

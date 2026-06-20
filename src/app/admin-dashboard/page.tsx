@@ -1269,7 +1269,7 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   useEffect(() => {
@@ -1658,9 +1658,20 @@ export default function AdminDashboardPage() {
   async function getAdminAccessToken() {
     const supabase = createClient();
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    let session = null;
+
+    try {
+      const sessionResult = await supabase.auth.getSession();
+      session = sessionResult.data.session;
+    } catch (error) {
+      if (isMissingRefreshTokenError(error)) {
+        await supabase.auth.signOut({ scope: "local" });
+        router.replace("/admin-login");
+        return null;
+      }
+
+      throw error;
+    }
 
     if (session?.access_token) {
       return session.access_token;
@@ -1865,7 +1876,9 @@ export default function AdminDashboardPage() {
     }
   }
 
-  async function createStudentCredentials() {
+  async function createStudentCredentials(
+    repairAllSameEmailEnrollments = false,
+  ) {
     setCredentialSubmitting(true);
     setCredentialMsg(null);
     try {
@@ -1915,6 +1928,7 @@ export default function AdminDashboardPage() {
           studentPhone: credentialForm.studentPhone,
           username: credentialForm.username,
           defaultPassword: credentialForm.defaultPassword,
+          repairAllSameEmailEnrollments,
         }),
       });
 
@@ -1940,6 +1954,7 @@ export default function AdminDashboardPage() {
               studentPhone: credentialForm.studentPhone,
               username: credentialForm.username,
               defaultPassword: credentialForm.defaultPassword,
+              repairAllSameEmailEnrollments,
             }),
           });
         }
@@ -2677,19 +2692,33 @@ export default function AdminDashboardPage() {
                           {selectedStudent.phone ?? "-"}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Course Name</p>
-                        <p className="font-semibold text-gray-900">
-                          {selectedStudent.enrollments?.[0]?.course_title ??
-                            "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Faculty</p>
-                        <p className="font-semibold text-gray-900">
-                          {selectedStudent.enrollments?.[0]?.faculty_name ??
-                            "-"}
-                        </p>
+                      <div className="sm:col-span-2">
+                        <p className="text-xs text-gray-500 mb-2">Courses</p>
+                        {selectedStudent.enrollments &&
+                        selectedStudent.enrollments.length > 0 ? (
+                          <div className="space-y-3">
+                            {selectedStudent.enrollments.map(
+                              (enrollment, index) => (
+                                <div
+                                  key={`${selectedStudent.user_id}-${enrollment.batch_name}-${enrollment.course_title}-${index}`}
+                                  className="rounded-xl border border-blue-100 bg-blue-50/40 p-3"
+                                >
+                                  <p className="font-semibold text-gray-900">
+                                    {enrollment.course_title}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    Batch: {enrollment.batch_name}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-0.5">
+                                    Faculty: {enrollment.faculty_name}
+                                  </p>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        ) : (
+                          <p className="font-semibold text-gray-900">-</p>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Student Email</p>
@@ -2920,9 +2949,9 @@ export default function AdminDashboardPage() {
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {(selectedStudent.enrollments || []).map(
-                            (enrollment) => (
+                            (enrollment, index) => (
                               <button
-                                key={`${selectedStudent.user_id}-${enrollment.course_title}`}
+                                key={`${selectedStudent.user_id}-${enrollment.batch_name}-${enrollment.course_title}-${index}`}
                                 onClick={() =>
                                   deleteSelectedEnrollment(
                                     enrollment.course_title,
@@ -4899,6 +4928,16 @@ export default function AdminDashboardPage() {
                         </span>
                       )}
                     </p>
+                    <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
+                      Use{" "}
+                      <span className="font-semibold">
+                        Repair Same-Email Courses
+                      </span>{" "}
+                      only for legacy paid enrolments where the same student
+                      paid for multiple courses with one email but received only
+                      one login. It will backfill missing course-specific
+                      accounts and resend the course emails.
+                    </p>
 
                     {credentialMsg && (
                       <div
@@ -5073,7 +5112,7 @@ export default function AdminDashboardPage() {
 
                     <div className="mt-4 flex items-center gap-3">
                       <button
-                        onClick={createStudentCredentials}
+                        onClick={() => createStudentCredentials(false)}
                         disabled={
                           credentialSubmitting ||
                           !credentialForm.courseName ||
@@ -5091,6 +5130,20 @@ export default function AdminDashboardPage() {
                           <Plus className="w-4 h-4" />
                         )}
                         Create Credentials
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => createStudentCredentials(true)}
+                        disabled={
+                          credentialSubmitting ||
+                          !credentialForm.studentEmail ||
+                          !credentialForm.courseName
+                        }
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-sm font-semibold hover:bg-blue-100 disabled:opacity-60"
+                        title="Backfills missing course accounts for legacy same-email paid enrolments."
+                      >
+                        Repair Same-Email Courses
                       </button>
 
                       {(credentialForm.registrationId ||
