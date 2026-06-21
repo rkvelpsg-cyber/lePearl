@@ -15,6 +15,8 @@ import {
 
 export const runtime = "nodejs";
 
+export const maxDuration = 26;
+
 const recipientEmail =
   process.env.REGISTRATION_ADMIN_EMAIL ?? "admin@lepearleducation.com";
 
@@ -546,6 +548,7 @@ async function ensurePaidStudentAccount(params: {
   });
 
   if (profileInsertError) {
+    await service.auth.admin.deleteUser(studentUserId).catch(() => {});
     return { ensured: false, reason: profileInsertError.message };
   }
 
@@ -579,6 +582,7 @@ async function ensurePaidStudentAccount(params: {
     );
 
   if (studentProfileUpsertError) {
+    await service.auth.admin.deleteUser(studentUserId).catch(() => {});
     return { ensured: false, reason: studentProfileUpsertError.message };
   }
 
@@ -1124,10 +1128,12 @@ export async function POST(req: NextRequest) {
           html: studentEmail.html,
         });
       } catch (error) {
-        console.warn(
+        console.error(
           "Email send failed (non-critical):",
           error instanceof Error ? error.message : error,
         );
+      } finally {
+        transporter.close();
       }
     }
 

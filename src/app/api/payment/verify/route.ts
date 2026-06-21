@@ -7,6 +7,8 @@ import { sendStudentPaymentWhatsAppNotification } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
+export const maxDuration = 26;
+
 const adminPaymentRecipient =
   process.env.PAYMENT_NOTIFICATION_EMAIL ??
   process.env.ADMIN_PAYMENT_EMAIL ??
@@ -362,6 +364,25 @@ export async function POST(req: NextRequest) {
     /* ── save verified payment to database ── */
     const supabase = createServerClient();
     const paymentAmount = Number(amount) / 100;
+
+    /* ── guard against duplicate payment processing ── */
+    const { data: existingPayment } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("razorpay_payment_id", razorpay_payment_id)
+      .maybeSingle();
+
+    if (existingPayment) {
+      return NextResponse.json({
+        success: true,
+        payment: {
+          amount: paymentAmount,
+          payment_mode: "razorpay",
+          transaction_id: razorpay_payment_id,
+        },
+      });
+    }
+
     const paymentMode = "razorpay";
     const paymentDescription = String(
       description || "Course fee payment",
@@ -543,10 +564,13 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (error) {
-        console.warn(
+        console.error(
           "[payment/verify] Email send failed (non-critical):",
           error instanceof Error ? error.message : error,
         );
+      }
+      finally {
+        transporter.close();
       }
     }
 

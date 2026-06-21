@@ -242,9 +242,18 @@ function getDefaultFacultyByCourse(courseName: string) {
 
   if (normalized.includes("upgdc")) return "Dr. Prem Shankar Pandey";
   if (
+    normalized.includes("uphesc") ||
+    normalized.includes("communicationskills") ||
+    normalized.includes("researchassistance") ||
+    normalized.includes("interviewpreparation")
+  ) {
+    return "Dr. Prem Shankar Pandey";
+  }
+  if (
     normalized.includes("netpaper1") ||
     normalized.includes("netpaper2") ||
-    normalized.includes("ltgrade")
+    normalized.includes("ltgrade") ||
+    normalized.includes("set")
   ) {
     return "Ms Sadhana";
   }
