@@ -8,6 +8,7 @@ import {
 } from "@/lib/studentRegistration";
 
 export const runtime = "nodejs";
+export const maxDuration = 26;
 
 type CreateStudentCredentialBody = {
   accessToken?: string;
@@ -746,10 +747,12 @@ async function repairLegacySameEmailEnrollments(params: {
           html: studentEmail.html,
         });
       } catch (emailError) {
-        console.warn(
+        console.error(
           "repair-legacy-paid-enrolments email send failed (non-critical):",
           emailError instanceof Error ? emailError.message : emailError,
         );
+      } finally {
+        transporter.close();
       }
     }
 
@@ -1099,10 +1102,12 @@ export async function POST(req: NextRequest) {
           html: credentialEmail.html,
         });
       } catch (emailError) {
-        console.warn(
+        console.error(
           "create-student-credentials email send failed (non-critical):",
           emailError instanceof Error ? emailError.message : emailError,
         );
+      } finally {
+        transporter.close();
       }
     }
 
