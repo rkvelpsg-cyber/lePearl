@@ -172,27 +172,44 @@ function normalizeUsernameBase(value: string) {
   return cleaned || "student";
 }
 
-function buildCourseScopedUsername(params: {
-  baseUsername: string;
-  courseName: string;
-  registrationNo: string;
-}) {
-  const base = normalizeUsernameBase(params.baseUsername);
-  const courseToken = normalizeCode(params.courseName)
-    .toLowerCase()
-    .replace(/-/g, "")
-    .slice(0, 8);
-  const registrationToken = params.registrationNo
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .slice(-6);
+function normalizeSubmittedUsername(value: string) {
+  return normalizeUsernameBase(value);
+}
 
-  const tokenParts = [
-    base,
-    courseToken || "course",
-    registrationToken || "reg",
-  ];
-  return tokenParts.join("-").slice(0, 32).replace(/-+$/g, "");
+async function isUsernameAlreadyUsed(params: {
+  service: ReturnType<typeof createServerClient>;
+  username: string;
+}) {
+  const normalizedUsername = normalizeSubmittedUsername(params.username);
+  if (!normalizedUsername) return false;
+
+  const [profileUsernameRes, registrationUsernameRes] = await Promise.all([
+    params.service
+      .from("profiles")
+      .select("user_id")
+      .ilike("username", normalizedUsername)
+      .limit(1)
+      .maybeSingle(),
+    params.service
+      .from("student_registrations")
+      .select("id")
+      .eq("mode", "paid")
+      .ilike("username", normalizedUsername)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (profileUsernameRes.error) {
+    throw profileUsernameRes.error;
+  }
+
+  if (registrationUsernameRes.error) {
+    throw registrationUsernameRes.error;
+  }
+
+  return Boolean(
+    profileUsernameRes.data?.user_id || registrationUsernameRes.data?.id,
+  );
 }
 
 function normalizeCode(value: string) {
@@ -514,9 +531,7 @@ async function ensurePaidStudentAccount(params: {
 }) {
   const { payload, body } = params;
 
-  const submittedUsername = sanitizeRegistrationValue(
-    body.username ?? "",
-  ).toLowerCase();
+  const submittedUsername = normalizeSubmittedUsername(body.username ?? "");
   const password = body.password?.trim() ?? "";
   const registrationNo = sanitizeRegistrationValue(body.registrationNo ?? "");
 
@@ -530,54 +545,11 @@ async function ensurePaidStudentAccount(params: {
 
   const service = createServerClient();
 
-  let username = submittedUsername;
-  const candidateUsernames = [
-    submittedUsername,
-    buildCourseScopedUsername({
-      baseUsername: submittedUsername,
-      courseName: payload.course,
-      registrationNo,
-    }),
-  ];
-
-  let resolvedUsername: string | null = null;
-  for (const candidate of candidateUsernames) {
-    const { data: existingUsername } = await service
-      .from("profiles")
-      .select("user_id")
-      .eq("role", "student")
-      .ilike("username", candidate)
-      .maybeSingle();
-
-    if (!existingUsername?.user_id) {
-      resolvedUsername = candidate;
-      break;
-    }
-  }
-
-  if (!resolvedUsername) {
-    for (let attempt = 1; attempt <= 5; attempt += 1) {
-      const candidate = `${buildCourseScopedUsername({
-        baseUsername: submittedUsername,
-        courseName: payload.course,
-        registrationNo,
-      })}${attempt}`.slice(0, 32);
-
-      const { data: existingUsername } = await service
-        .from("profiles")
-        .select("user_id")
-        .eq("role", "student")
-        .ilike("username", candidate)
-        .maybeSingle();
-
-      if (!existingUsername?.user_id) {
-        resolvedUsername = candidate;
-        break;
-      }
-    }
-  }
-
-  if (!resolvedUsername) {
+  const usernameAlreadyUsed = await isUsernameAlreadyUsed({
+    service,
+    username: submittedUsername,
+  });
+  if (usernameAlreadyUsed) {
     return {
       ensured: false,
       reason: "Username already exists",
@@ -585,7 +557,7 @@ async function ensurePaidStudentAccount(params: {
     };
   }
 
-  username = resolvedUsername;
+  const username = submittedUsername;
 
   const { data: existingRegistrationNo } = await service
     .from("student_profiles")
@@ -843,6 +815,51 @@ async function ensurePaidStudentAccount(params: {
   return { ensured: true, reason: null, username };
 }
 
+export async function GET(req: NextRequest) {
+  try {
+    const username = normalizeSubmittedUsername(
+      req.nextUrl.searchParams.get("username") ?? "",
+    );
+
+    if (!username) {
+      return NextResponse.json(
+        { available: false, message: "Username is required." },
+        { status: 400 },
+      );
+    }
+
+    if (username.length < 3) {
+      return NextResponse.json(
+        {
+          available: false,
+          message: "Username must be at least 3 characters.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const service = createServerClient();
+    const alreadyUsed = await isUsernameAlreadyUsed({ service, username });
+
+    return NextResponse.json({
+      available: !alreadyUsed,
+      username,
+      message: alreadyUsed
+        ? "This username is already in use. Please choose another username."
+        : "Username is available.",
+    });
+  } catch (error) {
+    console.error("student registration username availability error:", error);
+    return NextResponse.json(
+      {
+        available: false,
+        message: "Unable to validate username right now. Please try again.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as RegistrationRequestBody;
@@ -1005,6 +1022,35 @@ export async function POST(req: NextRequest) {
         { error: "Please enter a valid email address." },
         { status: 400 },
       );
+    }
+
+    if (mode === "paid") {
+      const username = normalizeSubmittedUsername(body.username ?? "");
+      if (!username) {
+        return NextResponse.json(
+          { error: "Please enter a valid username for paid enrolment." },
+          { status: 400 },
+        );
+      }
+
+      if (username.length < 3) {
+        return NextResponse.json(
+          { error: "Username must be at least 3 characters long." },
+          { status: 400 },
+        );
+      }
+
+      const service = createServerClient();
+      const alreadyUsed = await isUsernameAlreadyUsed({ service, username });
+      if (alreadyUsed) {
+        return NextResponse.json(
+          {
+            error:
+              "This username is already in use. Please choose a different username.",
+          },
+          { status: 409 },
+        );
+      }
     }
 
     // PRIMARY: Store in Supabase

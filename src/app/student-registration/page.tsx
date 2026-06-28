@@ -170,8 +170,21 @@ type SubmissionState =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
+type UsernameAvailabilityState = {
+  status: "idle" | "checking" | "available" | "taken" | "error";
+  message: string;
+};
+
 const PAID_REGISTRATION_DRAFT_KEY = "lepearl-paid-registration-draft";
 const PAID_REGISTRATION_COURSE_BACK_KEY = "lepearl-paid-course-back-href";
+
+function normalizePaidUsernameInput(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 20);
+}
 
 function isInterviewPrepCourseId(
   course: StudentRegistrationPayload["course"],
@@ -679,6 +692,11 @@ function StudentRegistrationContent() {
     });
   const [showPaidSuccessPopup, setShowPaidSuccessPopup] = useState(false);
   const [paidSuccessPopupMessage, setPaidSuccessPopupMessage] = useState("");
+  const [usernameAvailability, setUsernameAvailability] =
+    useState<UsernameAvailabilityState>({
+      status: "idle",
+      message: "",
+    });
   const [showFeePlanModal, setShowFeePlanModal] = useState(false);
   const [showPaidPassword, setShowPaidPassword] = useState(false);
   const [modalPlanChoice, setModalPlanChoice] = useState<"full" | "instalment">(
@@ -819,6 +837,37 @@ function StudentRegistrationContent() {
 
   const isPaidWhatsappValid = /^\d{10}$/.test(safePaidFormData.whatsapp);
   const isFreeWhatsappValid = /^\d{10}$/.test(safeFreeFormData.whatsapp);
+
+  async function checkPaidUsernameAvailability(username: string) {
+    const normalizedUsername = normalizePaidUsernameInput(username);
+    if (!normalizedUsername || normalizedUsername.length < 3) {
+      return {
+        available: false,
+        message: "Username must be at least 3 characters.",
+      };
+    }
+
+    const response = await fetch(
+      `/api/student-registration?username=${encodeURIComponent(normalizedUsername)}`,
+      {
+        method: "GET",
+      },
+    );
+
+    const payload = (await response.json()) as {
+      available?: boolean;
+      message?: string;
+    };
+
+    return {
+      available: Boolean(payload.available),
+      message:
+        payload.message ??
+        (payload.available
+          ? "Username is available."
+          : "This username is already in use. Please choose another username."),
+    };
+  }
 
   const paidRegistrationReturnTo = useMemo(() => {
     const query = searchParams.toString();
@@ -1069,6 +1118,52 @@ function StudentRegistrationContent() {
   }, []);
 
   useEffect(() => {
+    if (activeMode !== "paid") {
+      setUsernameAvailability({ status: "idle", message: "" });
+      return;
+    }
+
+    const username = normalizePaidUsernameInput(safePaidFormData.username);
+    if (!username) {
+      setUsernameAvailability({ status: "idle", message: "" });
+      return;
+    }
+
+    if (username.length < 3) {
+      setUsernameAvailability({
+        status: "taken",
+        message: "Username must be at least 3 characters.",
+      });
+      return;
+    }
+
+    let cancelled = false;
+    setUsernameAvailability({ status: "checking", message: "Checking..." });
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await checkPaidUsernameAvailability(username);
+        if (cancelled) return;
+        setUsernameAvailability({
+          status: result.available ? "available" : "taken",
+          message: result.message,
+        });
+      } catch {
+        if (cancelled) return;
+        setUsernameAvailability({
+          status: "error",
+          message: "Unable to validate username right now. Please try again.",
+        });
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeMode, safePaidFormData.username]);
+
+  useEffect(() => {
     if (!hasLoadedPaidDraft) return;
     const { password: _ignoredPassword, ...paidDraftToPersist } =
       safePaidFormData;
@@ -1144,6 +1239,20 @@ function StudentRegistrationContent() {
     setPaidSuccessPopupMessage("");
 
     try {
+      const normalizedUsername = normalizePaidUsernameInput(
+        safePaidFormData.username,
+      );
+      if (!normalizedUsername || normalizedUsername.length < 3) {
+        throw new Error("Please enter a valid username (minimum 3 characters).");
+      }
+
+      const usernameAvailabilityCheck = await checkPaidUsernameAvailability(
+        normalizedUsername,
+      );
+      if (!usernameAvailabilityCheck.available) {
+        throw new Error(usernameAvailabilityCheck.message);
+      }
+
       const payload: StudentRegistrationPayload = {
         fullName: safePaidFormData.fullName.trim(),
         qualification: "Paid Enrolment",
@@ -1274,7 +1383,7 @@ function StudentRegistrationContent() {
           ...payload,
           mode: "paid",
           registrationNo: safePaidFormData.registrationNo,
-          username: safePaidFormData.username,
+          username: normalizedUsername,
           password: safePaidFormData.password,
           paymentTenure: safePaidFormData.paymentTenure,
           acceptedTerms: safePaidFormData.acceptedTerms,
@@ -1599,11 +1708,22 @@ function StudentRegistrationContent() {
                   required
                   value={safePaidFormData.username}
                   onChange={(event) =>
-                    updatePaidField("username", event.target.value)
+                    updatePaidField(
+                      "username",
+                      normalizePaidUsernameInput(event.target.value),
+                    )
                   }
                   className={inputClassName}
                   placeholder="Choose your username"
                 />
+                {usernameAvailability.status !== "idle" &&
+                  safePaidFormData.username.length > 0 && (
+                    <p
+                      className={`mt-2 text-xs ${usernameAvailability.status === "available" ? "text-emerald-600" : usernameAvailability.status === "checking" ? "text-slate-500" : "text-rose-600"}`}
+                    >
+                      {usernameAvailability.message}
+                    </p>
+                  )}
               </label>
               <label className="text-base font-semibold text-slate-700">
                 Case-sensitive Password <span className="text-red-500">*</span>
@@ -1968,7 +2088,10 @@ function StudentRegistrationContent() {
                 isSubmittingPaid ||
                 !allConsentsChecked ||
                 !passwordValidation ||
-                !isPaidWhatsappValid
+                !isPaidWhatsappValid ||
+                usernameAvailability.status === "checking" ||
+                usernameAvailability.status === "taken" ||
+                usernameAvailability.status === "error"
               }
               className="w-full cursor-pointer rounded-xl bg-[linear-gradient(90deg,#9333ea,#2563eb)] px-6 py-4 text-xl font-semibold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
             >
