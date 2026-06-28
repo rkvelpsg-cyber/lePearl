@@ -161,6 +161,39 @@ function buildCourseScopedAuthEmail(params: {
   return `${local || "student"}+lp-${token || fallbackToken}-${Date.now().toString(36)}@${domain || "lepearleducation.com"}`;
 }
 
+function normalizeUsernameBase(value: string) {
+  const cleaned = sanitizeRegistrationValue(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 20);
+
+  return cleaned || "student";
+}
+
+function buildCourseScopedUsername(params: {
+  baseUsername: string;
+  courseName: string;
+  registrationNo: string;
+}) {
+  const base = normalizeUsernameBase(params.baseUsername);
+  const courseToken = normalizeCode(params.courseName)
+    .toLowerCase()
+    .replace(/-/g, "")
+    .slice(0, 8);
+  const registrationToken = params.registrationNo
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(-6);
+
+  const tokenParts = [
+    base,
+    courseToken || "course",
+    registrationToken || "reg",
+  ];
+  return tokenParts.join("-").slice(0, 32).replace(/-+$/g, "");
+}
+
 function normalizeCode(value: string) {
   const cleaned = value
     .toUpperCase()
@@ -475,26 +508,78 @@ async function ensurePaidStudentAccount(params: {
 }) {
   const { payload, body } = params;
 
-  const username = sanitizeRegistrationValue(body.username ?? "").toLowerCase();
+  const submittedUsername = sanitizeRegistrationValue(
+    body.username ?? "",
+  ).toLowerCase();
   const password = body.password?.trim() ?? "";
   const registrationNo = sanitizeRegistrationValue(body.registrationNo ?? "");
 
-  if (!payload.email || !username || !password || !registrationNo) {
-    return { ensured: false, reason: "Missing login account fields" };
+  if (!payload.email || !submittedUsername || !password || !registrationNo) {
+    return {
+      ensured: false,
+      reason: "Missing login account fields",
+      username: null,
+    };
   }
 
   const service = createServerClient();
 
-  const { data: existingUsername } = await service
-    .from("profiles")
-    .select("user_id")
-    .eq("role", "student")
-    .ilike("username", username)
-    .maybeSingle();
+  let username = submittedUsername;
+  const candidateUsernames = [
+    submittedUsername,
+    buildCourseScopedUsername({
+      baseUsername: submittedUsername,
+      courseName: payload.course,
+      registrationNo,
+    }),
+  ];
 
-  if (existingUsername?.user_id) {
-    return { ensured: false, reason: "Username already exists" };
+  let resolvedUsername: string | null = null;
+  for (const candidate of candidateUsernames) {
+    const { data: existingUsername } = await service
+      .from("profiles")
+      .select("user_id")
+      .eq("role", "student")
+      .ilike("username", candidate)
+      .maybeSingle();
+
+    if (!existingUsername?.user_id) {
+      resolvedUsername = candidate;
+      break;
+    }
   }
+
+  if (!resolvedUsername) {
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      const candidate = `${buildCourseScopedUsername({
+        baseUsername: submittedUsername,
+        courseName: payload.course,
+        registrationNo,
+      })}${attempt}`.slice(0, 32);
+
+      const { data: existingUsername } = await service
+        .from("profiles")
+        .select("user_id")
+        .eq("role", "student")
+        .ilike("username", candidate)
+        .maybeSingle();
+
+      if (!existingUsername?.user_id) {
+        resolvedUsername = candidate;
+        break;
+      }
+    }
+  }
+
+  if (!resolvedUsername) {
+    return {
+      ensured: false,
+      reason: "Username already exists",
+      username: null,
+    };
+  }
+
+  username = resolvedUsername;
 
   const { data: existingRegistrationNo } = await service
     .from("student_profiles")
@@ -506,6 +591,7 @@ async function ensurePaidStudentAccount(params: {
     return {
       ensured: false,
       reason: "Registration number already exists",
+      username: null,
     };
   }
 
@@ -531,6 +617,7 @@ async function ensurePaidStudentAccount(params: {
     return {
       ensured: false,
       reason: createUserError?.message || "Failed to create auth user",
+      username: null,
     };
   }
 
@@ -549,7 +636,11 @@ async function ensurePaidStudentAccount(params: {
 
   if (profileInsertError) {
     await service.auth.admin.deleteUser(studentUserId).catch(() => {});
-    return { ensured: false, reason: profileInsertError.message };
+    return {
+      ensured: false,
+      reason: profileInsertError.message,
+      username: null,
+    };
   }
 
   const { error: authUpdateError } = await service.auth.admin.updateUserById(
@@ -565,7 +656,11 @@ async function ensurePaidStudentAccount(params: {
   );
 
   if (authUpdateError) {
-    return { ensured: false, reason: authUpdateError.message };
+    return {
+      ensured: false,
+      reason: authUpdateError.message,
+      username: null,
+    };
   }
 
   const { error: studentProfileUpsertError } = await service
@@ -583,7 +678,11 @@ async function ensurePaidStudentAccount(params: {
 
   if (studentProfileUpsertError) {
     await service.auth.admin.deleteUser(studentUserId).catch(() => {});
-    return { ensured: false, reason: studentProfileUpsertError.message };
+    return {
+      ensured: false,
+      reason: studentProfileUpsertError.message,
+      username: null,
+    };
   }
 
   const defaultFacultyName = getDefaultFacultyForCourse(payload.course);
@@ -594,7 +693,11 @@ async function ensurePaidStudentAccount(params: {
       .eq("role", "faculty");
 
     if (facultyError) {
-      return { ensured: false, reason: facultyError.message };
+      return {
+        ensured: false,
+        reason: facultyError.message,
+        username: null,
+      };
     }
 
     const faculty = (facultyProfiles ?? []).find(
@@ -607,6 +710,7 @@ async function ensurePaidStudentAccount(params: {
       return {
         ensured: false,
         reason: `Default faculty '${defaultFacultyName}' not found in profiles`,
+        username: null,
       };
     }
 
@@ -615,7 +719,11 @@ async function ensurePaidStudentAccount(params: {
       .select("id, title, code");
 
     if (courseError) {
-      return { ensured: false, reason: courseError.message };
+      return {
+        ensured: false,
+        reason: courseError.message,
+        username: null,
+      };
     }
 
     const requestedCourse = normalizeForMatch(payload.course);
@@ -644,6 +752,7 @@ async function ensurePaidStudentAccount(params: {
         return {
           ensured: false,
           reason: createCourseError?.message || "Failed to create course",
+          username: null,
         };
       }
 
@@ -660,7 +769,11 @@ async function ensurePaidStudentAccount(params: {
       .maybeSingle();
 
     if (batchFetchError) {
-      return { ensured: false, reason: batchFetchError.message };
+      return {
+        ensured: false,
+        reason: batchFetchError.message,
+        username: null,
+      };
     }
 
     let batchId = existingBatch?.id ?? null;
@@ -687,6 +800,7 @@ async function ensurePaidStudentAccount(params: {
         return {
           ensured: false,
           reason: batchCreateError?.message || "Failed to create batch",
+          username: null,
         };
       }
 
@@ -703,11 +817,15 @@ async function ensurePaidStudentAccount(params: {
     );
 
     if (enrollmentError) {
-      return { ensured: false, reason: enrollmentError.message };
+      return {
+        ensured: false,
+        reason: enrollmentError.message,
+        username: null,
+      };
     }
   }
 
-  return { ensured: true, reason: null };
+  return { ensured: true, reason: null, username };
 }
 
 export async function POST(req: NextRequest) {
@@ -1063,6 +1181,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let issuedUsername =
+      mode === "paid"
+        ? sanitizeRegistrationValue(body.username ?? "").toLowerCase()
+        : "";
+
     if (mode === "paid" && isRazorpayPayment) {
       try {
         const ensureResult = await ensurePaidStudentAccount({ payload, body });
@@ -1086,6 +1209,25 @@ export async function POST(req: NextRequest) {
             },
           );
         }
+
+        if (ensureResult.username) {
+          issuedUsername = ensureResult.username;
+          if (
+            supabase &&
+            issuedUsername !==
+              sanitizeRegistrationValue(body.username ?? "").toLowerCase()
+          ) {
+            await supabase
+              .from("student_registrations")
+              .update({ username: issuedUsername })
+              .eq(
+                "registration_no",
+                sanitizeRegistrationValue(body.registrationNo ?? ""),
+              )
+              .eq("email", payload.email)
+              .eq("mode", "paid");
+          }
+        }
       } catch (error) {
         return NextResponse.json(
           {
@@ -1103,7 +1245,10 @@ export async function POST(req: NextRequest) {
         const emailContent = buildModeAwareAdminEmail(payload, body, mode);
         const studentEmail =
           mode === "paid"
-            ? buildStudentPaidPaymentEmail(payload, body)
+            ? buildStudentPaidPaymentEmail(payload, {
+                ...body,
+                username: issuedUsername || body.username,
+              })
             : buildStudentConfirmationEmail(payload, mode);
         const fromAddress =
           process.env.REGISTRATION_EMAIL_FROM ??
@@ -1144,7 +1289,7 @@ export async function POST(req: NextRequest) {
         course: payload.course,
         amount: Number(body.paymentAmount ?? body.finalPayable ?? 0),
         registrationNo: body.registrationNo ?? null,
-        username: body.username ?? null,
+        username: issuedUsername || body.username || null,
         temporaryPassword: body.password ?? null,
         transactionId: body.razorpayPaymentId ?? null,
         orderId: body.razorpayOrderId ?? null,
