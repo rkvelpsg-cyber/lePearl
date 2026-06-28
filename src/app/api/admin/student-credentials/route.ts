@@ -825,6 +825,16 @@ export async function POST(req: NextRequest) {
     ).toLowerCase();
     const defaultPassword = body.defaultPassword?.trim() || "LePearl@123";
 
+    if (!registrationId) {
+      return NextResponse.json(
+        {
+          error:
+            "Please select a registration row first. Manual credential creation is disabled.",
+        },
+        { status: 400 },
+      );
+    }
+
     if (!isValidStudentRegistrationCourse(courseName)) {
       return NextResponse.json(
         { error: "Please select a valid course from the registration list." },
@@ -1075,20 +1085,10 @@ export async function POST(req: NextRequest) {
 
     if (enrollmentError) throw enrollmentError;
 
-    if (registrationId) {
-      await service
-        .from("student_registrations")
-        .update({ status: "completed" })
-        .eq("id", registrationId);
-    } else {
-      await service
-        .from("student_registrations")
-        .update({ status: "completed" })
-        .eq("email", studentEmail)
-        .eq("course", courseName)
-        .eq("full_name", studentName)
-        .eq("status", "pending");
-    }
+    await service
+      .from("student_registrations")
+      .update({ status: "completed" })
+      .eq("id", registrationId);
 
     await service.from("activity_logs").insert({
       actor_user_id: adminUserId,

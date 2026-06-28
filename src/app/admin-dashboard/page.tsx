@@ -1894,6 +1894,14 @@ export default function AdminDashboardPage() {
   async function createStudentCredentials(
     repairAllSameEmailEnrollments = false,
   ) {
+    if (!credentialForm.registrationId) {
+      setCredentialMsg({
+        type: "err",
+        text: "Please select a registration row first. Manual credential creation is disabled.",
+      });
+      return;
+    }
+
     setCredentialSubmitting(true);
     setCredentialMsg(null);
     try {
@@ -2900,8 +2908,8 @@ export default function AdminDashboardPage() {
                           </div>
                           <p className="mt-1 text-xs text-gray-500">
                             Use this field only when a student forgets their
-                            password. The student will be forced to change it
-                            on first login.
+                            password. The student will be forced to change it on
+                            first login.
                           </p>
                         </div>
                       </div>
@@ -4911,6 +4919,10 @@ export default function AdminDashboardPage() {
                         </span>
                       )}
                     </p>
+                    <p className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-800">
+                      Manual editing is disabled. Select a registration row from
+                      the left table to prefill details.
+                    </p>
                     <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-5 text-amber-800">
                       Use{" "}
                       <span className="font-semibold">
@@ -4936,7 +4948,8 @@ export default function AdminDashboardPage() {
                           Course Name
                         </label>
                         <select
-                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          disabled
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                           value={credentialForm.courseName}
                           onChange={(e) =>
                             setCredentialForm((p) => ({
@@ -4963,7 +4976,8 @@ export default function AdminDashboardPage() {
                             Registration Number
                           </label>
                           <input
-                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                             value={credentialForm.registrationNumber}
                             onChange={(e) =>
                               setCredentialForm((p) => ({
@@ -4980,7 +4994,8 @@ export default function AdminDashboardPage() {
                             Student Name
                           </label>
                           <input
-                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                             value={credentialForm.studentName}
                             onChange={(e) =>
                               setCredentialForm((p) => ({
@@ -4998,7 +5013,8 @@ export default function AdminDashboardPage() {
                           Faculty Name
                         </label>
                         <select
-                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          disabled
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                           value={credentialForm.facultyName}
                           onChange={(e) =>
                             setCredentialForm((p) => ({
@@ -5025,7 +5041,8 @@ export default function AdminDashboardPage() {
                         </label>
                         <input
                           type="email"
-                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          readOnly
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                           value={credentialForm.studentEmail}
                           onChange={(e) =>
                             setCredentialForm((p) => ({
@@ -5043,7 +5060,8 @@ export default function AdminDashboardPage() {
                         </label>
                         <input
                           type="tel"
-                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                          readOnly
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                           value={credentialForm.studentPhone}
                           onChange={(e) =>
                             setCredentialForm((p) => ({
@@ -5061,7 +5079,8 @@ export default function AdminDashboardPage() {
                             User Name
                           </label>
                           <input
-                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                             value={credentialForm.username}
                             onChange={(e) =>
                               setCredentialForm((p) => ({
@@ -5079,7 +5098,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <input
                             type="text"
-                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-700"
                             value={credentialForm.defaultPassword}
                             onChange={(e) =>
                               setCredentialForm((p) => ({
@@ -5098,6 +5118,7 @@ export default function AdminDashboardPage() {
                         onClick={() => createStudentCredentials(false)}
                         disabled={
                           credentialSubmitting ||
+                          !credentialForm.registrationId ||
                           !credentialForm.courseName ||
                           !credentialForm.registrationNumber ||
                           !credentialForm.studentName ||
@@ -5120,6 +5141,7 @@ export default function AdminDashboardPage() {
                         onClick={() => createStudentCredentials(true)}
                         disabled={
                           credentialSubmitting ||
+                          !credentialForm.registrationId ||
                           !credentialForm.studentEmail ||
                           !credentialForm.courseName
                         }
