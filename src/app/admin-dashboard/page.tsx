@@ -1786,13 +1786,6 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           action: "update",
           studentUserId: selectedStudent.user_id,
-          registrationNo: studentEditForm.registrationNo,
-          phone: studentEditForm.phone,
-          courseName: studentEditForm.courseName,
-          studentName: studentEditForm.studentName,
-          facultyName: studentEditForm.facultyName,
-          studentEmail: studentEditForm.studentEmail,
-          username: studentEditForm.username,
           password: studentEditForm.password,
         }),
       });
@@ -1806,35 +1799,17 @@ export default function AdminDashboardPage() {
 
       setStudentActionMsg({
         type: "ok",
-        text: payload.message || "Student updated successfully.",
+        text: payload.message || "Password reset successfully.",
       });
       await load();
-      setSelectedStudent((prev) =>
-        prev
-          ? {
-              ...prev,
-              registration_no: studentEditForm.registrationNo.trim() || null,
-              phone: studentEditForm.phone.trim() || null,
-              full_name: studentEditForm.studentName.trim() || prev.full_name,
-              email: studentEditForm.studentEmail.trim() || null,
-              username: studentEditForm.username.trim() || null,
-              enrollments: [
-                {
-                  batch_name:
-                    studentEditForm.courseName.trim() || "Updated Batch",
-                  course_title:
-                    studentEditForm.courseName.trim() || "Updated Course",
-                  faculty_name:
-                    studentEditForm.facultyName.trim() || "Updated Faculty",
-                },
-              ],
-            }
-          : prev,
-      );
+      setStudentEditForm((prev) => ({
+        ...prev,
+        password: "",
+      }));
     } catch (err) {
       setStudentActionMsg({
         type: "err",
-        text: err instanceof Error ? err.message : "Failed to update student.",
+        text: err instanceof Error ? err.message : "Failed to reset password.",
       });
     } finally {
       setStudentActionLoading(false);
@@ -2806,13 +2781,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <input
                             value={studentEditForm.registrationNo}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                registrationNo: e.target.value,
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           />
                         </div>
                         <div>
@@ -2821,13 +2791,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <input
                             value={studentEditForm.phone}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                phone: e.target.value,
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           />
                         </div>
                         <div>
@@ -2836,13 +2801,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <input
                             value={studentEditForm.studentName}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                studentName: e.target.value,
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           />
                         </div>
                         <div>
@@ -2851,13 +2811,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <select
                             value={studentEditForm.courseName}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                courseName: e.target.value,
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
+                            disabled
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           >
                             <option value="">Select course</option>
                             {studentRegistrationCourses.map((courseName) => (
@@ -2873,13 +2828,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <select
                             value={studentEditForm.facultyName}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                facultyName: e.target.value,
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-white"
+                            disabled
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           >
                             <option value="">Select faculty</option>
                             {faculty.map((facultyItem) => (
@@ -2898,13 +2848,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <input
                             value={studentEditForm.studentEmail}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                studentEmail: e.target.value,
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           />
                         </div>
                         <div>
@@ -2913,13 +2858,8 @@ export default function AdminDashboardPage() {
                           </label>
                           <input
                             value={studentEditForm.username}
-                            onChange={(e) =>
-                              setStudentEditForm((prev) => ({
-                                ...prev,
-                                username: e.target.value.toLowerCase(),
-                              }))
-                            }
-                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm"
+                            readOnly
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm bg-gray-100 text-gray-700"
                           />
                         </div>
                         <div className="md:col-span-2">
@@ -2959,9 +2899,9 @@ export default function AdminDashboardPage() {
                             </button>
                           </div>
                           <p className="mt-1 text-xs text-gray-500">
-                            If you set a new username or password, the student
-                            will be forced to change the password on first
-                            login.
+                            Use this field only when a student forgets their
+                            password. The student will be forced to change it
+                            on first login.
                           </p>
                         </div>
                       </div>
@@ -2969,7 +2909,10 @@ export default function AdminDashboardPage() {
                       <div className="mt-4 flex flex-wrap gap-3 items-center">
                         <button
                           onClick={saveSelectedStudent}
-                          disabled={studentActionLoading}
+                          disabled={
+                            studentActionLoading ||
+                            !studentEditForm.password.trim()
+                          }
                           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
                         >
                           {studentActionLoading ? (

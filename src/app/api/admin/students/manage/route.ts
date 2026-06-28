@@ -410,70 +410,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "update") {
-      const registrationNo = body.registrationNo?.trim() || null;
-      const phone = body.phone?.trim() || null;
-      const courseName = body.courseName?.trim() || null;
-      const studentName = body.studentName?.trim() || null;
-      const facultyName = body.facultyName?.trim() || null;
-      const studentEmail = body.studentEmail?.trim().toLowerCase() || null;
-      const username = body.username?.trim().toLowerCase() || null;
       const password = body.password?.trim() || null;
 
-      if (!studentName) {
+      if (!password) {
         return NextResponse.json(
-          { error: "Student name is required." },
+          { error: "New password is required." },
           { status: 400 },
         );
       }
 
-      if (!registrationNo) {
+      if (password.length < 8) {
         return NextResponse.json(
-          { error: "Registration number is required." },
-          { status: 400 },
-        );
-      }
-
-      if (!courseName) {
-        return NextResponse.json(
-          { error: "Course name is required." },
-          { status: 400 },
-        );
-      }
-
-      if (!isValidStudentRegistrationCourse(courseName)) {
-        return NextResponse.json(
-          {
-            error:
-              "Please select a valid course from the New Registrations list.",
-          },
-          { status: 400 },
-        );
-      }
-
-      if (!facultyName) {
-        return NextResponse.json(
-          { error: "Faculty name is required." },
-          { status: 400 },
-        );
-      }
-
-      if (!studentEmail || !isValidEmail(studentEmail)) {
-        return NextResponse.json(
-          { error: "Please enter a valid student email ID." },
-          { status: 400 },
-        );
-      }
-
-      if (!username || username.length < 4) {
-        return NextResponse.json(
-          { error: "Please enter a valid username." },
+          { error: "Password must be at least 8 characters long." },
           { status: 400 },
         );
       }
 
       const { data: currentStudent, error: currentStudentError } = await service
         .from("profiles")
-        .select("user_id, username")
+        .select("user_id")
         .eq("user_id", studentUserId)
         .eq("role", "student")
         .maybeSingle();
@@ -486,188 +441,39 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const { data: usernameConflict } = await service
-        .from("profiles")
-        .select("user_id")
-        .ilike("username", username)
-        .neq("user_id", studentUserId)
-        .maybeSingle();
-
-      if (usernameConflict) {
-        return NextResponse.json(
-          { error: "Username already exists. Please choose another username." },
-          { status: 409 },
-        );
-      }
-
-      const { data: facultyProfiles, error: facultyError } = await service
-        .from("profiles")
-        .select("user_id, full_name")
-        .eq("role", "faculty");
-
-      if (facultyError) throw facultyError;
-
-      const effectiveFacultyName =
-        getCanonicalPaidEnrollmentBatch(courseName)?.facultyName || facultyName;
-
-      const faculty = (facultyProfiles ?? []).find(
-        (f) =>
-          normalizeLabel(f.full_name) === normalizeLabel(effectiveFacultyName),
-      );
-
-      if (!faculty) {
-        return NextResponse.json(
-          {
-            error:
-              "Selected faculty account was not found in the system. Please verify faculty setup.",
-          },
-          { status: 400 },
-        );
-      }
-
-      const { data: courseRows, error: courseFetchError } = await service
-        .from("courses")
-        .select("id, title, code");
-
-      if (courseFetchError) throw courseFetchError;
-
-      let matchedCourse = (courseRows ?? []).find(
-        (c) => normalizeLabel(c.title) === normalizeLabel(courseName),
-      );
-
-      if (!matchedCourse) {
-        const courseCode = `${normalizeCode(courseName)}-${Date.now().toString().slice(-5)}`;
-        const { data: createdCourse, error: courseCreateError } = await service
-          .from("courses")
-          .insert({
-            code: courseCode,
-            title: courseName,
-            is_active: true,
-          })
-          .select("id, title, code")
-          .single();
-
-        if (courseCreateError) throw courseCreateError;
-        matchedCourse = createdCourse;
-      }
-
-      const canonicalBatchName =
-        getCanonicalPaidEnrollmentBatch(courseName)?.batchName;
-      const batchLookup = service
-        .from("batches")
-        .select("id")
-        .eq("course_id", matchedCourse.id)
-        .eq("faculty_user_id", faculty.user_id);
-
-      const { data: existingBatch } = canonicalBatchName
-        ? await batchLookup.eq("batch_name", canonicalBatchName).maybeSingle()
-        : await batchLookup
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-      let batchId = existingBatch?.id ?? null;
-
-      if (!batchId) {
-        const batchName =
-          canonicalBatchName ||
-          `${normalizeCode(courseName).slice(0, 10)}-${faculty.full_name.split(" ").slice(-1)[0]}-A`;
-        const { data: createdBatch, error: batchCreateError } = await service
-          .from("batches")
-          .insert({
-            course_id: matchedCourse.id,
-            batch_name: batchName,
-            faculty_user_id: faculty.user_id,
-            start_date: new Date().toISOString().slice(0, 10),
-          })
-          .select("id")
-          .single();
-
-        if (batchCreateError) throw batchCreateError;
-        batchId = createdBatch.id;
-      }
-
-      const shouldResetPassword = Boolean(password);
-
       const { error: authUpdateError } =
         await service.auth.admin.updateUserById(studentUserId, {
-          email: studentEmail,
-          password: password || undefined,
+          password,
           email_confirm: true,
-          user_metadata: {
-            full_name: studentName,
-            username,
-          },
         });
 
       if (authUpdateError) throw authUpdateError;
 
-      const { error: profileUpdateError } = await service
-        .from("profiles")
-        .update({
-          full_name: studentName,
-          phone,
-          registration_no: registrationNo,
-          email: studentEmail,
-          username,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", studentUserId)
-        .eq("role", "student");
-
-      if (profileUpdateError) throw profileUpdateError;
-
       const { error: studentProfileUpdateError } = await service
         .from("student_profiles")
         .update({
-          registration_no: registrationNo,
-          target_exam: courseName,
-          must_reset_password: shouldResetPassword,
+          must_reset_password: true,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", studentUserId);
 
       if (studentProfileUpdateError) throw studentProfileUpdateError;
 
-      const { error: deleteEnrollmentsError } = await service
-        .from("enrollments")
-        .delete()
-        .eq("student_user_id", studentUserId);
-
-      if (deleteEnrollmentsError) throw deleteEnrollmentsError;
-
-      const { error: insertEnrollmentError } = await service
-        .from("enrollments")
-        .insert({
-          student_user_id: studentUserId,
-          batch_id: batchId,
-          enrolled_on: new Date().toISOString().slice(0, 10),
-          status: "active",
-        });
-
-      if (insertEnrollmentError) throw insertEnrollmentError;
-
       await service.from("activity_logs").insert({
         actor_user_id: adminUserId,
         actor_role: "admin",
-        action: "update_student",
-        entity_name: "profiles",
+        action: "reset_student_password",
+        entity_name: "auth.users",
         entity_id: studentUserId,
         details: {
-          registrationNo,
-          phone,
-          courseName,
-          studentName,
-          facultyName,
-          studentEmail,
-          username,
-          passwordUpdated: Boolean(password),
+          passwordUpdated: true,
         },
       });
 
       return NextResponse.json({
         ok: true,
-        message: "Student details updated successfully.",
+        message:
+          "Student password reset successfully. The student must change it on first login.",
       });
     }
 
