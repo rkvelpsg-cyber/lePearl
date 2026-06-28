@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { createServerClient } from "@/lib/supabase/server";
 import { isValidStudentRegistrationCourse } from "@/lib/studentRegistration";
+import { getCanonicalPaidEnrollmentBatch } from "@/lib/paidEnrollmentBatchMapping";
 
 export const runtime = "nodejs";
 
@@ -506,8 +507,12 @@ export async function POST(req: NextRequest) {
 
       if (facultyError) throw facultyError;
 
+      const effectiveFacultyName =
+        getCanonicalPaidEnrollmentBatch(courseName)?.facultyName || facultyName;
+
       const faculty = (facultyProfiles ?? []).find(
-        (f) => normalizeLabel(f.full_name) === normalizeLabel(facultyName),
+        (f) =>
+          normalizeLabel(f.full_name) === normalizeLabel(effectiveFacultyName),
       );
 
       if (!faculty) {
@@ -546,19 +551,27 @@ export async function POST(req: NextRequest) {
         matchedCourse = createdCourse;
       }
 
-      const { data: existingBatch } = await service
+      const canonicalBatchName =
+        getCanonicalPaidEnrollmentBatch(courseName)?.batchName;
+      const batchLookup = service
         .from("batches")
         .select("id")
         .eq("course_id", matchedCourse.id)
-        .eq("faculty_user_id", faculty.user_id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq("faculty_user_id", faculty.user_id);
+
+      const { data: existingBatch } = canonicalBatchName
+        ? await batchLookup.eq("batch_name", canonicalBatchName).maybeSingle()
+        : await batchLookup
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
       let batchId = existingBatch?.id ?? null;
 
       if (!batchId) {
-        const batchName = `${normalizeCode(courseName).slice(0, 10)}-${faculty.full_name.split(" ").slice(-1)[0]}-A`;
+        const batchName =
+          canonicalBatchName ||
+          `${normalizeCode(courseName).slice(0, 10)}-${faculty.full_name.split(" ").slice(-1)[0]}-A`;
         const { data: createdBatch, error: batchCreateError } = await service
           .from("batches")
           .insert({

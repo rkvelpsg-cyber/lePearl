@@ -8,6 +8,7 @@ import {
   sanitizeRegistrationValue,
   StudentRegistrationPayload,
 } from "@/lib/studentRegistration";
+import { getCanonicalPaidEnrollmentBatch } from "@/lib/paidEnrollmentBatchMapping";
 import {
   sendStudentPaymentWhatsAppNotification,
   sendWhatsAppTextNotification,
@@ -209,6 +210,11 @@ function normalizeCode(value: string) {
 }
 
 function getDefaultFacultyForCourse(course: string) {
+  const canonicalMapping = getCanonicalPaidEnrollmentBatch(course);
+  if (canonicalMapping?.facultyName) {
+    return canonicalMapping.facultyName;
+  }
+
   const normalized = normalizeForMatch(course);
 
   if (normalized.includes("upgdc")) {
@@ -687,6 +693,9 @@ async function ensurePaidStudentAccount(params: {
 
   const defaultFacultyName = getDefaultFacultyForCourse(payload.course);
   if (defaultFacultyName) {
+    const canonicalBatchName = getCanonicalPaidEnrollmentBatch(
+      payload.course,
+    )?.batchName;
     const { data: facultyProfiles, error: facultyError } = await service
       .from("profiles")
       .select("user_id, full_name")
@@ -759,14 +768,18 @@ async function ensurePaidStudentAccount(params: {
       matchedCourse = createdCourse;
     }
 
-    const { data: existingBatch, error: batchFetchError } = await service
+    const batchLookup = service
       .from("batches")
       .select("id")
       .eq("course_id", matchedCourse.id)
-      .eq("faculty_user_id", faculty.user_id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq("faculty_user_id", faculty.user_id);
+
+    const { data: existingBatch, error: batchFetchError } = canonicalBatchName
+      ? await batchLookup.eq("batch_name", canonicalBatchName).maybeSingle()
+      : await batchLookup
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
     if (batchFetchError) {
       return {
@@ -783,7 +796,9 @@ async function ensurePaidStudentAccount(params: {
         .split(" ")
         .filter(Boolean)
         .slice(-1)[0];
-      const batchName = `${normalizeCode(payload.course).slice(0, 10)}-${facultyLastName || "FAC"}-A`;
+      const batchName =
+        canonicalBatchName ||
+        `${normalizeCode(payload.course).slice(0, 10)}-${facultyLastName || "FAC"}-A`;
 
       const { data: createdBatch, error: batchCreateError } = await service
         .from("batches")
