@@ -30,10 +30,11 @@ with canonical_map(course_title, batch_name) as (
 )
 update public.batches b
 set batch_name = cm.batch_name
-from canonical_map cm
-join public.courses c on c.id = b.course_id
+from canonical_map cm,
+     public.courses c
 where regexp_replace(lower(c.title), '[^a-z0-9]+', '', 'g') =
       regexp_replace(lower(cm.course_title), '[^a-z0-9]+', '', 'g')
+  and c.id = b.course_id
   and lower(b.batch_name) = lower(cm.batch_name)
   and b.batch_name <> cm.batch_name
   and not exists (
