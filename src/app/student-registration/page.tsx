@@ -677,6 +677,8 @@ function StudentRegistrationContent() {
     useState<SubmissionState>({
       type: "idle",
     });
+  const [showPaidSuccessPopup, setShowPaidSuccessPopup] = useState(false);
+  const [paidSuccessPopupMessage, setPaidSuccessPopupMessage] = useState("");
   const [showFeePlanModal, setShowFeePlanModal] = useState(false);
   const [showPaidPassword, setShowPaidPassword] = useState(false);
   const [modalPlanChoice, setModalPlanChoice] = useState<"full" | "instalment">(
@@ -1138,6 +1140,8 @@ function StudentRegistrationContent() {
 
     setIsSubmittingPaid(true);
     setPaidSubmissionState({ type: "idle" });
+    setShowPaidSuccessPopup(false);
+    setPaidSuccessPopupMessage("");
 
     try {
       const payload: StudentRegistrationPayload = {
@@ -1342,6 +1346,14 @@ function StudentRegistrationContent() {
             ? "Registration submitted in UPI/manual mode. Our team will verify your payment and share login details after confirmation."
             : "Payment successful. Your paid registration is completed. Confirmation details have been sent to your email, and our admin team has received your registration."),
       });
+
+      if (!useUpiQrPayment) {
+        setPaidSuccessPopupMessage(
+          "Your payment was completed successfully. Please check your email ID for your username and password. If you do not see the email, please check your Spam/Junk folder.",
+        );
+        setShowPaidSuccessPopup(true);
+      }
+
       window.sessionStorage.removeItem(PAID_REGISTRATION_DRAFT_KEY);
       window.sessionStorage.removeItem(PAID_REGISTRATION_COURSE_BACK_KEY);
       setPaidFormData(initialPaidForm());
@@ -2116,6 +2128,39 @@ function StudentRegistrationContent() {
           © 2026 LePearl Education. All rights reserved.
         </footer>
       </div>
+
+      {showPaidSuccessPopup && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowPaidSuccessPopup(false)}
+          />
+          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 sm:p-6">
+            <div className="w-full max-w-lg rounded-2xl border border-emerald-200 bg-white p-6 shadow-2xl sm:p-7">
+              <div className="mb-4 flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-600" />
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Payment Completed Successfully
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {paidSuccessPopupMessage}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPaidSuccessPopup(false)}
+                className="mt-2 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                OK, I will check my email
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── Fee Plan Selection Modal (centered dialog) ── */}
       {showFeePlanModal && activeMode === "paid" && (
         <>
