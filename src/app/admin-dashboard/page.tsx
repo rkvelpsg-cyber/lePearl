@@ -744,7 +744,8 @@ export default function AdminDashboardPage() {
               }[]
             | null
         )?.forEach((b) => {
-          const courseTitle = unwrapOne(b.courses)?.title ?? "Unassigned Course";
+          const courseTitle =
+            unwrapOne(b.courses)?.title ?? "Unassigned Course";
           if (
             !isCanonicalPaidEnrollmentBatch({
               courseName: courseTitle,

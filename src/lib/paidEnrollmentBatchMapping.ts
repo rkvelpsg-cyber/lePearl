@@ -104,7 +104,9 @@ export function isCanonicalPaidEnrollmentBatch(params: {
   batchName: string | null | undefined;
 }) {
   const courseName = String(params.courseName ?? "").trim();
-  const batchName = String(params.batchName ?? "").trim().toLowerCase();
+  const batchName = String(params.batchName ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!courseName || !batchName) {
     return false;

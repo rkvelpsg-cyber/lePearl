@@ -568,8 +568,7 @@ export async function POST(req: NextRequest) {
           "[payment/verify] Email send failed (non-critical):",
           error instanceof Error ? error.message : error,
         );
-      }
-      finally {
+      } finally {
         transporter.close();
       }
     }
