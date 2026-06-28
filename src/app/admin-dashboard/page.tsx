@@ -8,6 +8,10 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { formatDateIST } from "@/lib/timezone";
 import { studentRegistrationCourses } from "@/lib/studentRegistration";
 import {
+  allowedCanonicalBatchNames,
+  isCanonicalPaidEnrollmentBatch,
+} from "@/lib/paidEnrollmentBatchMapping";
+import {
   LogOut,
   LayoutDashboard,
   Users,
@@ -740,9 +744,19 @@ export default function AdminDashboardPage() {
               }[]
             | null
         )?.forEach((b) => {
+          const courseTitle = unwrapOne(b.courses)?.title ?? "Unassigned Course";
+          if (
+            !isCanonicalPaidEnrollmentBatch({
+              courseName: courseTitle,
+              batchName: b.batch_name,
+            })
+          ) {
+            return;
+          }
+
           batchById.set(b.id, {
             batch_name: b.batch_name,
-            course_title: unwrapOne(b.courses)?.title ?? "Unassigned Course",
+            course_title: courseTitle,
             faculty_name:
               unwrapOne(b.profiles)?.full_name ?? "Unassigned Faculty",
           });
@@ -751,6 +765,10 @@ export default function AdminDashboardPage() {
         const mapByStudent = new Map<string, StudentRow>();
         enrollRows.forEach((row) => {
           const studentId = row.student_user_id;
+
+          if (!batchById.has(row.batch_id)) {
+            return;
+          }
 
           const batchInfo = batchById.get(row.batch_id) ?? {
             batch_name: "Unknown Batch",
@@ -1170,16 +1188,24 @@ export default function AdminDashboardPage() {
             courses: { title: string } | null;
             profiles: { full_name: string } | null;
           }[]
-        ).map((b) => ({
-          id: b.id,
-          batch_name: b.batch_name,
-          start_date: b.start_date,
-          end_date: b.end_date,
-          student_count:
-            (b.enrollments as unknown as { count: number }[])?.[0]?.count ?? 0,
-          course_title: unwrapOne(b.courses)?.title ?? "-",
-          faculty_name: unwrapOne(b.profiles)?.full_name ?? "-",
-        }));
+        )
+          .map((b) => ({
+            id: b.id,
+            batch_name: b.batch_name,
+            start_date: b.start_date,
+            end_date: b.end_date,
+            student_count:
+              (b.enrollments as unknown as { count: number }[])?.[0]?.count ??
+              0,
+            course_title: unwrapOne(b.courses)?.title ?? "-",
+            faculty_name: unwrapOne(b.profiles)?.full_name ?? "-",
+          }))
+          .filter((row) =>
+            isCanonicalPaidEnrollmentBatch({
+              courseName: row.course_title,
+              batchName: row.batch_name,
+            }),
+          );
         setBatches(rows);
         setTotalBatches(rows.length);
       }
@@ -1196,17 +1222,19 @@ export default function AdminDashboardPage() {
             batches: { batch_name: string } | null;
             mock_test_attempts: { count: number }[] | null;
           }[]
-        ).map((t) => ({
-          id: t.id,
-          title: t.title,
-          total_marks: t.total_marks,
-          exam_type: t.exam_type,
-          is_published: t.is_published,
-          batch_name: unwrapOne(t.batches)?.batch_name ?? "-",
-          attempt_count:
-            (t.mock_test_attempts as unknown as { count: number }[])?.[0]
-              ?.count ?? 0,
-        }));
+        )
+          .map((t) => ({
+            id: t.id,
+            title: t.title,
+            total_marks: t.total_marks,
+            exam_type: t.exam_type,
+            is_published: t.is_published,
+            batch_name: unwrapOne(t.batches)?.batch_name ?? "-",
+            attempt_count:
+              (t.mock_test_attempts as unknown as { count: number }[])?.[0]
+                ?.count ?? 0,
+          }))
+          .filter((row) => allowedCanonicalBatchNames.includes(row.batch_name));
         setMcqTests(rows);
         setTotalTests(rows.length);
       }
@@ -1255,17 +1283,19 @@ export default function AdminDashboardPage() {
             batches: { batch_name: string } | null;
             profiles: { full_name: string } | null;
           }[]
-        ).map((c) => ({
-          id: c.id,
-          title: c.title,
-          session_date: c.session_date,
-          start_time: c.start_time,
-          end_time: c.end_time,
-          meeting_link: c.meeting_link,
-          is_live: c.is_live,
-          batch_name: unwrapOne(c.batches)?.batch_name ?? "-",
-          faculty_name: unwrapOne(c.profiles)?.full_name ?? "-",
-        }));
+        )
+          .map((c) => ({
+            id: c.id,
+            title: c.title,
+            session_date: c.session_date,
+            start_time: c.start_time,
+            end_time: c.end_time,
+            meeting_link: c.meeting_link,
+            is_live: c.is_live,
+            batch_name: unwrapOne(c.batches)?.batch_name ?? "-",
+            faculty_name: unwrapOne(c.profiles)?.full_name ?? "-",
+          }))
+          .filter((row) => allowedCanonicalBatchNames.includes(row.batch_name));
         setLiveClasses(rows);
         setTotalLiveClasses(rows.length);
       }

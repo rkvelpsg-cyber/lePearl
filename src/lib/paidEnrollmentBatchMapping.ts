@@ -71,6 +71,10 @@ export const paidEnrollmentBatchMappings: PaidEnrollmentBatchMapping[] = [
   },
 ];
 
+export const allowedCanonicalBatchNames = Array.from(
+  new Set(paidEnrollmentBatchMappings.map((mapping) => mapping.batchName)),
+);
+
 function normalizeCourseLabel(value: string) {
   return value
     .toLowerCase()
@@ -93,4 +97,23 @@ export function getCanonicalPaidEnrollmentBatch(courseName: string) {
       );
     }) ?? null
   );
+}
+
+export function isCanonicalPaidEnrollmentBatch(params: {
+  courseName: string | null | undefined;
+  batchName: string | null | undefined;
+}) {
+  const courseName = String(params.courseName ?? "").trim();
+  const batchName = String(params.batchName ?? "").trim().toLowerCase();
+
+  if (!courseName || !batchName) {
+    return false;
+  }
+
+  const mapping = getCanonicalPaidEnrollmentBatch(courseName);
+  if (!mapping) {
+    return false;
+  }
+
+  return mapping.batchName.trim().toLowerCase() === batchName;
 }

@@ -14,6 +14,7 @@ import {
   localDateKeyIST,
   utcToIstDateTimeInput,
 } from "@/lib/timezone";
+import { isCanonicalPaidEnrollmentBatch } from "@/lib/paidEnrollmentBatchMapping";
 import {
   Bell,
   LogOut,
@@ -1130,6 +1131,20 @@ export default function FacultyDashboardPage() {
           ];
         }
 
+        batchData = batchData.filter((batch) => {
+          const courseObj = unwrapOne(
+            batch.courses as
+              | { id: number; title: string }
+              | { id: number; title: string }[]
+              | null,
+          );
+
+          return isCanonicalPaidEnrollmentBatch({
+            courseName: courseObj?.title,
+            batchName: batch.batch_name,
+          });
+        });
+
         setBatches(batchData);
 
         if (batchData.length > 0) {
@@ -1208,24 +1223,31 @@ export default function FacultyDashboardPage() {
                     }[]
                   | null;
               }[]
-            ).map((e) => {
-              const batchObj = unwrapOne(e.batches) as {
-                batch_name: string;
-                courses: { id: number; title: string } | null;
-              } | null;
-              const courseObj = unwrapOne(batchObj?.courses ?? null) as {
-                id: number;
-                title: string;
-              } | null;
-              return {
-                batch_id: e.batch_id,
-                student_user_id: e.student_user_id,
-                full_name: nameMap[e.student_user_id] ?? "Student",
-                batch_name: batchObj?.batch_name ?? "",
-                course_id: courseObj?.id ?? null,
-                course_title: courseObj?.title ?? "Course",
-              };
-            });
+            )
+              .map((e) => {
+                const batchObj = unwrapOne(e.batches) as {
+                  batch_name: string;
+                  courses: { id: number; title: string } | null;
+                } | null;
+                const courseObj = unwrapOne(batchObj?.courses ?? null) as {
+                  id: number;
+                  title: string;
+                } | null;
+                return {
+                  batch_id: e.batch_id,
+                  student_user_id: e.student_user_id,
+                  full_name: nameMap[e.student_user_id] ?? "Student",
+                  batch_name: batchObj?.batch_name ?? "",
+                  course_id: courseObj?.id ?? null,
+                  course_title: courseObj?.title ?? "Course",
+                };
+              })
+              .filter((student) =>
+                isCanonicalPaidEnrollmentBatch({
+                  courseName: student.course_title,
+                  batchName: student.batch_name,
+                }),
+              );
             setBatchStudents(students);
 
             // Exams each student has actually completed (MCQ/descriptive)
