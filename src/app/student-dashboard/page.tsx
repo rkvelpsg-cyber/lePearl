@@ -765,9 +765,9 @@ export default function StudentDashboardPage() {
               )
               .eq("mode", "paid")
               .match(
-                profileEmail
-                  ? { email: profileEmail }
-                  : { registration_no: registrationNo },
+                registrationNo
+                  ? { registration_no: registrationNo }
+                  : { email: profileEmail },
               )
               .order("created_at", { ascending: false })
               .limit(1)
