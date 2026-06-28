@@ -825,6 +825,55 @@ export default function StudentDashboardPage() {
           : Promise.resolve({ data: [], error: null }),
       ]);
 
+      let normalizedClassesRes = classesRes;
+      if (classesRes.error && /is_live/i.test(classesRes.error.message)) {
+        normalizedClassesRes = (
+          ids.length > 0
+            ? await supabase
+                .from("class_sessions")
+                .select(
+                  "id, title, session_date, start_time, end_time, meeting_link, batches(batch_name, courses(title))",
+                )
+                .in("batch_id", ids)
+                .order("session_date", { ascending: false })
+                .limit(50)
+            : { data: [], error: null }
+        ) as typeof classesRes;
+      }
+
+      let normalizedLecturesRes = lecturesRes;
+      if (lecturesRes.error && /is_active/i.test(lecturesRes.error.message)) {
+        normalizedLecturesRes = (
+          ids.length > 0
+            ? await supabase
+                .from("recorded_lectures")
+                .select(
+                  "id, title, description, subject, drive_link, created_at, batches(batch_name, courses(title))",
+                )
+                .in("batch_id", ids)
+                .order("created_at", { ascending: false })
+            : { data: [], error: null }
+        ) as typeof lecturesRes;
+      }
+
+      let normalizedStudyMaterialsRes = studyMaterialsRes;
+      if (
+        studyMaterialsRes.error &&
+        /is_active/i.test(studyMaterialsRes.error.message)
+      ) {
+        normalizedStudyMaterialsRes = (
+          ids.length > 0
+            ? await supabase
+                .from("study_materials")
+                .select(
+                  "id, title, description, subject, drive_link, created_at, batches(batch_name, courses(title))",
+                )
+                .in("batch_id", ids)
+                .order("created_at", { ascending: false })
+            : { data: [], error: null }
+        ) as typeof studyMaterialsRes;
+      }
+
       /* set course progress */
       const cpRows =
         (coursesRes.data as unknown as CourseProgress[] | null) ?? [];
@@ -863,21 +912,28 @@ export default function StudentDashboardPage() {
       setPayments(mergePaymentHistory(paymentRows, registrationSummary));
       if (feePlanRes.data) setFeePlan(feePlanRes.data as FeePlan);
       if (registrationSummary) setPaidRegistration(registrationSummary);
-      if (classesRes.data)
-        setClassSessions(classesRes.data as unknown as ClassSession[]);
+      if (normalizedClassesRes.data)
+        setClassSessions(
+          normalizedClassesRes.data as unknown as ClassSession[],
+        );
       if (attendRes.data)
         setAttendanceRecords(attendRes.data as unknown as AttendanceRecord[]);
-      if (lecturesRes.data)
-        setLectures(lecturesRes.data as unknown as RecordedLecture[]);
-      if (lecturesRes.error) {
-        console.error("Failed to load recorded lectures:", lecturesRes.error);
+      if (normalizedLecturesRes.data)
+        setLectures(normalizedLecturesRes.data as unknown as RecordedLecture[]);
+      if (normalizedLecturesRes.error) {
+        console.error(
+          "Failed to load recorded lectures:",
+          normalizedLecturesRes.error,
+        );
       }
-      if (studyMaterialsRes.data)
-        setStudyMaterials(studyMaterialsRes.data as unknown as StudyMaterial[]);
-      if (studyMaterialsRes.error) {
+      if (normalizedStudyMaterialsRes.data)
+        setStudyMaterials(
+          normalizedStudyMaterialsRes.data as unknown as StudyMaterial[],
+        );
+      if (normalizedStudyMaterialsRes.error) {
         console.error(
           "Failed to load study materials:",
-          studyMaterialsRes.error,
+          normalizedStudyMaterialsRes.error,
         );
       }
       if (tasksRes.data)
