@@ -864,8 +864,8 @@ function StudentRegistrationContent() {
       message:
         payload.message ??
         (payload.available
-          ? "Username is available."
-          : "This username is already in use. Please choose another username."),
+          ? "The user name is not present and you can use it."
+          : "This username is already in use. Please try another username or contact support."),
     };
   }
 
@@ -1243,12 +1243,13 @@ function StudentRegistrationContent() {
         safePaidFormData.username,
       );
       if (!normalizedUsername || normalizedUsername.length < 3) {
-        throw new Error("Please enter a valid username (minimum 3 characters).");
+        throw new Error(
+          "Please enter a valid username (minimum 3 characters).",
+        );
       }
 
-      const usernameAvailabilityCheck = await checkPaidUsernameAvailability(
-        normalizedUsername,
-      );
+      const usernameAvailabilityCheck =
+        await checkPaidUsernameAvailability(normalizedUsername);
       if (!usernameAvailabilityCheck.available) {
         throw new Error(usernameAvailabilityCheck.message);
       }

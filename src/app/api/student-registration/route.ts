@@ -179,9 +179,14 @@ function normalizeSubmittedUsername(value: string) {
 async function isUsernameAlreadyUsed(params: {
   service: ReturnType<typeof createServerClient>;
   username: string;
+  ignoreRegistrationNo?: string | null;
 }) {
   const normalizedUsername = normalizeSubmittedUsername(params.username);
   if (!normalizedUsername) return false;
+
+  const normalizedIgnoredRegistrationNo = sanitizeRegistrationValue(
+    params.ignoreRegistrationNo ?? "",
+  );
 
   const [profileUsernameRes, registrationUsernameRes] = await Promise.all([
     params.service
@@ -190,13 +195,19 @@ async function isUsernameAlreadyUsed(params: {
       .ilike("username", normalizedUsername)
       .limit(1)
       .maybeSingle(),
-    params.service
-      .from("student_registrations")
-      .select("id")
-      .eq("mode", "paid")
-      .ilike("username", normalizedUsername)
-      .limit(1)
-      .maybeSingle(),
+    (async () => {
+      let query = params.service
+        .from("student_registrations")
+        .select("id")
+        .eq("mode", "paid")
+        .ilike("username", normalizedUsername);
+
+      if (normalizedIgnoredRegistrationNo) {
+        query = query.neq("registration_no", normalizedIgnoredRegistrationNo);
+      }
+
+      return query.limit(1).maybeSingle();
+    })(),
   ]);
 
   if (profileUsernameRes.error) {
@@ -548,6 +559,7 @@ async function ensurePaidStudentAccount(params: {
   const usernameAlreadyUsed = await isUsernameAlreadyUsed({
     service,
     username: submittedUsername,
+    ignoreRegistrationNo: registrationNo,
   });
   if (usernameAlreadyUsed) {
     return {
@@ -845,8 +857,8 @@ export async function GET(req: NextRequest) {
       available: !alreadyUsed,
       username,
       message: alreadyUsed
-        ? "This username is already in use. Please choose another username."
-        : "Username is available.",
+        ? "This username is already in use. Please try another username or contact support."
+        : "The user name is not present and you can use it.",
     });
   } catch (error) {
     console.error("student registration username availability error:", error);
@@ -1046,7 +1058,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "This username is already in use. Please choose a different username.",
+              "This username is already in use. Please try another username or contact support.",
           },
           { status: 409 },
         );
@@ -1255,16 +1267,18 @@ export async function POST(req: NextRequest) {
           const normalizedReason = reason.toLowerCase();
           return NextResponse.json(
             {
-              error:
-                normalizedReason.includes("username already exists") ||
-                normalizedReason.includes("already registered")
-                  ? "This username/email is already in use. Please try another username or contact support."
+              error: normalizedReason.includes("username already exists")
+                ? "This username is already in use. Please try another username or contact support."
+                : normalizedReason.includes(
+                      "registration number already exists",
+                    )
+                  ? "A registration number conflict occurred. Please refresh and retry the enrolment form."
                   : `Paid registration completed but login account setup failed: ${reason}`,
             },
             {
               status:
                 normalizedReason.includes("username already exists") ||
-                normalizedReason.includes("already registered")
+                normalizedReason.includes("registration number already exists")
                   ? 409
                   : 500,
             },

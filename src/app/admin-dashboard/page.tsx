@@ -469,8 +469,8 @@ export default function AdminDashboardPage() {
     FacultyAttendanceRow[]
   >([]);
   const [attendanceRange, setAttendanceRange] = useState<
-    "daily" | "weekly" | "monthly" | "yearly" | "custom"
-  >("daily");
+    "all" | "daily" | "weekly" | "monthly" | "yearly" | "custom"
+  >("all");
   const [attendanceView, setAttendanceView] = useState<
     "all" | "student" | "faculty"
   >("all");
@@ -487,6 +487,8 @@ export default function AdminDashboardPage() {
     sessionId: "",
     status: "present" as "present" | "absent" | "late",
   });
+  const [selectedStudentAttendanceId, setSelectedStudentAttendanceId] =
+    useState("");
   const [studentAttendanceMsg, setStudentAttendanceMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -574,8 +576,7 @@ export default function AdminDashboardPage() {
           .select(
             "id, session_id, student_user_id, status, marked_at, class_sessions(id, title, session_date, batches(batch_name, courses(title))), student_profiles(registration_no, profiles(full_name))",
           )
-          .order("marked_at", { ascending: false })
-          .limit(100),
+          .order("marked_at", { ascending: false }),
         supabase
           .from("faculty_attendance")
           .select(
@@ -586,10 +587,10 @@ export default function AdminDashboardPage() {
         supabase
           .from("payments")
           .select(
-            "id, student_user_id, amount, status, payment_date, payment_mode, razorpay_payment_id, description, student_profiles(profiles(full_name)), courses(title)",
+            "id, student_user_id, amount, status, payment_date, payment_mode, razorpay_payment_id, description, created_at, student_profiles(profiles(full_name)), courses(title)",
           )
-          .order("payment_date", { ascending: false })
-          .limit(100),
+          .order("created_at", { ascending: false })
+          .limit(500),
         supabase
           .from("student_fee_plans")
           .select(
@@ -996,11 +997,41 @@ export default function AdminDashboardPage() {
       }
 
       /* payments */
+      let normalizedPaymentsData = paymentsRes.data as unknown;
+      let normalizedPaymentsError = paymentsRes.error;
+      if (normalizedPaymentsError) {
+        const paymentErr = (
+          normalizedPaymentsError.message || ""
+        ).toLowerCase();
+        const canFallbackToNoCourseJoin =
+          paymentErr.includes("courses") ||
+          paymentErr.includes("relationship") ||
+          paymentErr.includes("foreign key") ||
+          paymentErr.includes("schema cache");
+
+        if (canFallbackToNoCourseJoin) {
+          const fallbackPaymentsRes = await supabase
+            .from("payments")
+            .select(
+              "id, student_user_id, amount, status, payment_date, payment_mode, razorpay_payment_id, description, created_at, student_profiles(profiles(full_name))",
+            )
+            .order("created_at", { ascending: false })
+            .limit(500);
+
+          normalizedPaymentsData = fallbackPaymentsRes.data as unknown;
+          normalizedPaymentsError = fallbackPaymentsRes.error;
+        }
+      }
+
+      if (normalizedPaymentsError) {
+        console.error("Failed to load payments:", normalizedPaymentsError);
+      }
+
       let paidByStudentId = new Map<string, number>();
-      if (paymentsRes.data || registrationsRes.data) {
+      if (normalizedPaymentsData || registrationsRes.data) {
         let rev = 0;
         const basePaymentRows =
-          (paymentsRes.data as unknown as
+          (normalizedPaymentsData as
             | {
                 id: number;
                 student_user_id: string;
@@ -1010,10 +1041,11 @@ export default function AdminDashboardPage() {
                 payment_mode: string | null;
                 razorpay_payment_id: string | null;
                 description: string | null;
+                created_at: string | null;
                 student_profiles: {
                   profiles: { full_name: string } | null;
                 } | null;
-                courses: { title: string } | null;
+                courses?: { title: string } | null;
               }[]
             | null) ?? [];
 
@@ -1378,10 +1410,34 @@ export default function AdminDashboardPage() {
     }
   }, [attendanceRange]);
 
+  useEffect(() => {
+    if (attendance.length === 0) {
+      if (selectedStudentAttendanceId) {
+        setSelectedStudentAttendanceId("");
+      }
+      return;
+    }
+
+    if (
+      selectedStudentAttendanceId &&
+      attendance.some(
+        (row) => row.student_user_id === selectedStudentAttendanceId,
+      )
+    ) {
+      return;
+    }
+
+    setSelectedStudentAttendanceId(attendance[0]?.student_user_id ?? "");
+  }, [attendance, selectedStudentAttendanceId]);
+
   function getRangeDates() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+    if (attendanceRange === "all") {
+      return { from: null, to: null };
+    }
 
     if (attendanceRange === "daily") {
       const day = fmt(today);
@@ -1404,11 +1460,26 @@ export default function AdminDashboardPage() {
     return { from: attendanceFrom || null, to: attendanceTo || null };
   }
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const hasSearch = normalizedSearch.length > 0;
+  const matchesSearch = (
+    ...values: Array<string | number | null | undefined>
+  ) =>
+    !hasSearch ||
+    values.some((value) =>
+      String(value ?? "")
+        .toLowerCase()
+        .includes(normalizedSearch),
+    );
+
   const filteredFacultyAttendance = facultyAttendanceRows.filter((row) => {
-    const matchSearch =
-      !search ||
-      row.faculty_name.toLowerCase().includes(search.toLowerCase()) ||
-      (row.phone ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchSearch = matchesSearch(
+      row.faculty_name,
+      row.phone,
+      row.status,
+      row.attendance_date,
+      row.notes,
+    );
     if (!matchSearch) return false;
 
     const { from, to } = getRangeDates();
@@ -2240,20 +2311,32 @@ export default function AdminDashboardPage() {
     URL.revokeObjectURL(url);
   }
 
-  const filteredStudents = students.filter(
-    (s) =>
-      !search ||
-      s.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      (s.enrollment_no ?? "").toLowerCase().includes(search.toLowerCase()),
+  const filteredStudents = students.filter((s) =>
+    matchesSearch(
+      s.full_name,
+      s.enrollment_no,
+      s.registration_no,
+      s.email,
+      s.phone,
+      s.username,
+      s.enrollments?.map((row) => row.batch_name).join(" "),
+      s.enrollments?.map((row) => row.course_title).join(" "),
+    ),
   );
-  const filteredFaculty = faculty.filter(
-    (f) => !search || f.full_name.toLowerCase().includes(search.toLowerCase()),
+  const filteredFaculty = faculty.filter((f) =>
+    matchesSearch(f.full_name, f.email, f.phone, f.username, f.batchCount),
   );
-  const filteredPayments = payments.filter(
-    (p) =>
-      !search ||
-      p.student_name.toLowerCase().includes(search.toLowerCase()) ||
-      p.course_title.toLowerCase().includes(search.toLowerCase()),
+  const filteredPayments = payments.filter((p) =>
+    matchesSearch(
+      p.student_name,
+      p.course_title,
+      p.status,
+      p.payment_mode,
+      p.razorpay_payment_id,
+      p.description,
+      p.amount,
+      p.payment_date,
+    ),
   );
   const legacyFacultyRegistrations: FacultyRegistrationRow[] = registrations
     .filter((row) => row.course.trim().toLowerCase() === "faculty registration")
@@ -2282,32 +2365,40 @@ export default function AdminDashboardPage() {
   ];
   const hasLegacyFacultyRows = legacyFacultyRegistrations.length > 0;
 
-  const filteredFacultyRegistrations = facultyRegistrationRows.filter(
-    (row) =>
-      !search ||
-      row.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      row.email.toLowerCase().includes(search.toLowerCase()) ||
-      row.whatsapp.includes(search) ||
-      row.net_category.toLowerCase().includes(search.toLowerCase()) ||
-      row.expertise.toLowerCase().includes(search.toLowerCase()),
+  const filteredFacultyRegistrations = facultyRegistrationRows.filter((row) =>
+    matchesSearch(
+      row.full_name,
+      row.email,
+      row.whatsapp,
+      row.education,
+      row.net_category,
+      row.teaching_mode,
+      row.expertise,
+      row.status,
+    ),
   );
-  const filteredStudentFeeDetails = studentFeeDetails.filter(
-    (row) =>
-      !search ||
-      row.student_name.toLowerCase().includes(search.toLowerCase()) ||
-      (row.registration_no ?? "")
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      (row.course_name ?? "").toLowerCase().includes(search.toLowerCase()),
+  const filteredStudentFeeDetails = studentFeeDetails.filter((row) =>
+    matchesSearch(
+      row.student_name,
+      row.registration_no,
+      row.course_name,
+      row.total_fee,
+      row.total_paid,
+      row.pending_amount,
+      row.next_due_amount,
+      row.next_due_date,
+    ),
   );
   const filteredStudentAttendance = attendance.filter((row) => {
-    const q = search.toLowerCase();
-    const matchSearch =
-      !search ||
-      row.student_name.toLowerCase().includes(q) ||
-      row.registration_no.toLowerCase().includes(q) ||
-      row.course_name.toLowerCase().includes(q) ||
-      row.session_title.toLowerCase().includes(q);
+    const matchSearch = matchesSearch(
+      row.student_name,
+      row.registration_no,
+      row.course_name,
+      row.session_title,
+      row.status,
+      row.batch_name,
+      row.session_date,
+    );
     if (!matchSearch) return false;
 
     const { from, to } = getRangeDates();
@@ -2319,6 +2410,163 @@ export default function AdminDashboardPage() {
     activeSection === "attendance" && attendanceView !== "faculty";
   const showFacultyAttendance =
     activeSection === "attendance" && attendanceView !== "student";
+
+  const studentAttendanceReportOptions = Array.from(
+    new Map(
+      attendance.map((row) => [
+        row.student_user_id,
+        {
+          student_user_id: row.student_user_id,
+          student_name: row.student_name,
+          registration_no: row.registration_no,
+        },
+      ]),
+    ).values(),
+  ).sort((a, b) => a.student_name.localeCompare(b.student_name));
+
+  const selectedStudentReportRows = selectedStudentAttendanceId
+    ? attendance.filter(
+        (row) => row.student_user_id === selectedStudentAttendanceId,
+      )
+    : [];
+
+  const selectedStudentReportRowsSorted = [...selectedStudentReportRows].sort(
+    (a, b) => {
+      const aTime = new Date(a.marked_at).getTime();
+      const bTime = new Date(b.marked_at).getTime();
+      return bTime - aTime;
+    },
+  );
+
+  const selectedStudentReportMeta =
+    studentAttendanceReportOptions.find(
+      (row) => row.student_user_id === selectedStudentAttendanceId,
+    ) ?? null;
+
+  const selectedStudentPresentCount = selectedStudentReportRows.filter(
+    (row) => row.status === "present",
+  ).length;
+  const selectedStudentAbsentCount = selectedStudentReportRows.filter(
+    (row) => row.status === "absent",
+  ).length;
+  const selectedStudentLateCount = selectedStudentReportRows.filter(
+    (row) => row.status === "late",
+  ).length;
+  const selectedStudentAttendancePercent =
+    selectedStudentReportRows.length > 0
+      ? Math.round(
+          ((selectedStudentPresentCount + selectedStudentLateCount) /
+            selectedStudentReportRows.length) *
+            100,
+        )
+      : 0;
+
+  const selectedStudentCourseSummaries = Array.from(
+    selectedStudentReportRows
+      .reduce(
+        (acc, row) => {
+          const key = row.course_name || "Unspecified";
+          const current =
+            acc.get(key) ??
+            ({
+              course_name: key,
+              total: 0,
+              present: 0,
+              absent: 0,
+              late: 0,
+            } as {
+              course_name: string;
+              total: number;
+              present: number;
+              absent: number;
+              late: number;
+            });
+
+          current.total += 1;
+          if (row.status === "present") current.present += 1;
+          else if (row.status === "late") current.late += 1;
+          else current.absent += 1;
+
+          acc.set(key, current);
+          return acc;
+        },
+        new Map<
+          string,
+          {
+            course_name: string;
+            total: number;
+            present: number;
+            absent: number;
+            late: number;
+          }
+        >(),
+      )
+      .values(),
+  )
+    .map((row) => ({
+      ...row,
+      attendance_percent:
+        row.total > 0
+          ? Math.round(((row.present + row.late) / row.total) * 100)
+          : 0,
+    }))
+    .sort((a, b) => a.course_name.localeCompare(b.course_name));
+
+  const filteredCourses = courses.filter((row) =>
+    matchesSearch(
+      row.title,
+      row.description,
+      row.duration_weeks,
+      row.batch_count,
+    ),
+  );
+  const filteredBatches = batches.filter((row) =>
+    matchesSearch(
+      row.batch_name,
+      row.course_title,
+      row.faculty_name,
+      row.student_count,
+      row.start_date,
+      row.end_date,
+    ),
+  );
+  const filteredMcqTests = mcqTests.filter((row) =>
+    matchesSearch(
+      row.title,
+      row.batch_name,
+      row.total_marks,
+      row.exam_type,
+      row.attempt_count,
+      row.is_published ? "published" : "draft",
+    ),
+  );
+  const filteredRegistrations = registrations.filter((row) => {
+    const match = matchesSearch(
+      row.mode,
+      row.full_name,
+      row.qualification,
+      row.course,
+      row.phone,
+      row.email,
+      row.registration_no,
+      row.username,
+      row.status,
+      row.payment_status,
+      row.payment_tenure,
+      row.selected_fee_label,
+      row.payment_amount,
+      row.final_payable,
+      row.razorpay_payment_id,
+      row.created_at,
+    );
+
+    if (!match) return false;
+
+    const d = row.created_at.slice(0, 10);
+    const fromOk = regDateFrom ? d >= regDateFrom : true;
+    const toOk = regDateTo ? d <= regDateTo : true;
+    return fromOk && toOk;
+  });
 
   if (loading)
     return (
@@ -3704,6 +3952,7 @@ export default function AdminDashboardPage() {
                           onChange={(e) =>
                             setAttendanceRange(
                               e.target.value as
+                                | "all"
                                 | "daily"
                                 | "weekly"
                                 | "monthly"
@@ -3713,6 +3962,7 @@ export default function AdminDashboardPage() {
                           }
                           className="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white"
                         >
+                          <option value="all">All Time</option>
                           <option value="daily">Daily</option>
                           <option value="weekly">Weekly</option>
                           <option value="monthly">Monthly</option>
@@ -3777,6 +4027,219 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {showStudentAttendance && (
+                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100 space-y-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h2 className="font-bold text-gray-900">
+                          Student-wise Attendance Report (All Time)
+                        </h2>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          View overall attendance across all classes and all
+                          enrolled courses for one student.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="max-w-md">
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        Select Student
+                      </label>
+                      <select
+                        value={selectedStudentAttendanceId}
+                        onChange={(e) =>
+                          setSelectedStudentAttendanceId(e.target.value)
+                        }
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+                      >
+                        <option value="">Select student</option>
+                        {studentAttendanceReportOptions.map((student) => (
+                          <option
+                            key={student.student_user_id}
+                            value={student.student_user_id}
+                          >
+                            {student.student_name} (
+                            {student.registration_no || "-"})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {selectedStudentReportMeta && (
+                      <p className="text-sm text-gray-700">
+                        <span className="font-semibold">Student:</span>{" "}
+                        {selectedStudentReportMeta.student_name} |{" "}
+                        <span className="font-semibold">Registration:</span>{" "}
+                        {selectedStudentReportMeta.registration_no || "-"}
+                      </p>
+                    )}
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 text-center">
+                        <p className="text-xl font-bold text-blue-700">
+                          {selectedStudentReportRows.length}
+                        </p>
+                        <p className="text-xs font-semibold text-blue-700">
+                          Total Classes
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-green-50 border border-green-100 p-3 text-center">
+                        <p className="text-xl font-bold text-green-700">
+                          {selectedStudentPresentCount}
+                        </p>
+                        <p className="text-xs font-semibold text-green-700">
+                          Present
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-red-50 border border-red-100 p-3 text-center">
+                        <p className="text-xl font-bold text-red-700">
+                          {selectedStudentAbsentCount}
+                        </p>
+                        <p className="text-xs font-semibold text-red-700">
+                          Absent
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-center">
+                        <p className="text-xl font-bold text-amber-700">
+                          {selectedStudentAttendancePercent}%
+                        </p>
+                        <p className="text-xs font-semibold text-amber-700">
+                          Attendance %
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <h3 className="text-sm font-bold text-gray-900">
+                          Course-wise Summary
+                        </h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Course
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Total
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Present
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Absent
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Late
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Attendance %
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {selectedStudentCourseSummaries.map((row) => (
+                              <tr key={row.course_name}>
+                                <td className="px-4 py-2 font-medium text-gray-900">
+                                  {row.course_name}
+                                </td>
+                                <td className="px-4 py-2 text-gray-600">
+                                  {row.total}
+                                </td>
+                                <td className="px-4 py-2 text-green-700 font-semibold">
+                                  {row.present}
+                                </td>
+                                <td className="px-4 py-2 text-red-700 font-semibold">
+                                  {row.absent}
+                                </td>
+                                <td className="px-4 py-2 text-amber-700 font-semibold">
+                                  {row.late}
+                                </td>
+                                <td className="px-4 py-2 text-blue-700 font-semibold">
+                                  {row.attendance_percent}%
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {selectedStudentCourseSummaries.length === 0 && (
+                          <p className="text-center py-6 text-sm text-gray-400">
+                            No attendance records for selected student.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <h3 className="text-sm font-bold text-gray-900">
+                          All Session Records
+                        </h3>
+                      </div>
+                      <div className="overflow-x-auto max-h-[420px]">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Date
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Course
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Session
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Status
+                              </th>
+                              <th className="text-left px-4 py-2 text-xs font-semibold text-gray-600">
+                                Last Updated
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {selectedStudentReportRowsSorted.map((row) => (
+                              <tr key={`${row.id}-${row.marked_at}`}>
+                                <td className="px-4 py-2 text-gray-600">
+                                  {fmtDate(row.session_date)}
+                                </td>
+                                <td className="px-4 py-2 text-gray-700">
+                                  {row.course_name || "-"}
+                                </td>
+                                <td className="px-4 py-2 text-gray-700">
+                                  {row.session_title}
+                                </td>
+                                <td className="px-4 py-2">
+                                  <Badge
+                                    text={row.status}
+                                    color={
+                                      row.status === "present"
+                                        ? "green"
+                                        : row.status === "late"
+                                          ? "yellow"
+                                          : "red"
+                                    }
+                                  />
+                                </td>
+                                <td className="px-4 py-2 text-xs text-gray-500">
+                                  {fmtDate(row.marked_at)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {selectedStudentReportRowsSorted.length === 0 && (
+                          <p className="text-center py-6 text-sm text-gray-400">
+                            Select a student to view attendance report.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {showStudentAttendance && (
                   <div className="grid grid-cols-3 gap-4">
                     {(["present", "absent", "late"] as const).map((st) => {
                       const count = filteredStudentAttendance.filter(
@@ -3835,56 +4298,54 @@ export default function AdminDashboardPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                          {filteredStudentAttendance
-                            .slice(0, 300)
-                            .map((row) => (
-                              <tr key={row.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 font-medium text-gray-900">
-                                  {row.student_name}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {row.registration_no || "-"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {row.course_name || "-"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {row.session_title}
-                                </td>
-                                <td className="px-4 py-3 text-gray-500">
-                                  {fmtDate(row.session_date)}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <Badge
-                                    text={row.status}
-                                    color={
-                                      row.status === "present"
-                                        ? "green"
-                                        : row.status === "late"
-                                          ? "yellow"
-                                          : "red"
-                                    }
-                                  />
-                                </td>
-                                <td className="px-4 py-3 text-gray-500 text-xs">
-                                  {fmtDate(row.marked_at)}
-                                </td>
-                                <td className="px-4 py-3">
-                                  <button
-                                    onClick={() =>
-                                      setStudentAttendanceEditForm({
-                                        studentUserId: row.student_user_id,
-                                        sessionId: String(row.session_id),
-                                        status: row.status,
-                                      })
-                                    }
-                                    className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
-                                  >
-                                    Edit
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
+                          {filteredStudentAttendance.map((row) => (
+                            <tr key={row.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 font-medium text-gray-900">
+                                {row.student_name}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {row.registration_no || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {row.course_name || "-"}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600">
+                                {row.session_title}
+                              </td>
+                              <td className="px-4 py-3 text-gray-500">
+                                {fmtDate(row.session_date)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={row.status}
+                                  color={
+                                    row.status === "present"
+                                      ? "green"
+                                      : row.status === "late"
+                                        ? "yellow"
+                                        : "red"
+                                  }
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">
+                                {fmtDate(row.marked_at)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() =>
+                                    setStudentAttendanceEditForm({
+                                      studentUserId: row.student_user_id,
+                                      sessionId: String(row.session_id),
+                                      status: row.status,
+                                    })
+                                  }
+                                  className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
+                                >
+                                  Edit
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                       {filteredStudentAttendance.length === 0 && (
@@ -4338,13 +4799,14 @@ export default function AdminDashboardPage() {
                 <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-6 text-white">
                   <h1 className="text-xl font-bold mb-1">Courses & Batches</h1>
                   <p className="text-indigo-100 text-sm">
-                    {courses.length} courses · {batches.length} batches
+                    {filteredCourses.length} courses · {filteredBatches.length}{" "}
+                    batches
                   </p>
                 </div>
                 <div className="bg-white rounded-2xl shadow-sm p-5">
                   <h2 className="font-bold text-gray-900 mb-3">All Courses</h2>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {courses.map((c) => (
+                    {filteredCourses.map((c) => (
                       <div
                         key={c.id}
                         className="bg-indigo-50 rounded-xl p-4 border border-indigo-100"
@@ -4397,7 +4859,7 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {batches.map((b) => (
+                        {filteredBatches.map((b) => (
                           <tr key={b.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-900">
                               {b.batch_name}
@@ -4432,7 +4894,7 @@ export default function AdminDashboardPage() {
                 <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-6 text-white">
                   <h1 className="text-xl font-bold mb-1">Tests & Results</h1>
                   <p className="text-violet-100 text-sm">
-                    {mcqTests.length} tests created across all faculty
+                    {filteredMcqTests.length} tests created across all faculty
                   </p>
                 </div>
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -4461,7 +4923,7 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {mcqTests.map((t) => (
+                        {filteredMcqTests.map((t) => (
                           <tr key={t.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-900">
                               {t.title}
@@ -4488,7 +4950,7 @@ export default function AdminDashboardPage() {
                         ))}
                       </tbody>
                     </table>
-                    {mcqTests.length === 0 && (
+                    {filteredMcqTests.length === 0 && (
                       <p className="text-center py-8 text-sm text-gray-400">
                         No MCQ tests created yet.
                       </p>
@@ -4506,8 +4968,8 @@ export default function AdminDashboardPage() {
                     New Student Registrations
                   </h1>
                   <p className="text-blue-100 text-sm">
-                    {registrations.length} enrollment requests submitted · click
-                    a row to prefill the credentials form
+                    {filteredRegistrations.length} enrollment requests submitted
+                    · click a row to prefill the credentials form
                   </p>
                 </div>
 
@@ -4528,27 +4990,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <button
                           onClick={() => {
-                            const filtered = registrations.filter((r) => {
-                              const match = search
-                                ? r.full_name
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase()) ||
-                                  r.email
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase()) ||
-                                  r.phone.includes(search) ||
-                                  r.course
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase())
-                                : true;
-                              const d = r.created_at.slice(0, 10);
-                              const fromOk = regDateFrom
-                                ? d >= regDateFrom
-                                : true;
-                              const toOk = regDateTo ? d <= regDateTo : true;
-                              return match && fromOk && toOk;
-                            });
-                            exportRegistrationsToExcel(filtered);
+                            exportRegistrationsToExcel(filteredRegistrations);
                           }}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 shrink-0"
                         >
@@ -4634,270 +5076,244 @@ export default function AdminDashboardPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                          {registrations
-                            .filter((r) => {
-                              const textMatch = search
-                                ? r.full_name
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase()) ||
-                                  r.email
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase()) ||
-                                  r.phone.includes(search) ||
-                                  r.course
-                                    .toLowerCase()
-                                    .includes(search.toLowerCase())
-                                : true;
-                              const d = r.created_at.slice(0, 10);
-                              const fromOk = regDateFrom
-                                ? d >= regDateFrom
-                                : true;
-                              const toOk = regDateTo ? d <= regDateTo : true;
-                              return textMatch && fromOk && toOk;
-                            })
-                            .map((r) => (
-                              <tr
-                                key={r.id}
-                                onClick={() => {
+                          {filteredRegistrations.map((r) => (
+                            <tr
+                              key={r.id}
+                              onClick={() => {
+                                const normalizedEmail = r.email
+                                  .trim()
+                                  .toLowerCase();
+                                const byEmail = students.find(
+                                  (s) =>
+                                    (s.email ?? "").trim().toLowerCase() ===
+                                    normalizedEmail,
+                                );
+                                const byUsername = r.username
+                                  ? students.find(
+                                      (s) =>
+                                        (s.username ?? "")
+                                          .trim()
+                                          .toLowerCase() ===
+                                        r.username!.trim().toLowerCase(),
+                                    )
+                                  : null;
+
+                                setCredentialForm((p) => ({
+                                  ...p,
+                                  registrationId: r.id,
+                                  registrationNumber:
+                                    r.registration_no ||
+                                    byEmail?.registration_no ||
+                                    byUsername?.registration_no ||
+                                    "",
+                                  studentName: r.full_name,
+                                  studentEmail: r.email,
+                                  studentPhone: r.phone,
+                                  courseName: r.course,
+                                  facultyName:
+                                    p.facultyName ||
+                                    getDefaultFacultyByCourse(r.course),
+                                  defaultPassword:
+                                    r.submitted_password?.trim() || "",
+                                  username:
+                                    r.username ||
+                                    r.email
+                                      .split("@")[0]
+                                      .toLowerCase()
+                                      .replace(/[^a-z0-9._-]/g, ""),
+                                }));
+                                setCredentialMsg(null);
+                              }}
+                              className={`cursor-pointer transition-colors ${
+                                credentialForm.registrationId === r.id
+                                  ? "bg-blue-50 border-l-4 border-l-blue-500"
+                                  : "hover:bg-gray-50"
+                              }`}
+                            >
+                              <td className="px-4 py-3">
+                                <Badge
+                                  text={
+                                    r.mode === "free"
+                                      ? "Free"
+                                      : r.mode === "paid" ||
+                                          r.status === "completed" ||
+                                          r.payment_status === "successful"
+                                        ? "Paid"
+                                        : "Free"
+                                  }
+                                  color={
+                                    r.mode === "free"
+                                      ? "blue"
+                                      : r.mode === "paid" ||
+                                          r.status === "completed" ||
+                                          r.payment_status === "successful"
+                                        ? "green"
+                                        : "blue"
+                                  }
+                                />
+                              </td>
+                              <td className="px-4 py-3 font-medium text-gray-900">
+                                {r.full_name}
+                                {r.qualification && (
+                                  <span className="ml-1 text-xs text-gray-400">
+                                    ({r.qualification})
+                                  </span>
+                                )}
+                                {r.registration_no && (
+                                  <div className="mt-1 text-[11px] text-gray-500">
+                                    Reg: {r.registration_no}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate">
+                                {r.course}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-gray-600">
+                                {(() => {
+                                  const isPaidLike =
+                                    r.mode === "paid" ||
+                                    r.status === "completed" ||
+                                    r.payment_status === "successful";
+
                                   const normalizedEmail = r.email
                                     .trim()
                                     .toLowerCase();
-                                  const byEmail = students.find(
+                                  const matchedStudent = students.find(
                                     (s) =>
                                       (s.email ?? "").trim().toLowerCase() ===
                                       normalizedEmail,
                                   );
-                                  const byUsername = r.username
-                                    ? students.find(
-                                        (s) =>
-                                          (s.username ?? "")
-                                            .trim()
-                                            .toLowerCase() ===
-                                          r.username!.trim().toLowerCase(),
+
+                                  const paidByStudent = matchedStudent
+                                    ? payments
+                                        .filter(
+                                          (p) =>
+                                            p.student_user_id ===
+                                              matchedStudent.user_id &&
+                                            p.status === "paid",
+                                        )
+                                        .reduce((sum, p) => sum + p.amount, 0)
+                                    : 0;
+
+                                  const similarPlanAmount = r.selected_fee_label
+                                    ? registrations.find(
+                                        (other) =>
+                                          other.id !== r.id &&
+                                          other.course === r.course &&
+                                          other.selected_fee_label ===
+                                            r.selected_fee_label &&
+                                          (other.payment_amount != null ||
+                                            other.final_payable != null),
                                       )
                                     : null;
 
-                                  setCredentialForm((p) => ({
-                                    ...p,
-                                    registrationId: r.id,
-                                    registrationNumber:
-                                      r.registration_no ||
-                                      byEmail?.registration_no ||
-                                      byUsername?.registration_no ||
-                                      "",
-                                    studentName: r.full_name,
-                                    studentEmail: r.email,
-                                    studentPhone: r.phone,
-                                    courseName: r.course,
-                                    facultyName:
-                                      p.facultyName ||
-                                      getDefaultFacultyByCourse(r.course),
-                                    defaultPassword:
-                                      r.submitted_password?.trim() || "",
-                                    username:
-                                      r.username ||
-                                      r.email
-                                        .split("@")[0]
-                                        .toLowerCase()
-                                        .replace(/[^a-z0-9._-]/g, ""),
-                                  }));
-                                  setCredentialMsg(null);
-                                }}
-                                className={`cursor-pointer transition-colors ${
-                                  credentialForm.registrationId === r.id
-                                    ? "bg-blue-50 border-l-4 border-l-blue-500"
-                                    : "hover:bg-gray-50"
-                                }`}
-                              >
-                                <td className="px-4 py-3">
-                                  <Badge
-                                    text={
-                                      r.mode === "free"
-                                        ? "Free"
-                                        : r.mode === "paid" ||
-                                            r.status === "completed" ||
-                                            r.payment_status === "successful"
-                                          ? "Paid"
-                                          : "Free"
-                                    }
-                                    color={
-                                      r.mode === "free"
-                                        ? "blue"
-                                        : r.mode === "paid" ||
-                                            r.status === "completed" ||
-                                            r.payment_status === "successful"
-                                          ? "green"
-                                          : "blue"
-                                    }
-                                  />
-                                </td>
-                                <td className="px-4 py-3 font-medium text-gray-900">
-                                  {r.full_name}
-                                  {r.qualification && (
-                                    <span className="ml-1 text-xs text-gray-400">
-                                      ({r.qualification})
-                                    </span>
-                                  )}
-                                  {r.registration_no && (
-                                    <div className="mt-1 text-[11px] text-gray-500">
-                                      Reg: {r.registration_no}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600 max-w-[160px] truncate">
-                                  {r.course}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-600">
-                                  {(() => {
-                                    const isPaidLike =
-                                      r.mode === "paid" ||
-                                      r.status === "completed" ||
-                                      r.payment_status === "successful";
+                                  const displayAmount =
+                                    r.payment_amount ??
+                                    r.final_payable ??
+                                    (similarPlanAmount
+                                      ? (similarPlanAmount.payment_amount ??
+                                        similarPlanAmount.final_payable)
+                                      : null) ??
+                                    (paidByStudent > 0 ? paidByStudent : null);
 
-                                    const normalizedEmail = r.email
-                                      .trim()
-                                      .toLowerCase();
-                                    const matchedStudent = students.find(
-                                      (s) =>
-                                        (s.email ?? "").trim().toLowerCase() ===
-                                        normalizedEmail,
-                                    );
-
-                                    const paidByStudent = matchedStudent
-                                      ? payments
-                                          .filter(
-                                            (p) =>
-                                              p.student_user_id ===
-                                                matchedStudent.user_id &&
-                                              p.status === "paid",
-                                          )
-                                          .reduce((sum, p) => sum + p.amount, 0)
-                                      : 0;
-
-                                    const similarPlanAmount =
-                                      r.selected_fee_label
-                                        ? registrations.find(
-                                            (other) =>
-                                              other.id !== r.id &&
-                                              other.course === r.course &&
-                                              other.selected_fee_label ===
-                                                r.selected_fee_label &&
-                                              (other.payment_amount != null ||
-                                                other.final_payable != null),
-                                          )
-                                        : null;
-
-                                    const displayAmount =
-                                      r.payment_amount ??
-                                      r.final_payable ??
-                                      (similarPlanAmount
-                                        ? (similarPlanAmount.payment_amount ??
-                                          similarPlanAmount.final_payable)
-                                        : null) ??
-                                      (paidByStudent > 0
-                                        ? paidByStudent
-                                        : null);
-
-                                    return isPaidLike && displayAmount != null
-                                      ? `Rs. ${displayAmount.toLocaleString("en-IN")}`
-                                      : "-";
-                                  })()}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-600">
-                                  {r.mode === "paid" ||
-                                  r.status === "completed" ||
-                                  r.payment_status === "successful"
-                                    ? (r.selected_fee_label ??
-                                      (r.payment_tenure === "full"
-                                        ? "Full Payment"
-                                        : r.payment_tenure === "instalment"
-                                          ? "Instalment"
-                                          : "Paid"))
-                                    : "-"}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-gray-600">
-                                  {r.accepted_terms &&
-                                  r.accepted_privacy &&
-                                  r.accepted_refund
+                                  return isPaidLike && displayAmount != null
+                                    ? `Rs. ${displayAmount.toLocaleString("en-IN")}`
+                                    : "-";
+                                })()}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-gray-600">
+                                {r.mode === "paid" ||
+                                r.status === "completed" ||
+                                r.payment_status === "successful"
+                                  ? (r.selected_fee_label ??
+                                    (r.payment_tenure === "full"
+                                      ? "Full Payment"
+                                      : r.payment_tenure === "instalment"
+                                        ? "Instalment"
+                                        : "Paid"))
+                                  : "-"}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-gray-600">
+                                {r.accepted_terms &&
+                                r.accepted_privacy &&
+                                r.accepted_refund
+                                  ? "3/3"
+                                  : (r.mode === "paid" ||
+                                        r.status === "completed" ||
+                                        r.payment_status === "successful") &&
+                                      ((r.payment_amount ?? 0) > 0 ||
+                                        r.status === "completed")
                                     ? "3/3"
-                                    : (r.mode === "paid" ||
-                                          r.status === "completed" ||
-                                          r.payment_status === "successful") &&
-                                        ((r.payment_amount ?? 0) > 0 ||
-                                          r.status === "completed")
-                                      ? "3/3"
-                                      : r.mode === "free"
-                                        ? "N/A"
-                                        : "Incomplete"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600 text-xs">
-                                  {r.phone}
-                                </td>
-                                <td className="px-4 py-3 text-xs">
-                                  <a
-                                    href={`mailto:${r.email}`}
-                                    className="text-blue-600 hover:underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {r.email}
-                                  </a>
-                                </td>
-                                <td className="px-4 py-3 text-gray-500 text-xs">
-                                  {fmtDate(r.created_at)}
-                                </td>
-                                <td
-                                  className="px-4 py-3"
+                                    : r.mode === "free"
+                                      ? "N/A"
+                                      : "Incomplete"}
+                              </td>
+                              <td className="px-4 py-3 text-gray-600 text-xs">
+                                {r.phone}
+                              </td>
+                              <td className="px-4 py-3 text-xs">
+                                <a
+                                  href={`mailto:${r.email}`}
+                                  className="text-blue-600 hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <div className="relative inline-flex items-center gap-1">
-                                    {statusUpdatingId === r.id ? (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                                    ) : (
-                                      <>
-                                        <select
-                                          value={
-                                            r.status === "credentials_created"
-                                              ? "completed"
-                                              : r.status === "canceled"
-                                                ? "cancelled"
-                                                : r.status || "pending"
-                                          }
-                                          onChange={(e) =>
-                                            updateRegistrationStatus(
-                                              r.id,
-                                              e.target.value,
-                                            )
-                                          }
-                                          className={`appearance-none pr-5 pl-2 py-0.5 rounded-full text-xs font-semibold border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-                                            r.status === "completed" ||
-                                            r.status === "credentials_created"
-                                              ? "bg-green-100 text-green-700 focus:ring-green-400"
-                                              : r.status === "cancelled" ||
-                                                  r.status === "canceled"
-                                                ? "bg-red-100 text-red-700 focus:ring-red-400"
-                                                : "bg-amber-100 text-amber-700 focus:ring-amber-400"
-                                          }`}
-                                        >
-                                          <option value="pending">
-                                            Pending
-                                          </option>
-                                          <option value="cancelled">
-                                            Cancelled
-                                          </option>
-                                          <option value="completed">
-                                            Completed
-                                          </option>
-                                        </select>
-                                        <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none text-current opacity-60" />
-                                      </>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
+                                  {r.email}
+                                </a>
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 text-xs">
+                                {fmtDate(r.created_at)}
+                              </td>
+                              <td
+                                className="px-4 py-3"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="relative inline-flex items-center gap-1">
+                                  {statusUpdatingId === r.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                                  ) : (
+                                    <>
+                                      <select
+                                        value={
+                                          r.status === "credentials_created"
+                                            ? "completed"
+                                            : r.status === "canceled"
+                                              ? "cancelled"
+                                              : r.status || "pending"
+                                        }
+                                        onChange={(e) =>
+                                          updateRegistrationStatus(
+                                            r.id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className={`appearance-none pr-5 pl-2 py-0.5 rounded-full text-xs font-semibold border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                                          r.status === "completed" ||
+                                          r.status === "credentials_created"
+                                            ? "bg-green-100 text-green-700 focus:ring-green-400"
+                                            : r.status === "cancelled" ||
+                                                r.status === "canceled"
+                                              ? "bg-red-100 text-red-700 focus:ring-red-400"
+                                              : "bg-amber-100 text-amber-700 focus:ring-amber-400"
+                                        }`}
+                                      >
+                                        <option value="pending">Pending</option>
+                                        <option value="cancelled">
+                                          Cancelled
+                                        </option>
+                                        <option value="completed">
+                                          Completed
+                                        </option>
+                                      </select>
+                                      <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none text-current opacity-60" />
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
-                      {registrations.length === 0 && (
+                      {filteredRegistrations.length === 0 && (
                         <p className="text-center py-8 text-sm text-gray-400">
                           No student registrations yet.
                         </p>

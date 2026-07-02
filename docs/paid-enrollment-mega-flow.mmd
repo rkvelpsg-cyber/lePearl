@@ -1,0 +1,140 @@
+flowchart TD
+  %% ---------------------------
+  %% STUDENT ENROLLMENT + PAYMENT
+  %% ---------------------------
+  S1[Student opens Paid Enrollment page]
+  S2[Fill form: profile, course, plan, username, password, consents]
+  S3[POST create-payment-order]
+  S4[Razorpay order created]
+  S5[Student completes Razorpay checkout]
+  S6[POST payment-verify]
+  S7{Auth token valid?}
+  S8{Signature valid?}
+  S9{Duplicate razorpay_payment_id?}
+  S10[Insert payments row]
+  S11[Send payment emails: admin + student]
+  S12[Resolve faculty recipients from course]
+  S13[Send faculty payment alerts + activity_logs]
+  S14[Send student WhatsApp payment notification]
+  S15[Frontend submits paid registration]
+  S16[POST student-registration]
+  S17{Validation + consents + amount checks pass?}
+  S18[Insert student_registrations row]
+  S19[Run ensurePaidStudentAccount]
+  S20{Username/registration unique?}
+  S21[Create course-scoped auth user]
+  S22[Insert profiles row]
+  S23[Upsert student_profiles row]
+  S24[Resolve default faculty by course]
+  S25[Resolve/create course]
+  S26[Resolve/create batch]
+  S27[Upsert enrollments student->batch]
+  S28[Send enrollment emails + WhatsApp]
+  S29[Paid enrollment success response]
+
+  %% Fail states
+  E1[401 Unauthorized]
+  E2[400 Signature mismatch]
+  E3[Handled idempotent success]
+  E4[400 Validation error]
+  E5[409 Conflict or 500 provisioning failure]
+  E6[Rollback delete auth user]
+
+  %% Student flow edges
+  S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+  S7 -->|No| E1
+  S7 -->|Yes| S8
+  S8 -->|No| E2
+  S8 -->|Yes| S9
+  S9 -->|Yes| E3
+  S9 -->|No| S10 --> S11 --> S12 --> S13 --> S14 --> S15 --> S16 --> S17
+  S17 -->|No| E4
+  S17 -->|Yes| S18 --> S19 --> S20
+  S20 -->|No| E5
+  S20 -->|Yes| S21 --> S22
+  S22 -->|Fail| E6
+  S22 -->|OK| S23
+  S23 -->|Fail| E6
+  S23 -->|OK| S24 --> S25 --> S26 --> S27 --> S28 --> S29
+
+  %% ---------------------------
+  %% LOGIN RESOLUTION
+  %% ---------------------------
+  L1[Student enters username/email at login]
+  L2[POST student-login-lookup]
+  L3{Input is email?}
+  L4[Find matching student profiles by contact email]
+  L5{More than one match?}
+  L6[409: ask to login via username]
+  L7[Resolve auth email by user_id]
+  L8[Lookup by username in profiles]
+  L9{User found?}
+  L10[404 invalid username/email]
+  L11[Return resolved course-scoped auth email]
+
+  L1 --> L2 --> L3
+  L3 -->|Yes| L4 --> L5
+  L5 -->|Yes| L6
+  L5 -->|No, one| L7 --> L11
+  L5 -->|No, zero| L11
+  L3 -->|No| L8 --> L9
+  L9 -->|No| L10
+  L9 -->|Yes| L7 --> L11
+
+  %% ---------------------------
+  %% STUDENT DASHBOARD
+  %% ---------------------------
+  D1[Student opens dashboard]
+  D2[Validate student session + role]
+  D3[POST student-ensure-enrollment auto-heal]
+  D4{Enrollment exists?}
+  D5[Resolve course from student_profiles or paid registration]
+  D6[Resolve default faculty/course/batch]
+  D7[Upsert enrollments if missing]
+  D8[Load profile, student_profile, enrollments]
+  D9[Load payments + fee plan + paid registration summary]
+  D10[Load classes, attendance, tasks, lectures, materials]
+  D11[Render dashboard and Fees section]
+
+  D1 --> D2 --> D3 --> D4
+  D4 -->|Yes| D8
+  D4 -->|No| D5 --> D6 --> D7 --> D8
+  D8 --> D9 --> D10 --> D11
+
+  %% ---------------------------
+  %% ADMIN DASHBOARD + ACTIONS
+  %% ---------------------------
+  A1[Admin opens dashboard]
+  A2[Validate admin session]
+  A3[Load registrations, payments, profiles, enrollments, fee plans]
+  A4[Show pending/completed registrations]
+  A5[Admin clicks create credentials]
+  A6[POST admin/student-credentials]
+  A7{Admin token valid?}
+  A8{repairAllSameEmailEnrollments?}
+  A9[Repair legacy same-email paid enrollments]
+  A10[Create/repair auth+profiles+student_profiles+enrollments]
+  A11[Mark registrations completed]
+  A12[Send credential emails]
+  A13[Insert activity_logs]
+  A14[Refresh admin dashboard data]
+
+  A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7
+  A7 -->|No| E1
+  A7 -->|Yes| A8
+  A8 -->|Yes| A9 --> A10 --> A11 --> A12 --> A13 --> A14
+  A8 -->|No| A10 --> A11 --> A12 --> A13 --> A14
+
+  %% ---------------------------
+  %% FACULTY DASHBOARD
+  %% ---------------------------
+  F1[Faculty opens dashboard]
+  F2[Validate faculty session + role]
+  F3[Load assigned batches]
+  F4[Load enrollments and students in faculty batches]
+  F5[Load classes, tests, attendance, tasks, lectures, materials]
+  F6[Render faculty dashboard]
+  F7[Faculty receives payment alert email from payment-verify flow]
+
+  F1 --> F2 --> F3 --> F4 --> F5 --> F6
+  S13 --> F7

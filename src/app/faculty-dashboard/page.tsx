@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut } from "@/lib/supabase/auth";
@@ -41,6 +41,7 @@ import {
   FileDown,
   Zap,
   ChevronRight,
+  Search,
 } from "lucide-react";
 
 /* â”€â”€ types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -258,6 +259,22 @@ function isIndentedQuestionType(testType?: string | null) {
 function normalizeAttendanceTitle(title: string) {
   return title.replace(/\s*\(upcoming\)\s*$/i, "").trim();
 }
+
+function normalizeSearchQuery(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function includesSearch(
+  query: string,
+  ...values: Array<string | null | undefined>
+) {
+  if (!query) return true;
+  return values.some((value) =>
+    String(value ?? "")
+      .toLowerCase()
+      .includes(query),
+  );
+}
 function csvEscape(value: string | number | null | undefined) {
   const raw = String(value ?? "");
   return `"${raw.replace(/"/g, '""')}"`;
@@ -437,6 +454,46 @@ function NavBtn({
       <Icon className="w-4 h-4" />
       {label}
     </button>
+  );
+}
+
+function SectionSearchField({
+  value,
+  onChange,
+  placeholder,
+  resultCount,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  resultCount: number;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-2 sm:max-w-md">
+      <div className="relative w-full">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-10 pr-20 text-sm text-gray-900 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+            title="Clear search"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <p className="text-xs font-medium text-gray-500">
+        {resultCount} result{resultCount === 1 ? "" : "s"}
+      </p>
+    </div>
   );
 }
 
@@ -712,6 +769,9 @@ export default function FacultyDashboardPage() {
     description: "",
     driveLink: "",
   });
+  const classFormRef = useRef<HTMLDivElement | null>(null);
+  const lectureFormRef = useRef<HTMLDivElement | null>(null);
+  const studyMaterialFormRef = useRef<HTMLDivElement | null>(null);
 
   /* attendance */
   const [attendanceSessions, setAttendanceSessions] = useState<
@@ -734,6 +794,17 @@ export default function FacultyDashboardPage() {
   const [selectedCourseId, setSelectedCourseId] = useState<number | "all">(
     "all",
   );
+  const [sectionSearch, setSectionSearch] = useState<Record<Section, string>>({
+    dashboard: "",
+    attendance: "",
+    mcq: "",
+    evaluations: "",
+    classes: "",
+    lectures: "",
+    studyMaterial: "",
+    tasks: "",
+    students: "",
+  });
 
   /* derived state: courses and filtered batches */
   const courses = Array.from(
@@ -777,6 +848,48 @@ export default function FacultyDashboardPage() {
           );
           return courseObj?.id === selectedCourseId;
         });
+
+  const scrollToEditorForm = useCallback(
+    (ref: { current: HTMLDivElement | null }) => {
+      window.setTimeout(() => {
+        const container = ref.current;
+        if (!container) return;
+        container.scrollIntoView({ behavior: "smooth", block: "start" });
+        const firstInput = container.querySelector<HTMLElement>(
+          "input, select, textarea, button",
+        );
+        firstInput?.focus({ preventScroll: true });
+      }, 80);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (activeSection === "classes" && showClassForm && editingClassId) {
+      scrollToEditorForm(classFormRef);
+    }
+  }, [activeSection, showClassForm, editingClassId, scrollToEditorForm]);
+
+  useEffect(() => {
+    if (activeSection === "lectures" && showLectureForm && editingLectureId) {
+      scrollToEditorForm(lectureFormRef);
+    }
+  }, [activeSection, showLectureForm, editingLectureId, scrollToEditorForm]);
+
+  useEffect(() => {
+    if (
+      activeSection === "studyMaterial" &&
+      showStudyMaterialForm &&
+      editingStudyMaterialId
+    ) {
+      scrollToEditorForm(studyMaterialFormRef);
+    }
+  }, [
+    activeSection,
+    showStudyMaterialForm,
+    editingStudyMaterialId,
+    scrollToEditorForm,
+  ]);
 
   const filteredBatchIds = new Set(filteredBatches.map((b) => b.id));
   const filteredCourseIds = new Set(
@@ -828,6 +941,170 @@ export default function FacultyDashboardPage() {
     if (t.student_user_id) return filteredStudentIds.has(t.student_user_id);
     return false;
   });
+  const dashboardSearchQuery = normalizeSearchQuery(sectionSearch.dashboard);
+  const attendanceSearchQuery = normalizeSearchQuery(sectionSearch.attendance);
+  const mcqSearchQuery = normalizeSearchQuery(sectionSearch.mcq);
+  const evaluationsSearchQuery = normalizeSearchQuery(
+    sectionSearch.evaluations,
+  );
+  const classesSearchQuery = normalizeSearchQuery(sectionSearch.classes);
+  const lecturesSearchQuery = normalizeSearchQuery(sectionSearch.lectures);
+  const studyMaterialSearchQuery = normalizeSearchQuery(
+    sectionSearch.studyMaterial,
+  );
+  const tasksSearchQuery = normalizeSearchQuery(sectionSearch.tasks);
+  const studentsSearchQuery = normalizeSearchQuery(sectionSearch.students);
+
+  const searchedAttendanceSessions = filteredAttendanceSessions.filter((s) => {
+    const batch = unwrapOne(s.batches);
+    return includesSearch(
+      attendanceSearchQuery,
+      normalizeAttendanceTitle(s.title),
+      s.session_date,
+      s.start_time,
+      batch?.batch_name,
+    );
+  });
+
+  const searchedSessionStudents = sessionStudents.filter((student) =>
+    includesSearch(
+      attendanceSearchQuery,
+      student.full_name,
+      student.batch_name,
+      student.course_title,
+    ),
+  );
+
+  const searchedMcqTests = filteredMcqTests.filter((test) =>
+    includesSearch(
+      mcqSearchQuery,
+      test.title,
+      test.exam_type,
+      test.test_type,
+      unwrapOne(test.batches)?.batch_name,
+      unwrapOne(test.courses)?.title,
+    ),
+  );
+
+  const searchedTestQuestions = testQuestions.filter((question) =>
+    includesSearch(
+      mcqSearchQuery,
+      question.question_text,
+      question.option_a,
+      question.option_b,
+      question.option_c,
+      question.option_d,
+      question.correct_option,
+    ),
+  );
+
+  const searchedEvaluationTests = filteredDescriptiveTests.filter((test) =>
+    includesSearch(
+      evaluationsSearchQuery,
+      test.title,
+      test.test_type,
+      test.batches?.batch_name,
+      test.courses?.title,
+    ),
+  );
+
+  const searchedMcqSubmissions = mcqSubmissions.filter((submission) =>
+    includesSearch(
+      evaluationsSearchQuery,
+      submission.student_name,
+      submission.submitted_at,
+      String(submission.scored_marks ?? ""),
+    ),
+  );
+
+  const searchedStudentSubmissions = studentSubmissions.filter((submission) => {
+    const question = descriptiveQuestions.find(
+      (item) => item.id === submission.question_id,
+    );
+    return includesSearch(
+      evaluationsSearchQuery,
+      submission.student_name,
+      submission.submitted_at,
+      question?.question_text,
+      question ? `Q${question.question_order}` : "",
+      String(submission.marks_obtained ?? ""),
+      submission.faculty_notes,
+    );
+  });
+
+  const searchedUpcomingClasses = filteredUpcomingClasses.filter((session) => {
+    const batch = unwrapOne(session.batches);
+    return includesSearch(
+      classesSearchQuery,
+      session.title,
+      session.session_date,
+      session.start_time,
+      batch?.batch_name,
+    );
+  });
+
+  const searchedLectures = filteredLectures.filter((lecture) => {
+    const batch = unwrapOne(lecture.batches);
+    return includesSearch(
+      lecturesSearchQuery,
+      lecture.title,
+      lecture.subject,
+      lecture.description,
+      lecture.created_at,
+      batch?.batch_name,
+    );
+  });
+
+  const searchedStudyMaterials = filteredStudyMaterials.filter((material) => {
+    const batch = unwrapOne(material.batches);
+    return includesSearch(
+      studyMaterialSearchQuery,
+      material.title,
+      material.subject,
+      material.description,
+      material.created_at,
+      batch?.batch_name,
+    );
+  });
+
+  const searchedTasks = filteredTasks.filter((task) => {
+    const batch = unwrapOne(task.batches);
+    const student = unwrapOne(task.profiles);
+    return includesSearch(
+      tasksSearchQuery,
+      task.title,
+      task.description,
+      task.status,
+      task.due_date,
+      batch?.batch_name,
+      student?.full_name,
+    );
+  });
+
+  const searchedBatchStudents = filteredBatchStudents.filter((student) =>
+    includesSearch(
+      studentsSearchQuery,
+      student.full_name,
+      student.batch_name,
+      student.course_title,
+    ),
+  );
+
+  const attendanceVisibleResultCount = selectedSession
+    ? searchedSessionStudents.length
+    : searchedAttendanceSessions.length;
+
+  const mcqVisibleResultCount = selectedTest
+    ? searchedTestQuestions.length
+    : searchedMcqTests.length;
+
+  const evaluationsVisibleResultCount = !selectedEvalTest
+    ? searchedEvaluationTests.length
+    : selectedEvalTest.test_type !== "descriptive"
+      ? searchedMcqSubmissions.length
+      : !selectedSubmission
+        ? searchedStudentSubmissions.length
+        : 1;
   const selectedCourseStudentCount = new Set(
     filteredBatchStudents.map((s) => s.student_user_id),
   ).size;
@@ -856,6 +1133,10 @@ export default function FacultyDashboardPage() {
   const assignedCourseCount = new Set(
     assignedCourseBatches.map((entry) => entry.courseTitle),
   ).size;
+
+  const searchedAssignedCourseBatches = assignedCourseBatches.filter((entry) =>
+    includesSearch(dashboardSearchQuery, entry.batchName, entry.courseTitle),
+  );
 
   const mcqFormCourseOptions = Array.from(
     new Map(
@@ -1456,6 +1737,15 @@ export default function FacultyDashboardPage() {
     )
     .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
+  const searchedDashboardStudents = dashboardStudents.filter((student) =>
+    includesSearch(
+      dashboardSearchQuery,
+      student.full_name,
+      student.batch_name,
+      student.course_title,
+    ),
+  );
+
   const dashboardUpcomingTests = filteredMcqTests
     .filter((t) => {
       if (!t.scheduled_at) return false;
@@ -1464,13 +1754,39 @@ export default function FacultyDashboardPage() {
     })
     .sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
 
+  const searchedDashboardUpcomingTests = dashboardUpcomingTests.filter(
+    (test) => {
+      const batch = unwrapOne(test.batches);
+      const course = unwrapOne(test.courses);
+      return includesSearch(
+        dashboardSearchQuery,
+        test.title,
+        test.test_type,
+        test.scheduled_at,
+        batch?.batch_name,
+        course?.title,
+      );
+    },
+  );
+
   const dashboardCourseUpcomingClasses = filteredUpcomingClasses.filter((s) =>
     isUpcomingSession(s.session_date, s.start_time),
   );
 
-  const upcomingLiveClassesCount = dashboardCourseUpcomingClasses.filter(
-    (s) => s.is_live,
-  ).length;
+  const searchedDashboardCourseUpcomingClasses =
+    dashboardCourseUpcomingClasses.filter((session) => {
+      const batch = unwrapOne(session.batches);
+      return includesSearch(
+        dashboardSearchQuery,
+        session.title,
+        session.session_date,
+        session.start_time,
+        batch?.batch_name,
+      );
+    });
+
+  const upcomingLiveClassesCount =
+    searchedDashboardCourseUpcomingClasses.filter((s) => s.is_live).length;
 
   async function handleLogout() {
     await signOut("faculty");
@@ -3398,24 +3714,37 @@ export default function FacultyDashboardPage() {
                   </p>
                 </div>
 
+                <SectionSearchField
+                  value={sectionSearch.dashboard}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, dashboard: value }))
+                  }
+                  placeholder="Search students, classes, tests, batch, or course"
+                  resultCount={
+                    searchedDashboardStudents.length +
+                    searchedDashboardCourseUpcomingClasses.length +
+                    searchedDashboardUpcomingTests.length
+                  }
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatCard
                     label="Total Students"
-                    value={selectedCourseStudentCount}
+                    value={searchedDashboardStudents.length}
                     icon={Users}
                     iconBg="bg-blue-100"
                     iconColor="text-blue-600"
                   />
                   <StatCard
                     label="Upcoming Classes"
-                    value={dashboardCourseUpcomingClasses.length}
+                    value={searchedDashboardCourseUpcomingClasses.length}
                     icon={Video}
                     iconBg="bg-purple-100"
                     iconColor="text-purple-600"
                   />
                   <StatCard
                     label="Upcoming Tests (MCQ + Descriptive)"
-                    value={dashboardUpcomingTests.length}
+                    value={searchedDashboardUpcomingTests.length}
                     icon={FileQuestion}
                     iconBg="bg-amber-100"
                     iconColor="text-amber-600"
@@ -3428,16 +3757,16 @@ export default function FacultyDashboardPage() {
                       Assigned Course Batches
                     </h2>
                     <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                      {assignedCourseBatches.length}
+                      {searchedAssignedCourseBatches.length}
                     </span>
                   </div>
-                  {assignedCourseBatches.length === 0 ? (
+                  {searchedAssignedCourseBatches.length === 0 ? (
                     <p className="text-sm text-gray-500">
                       No batch assigned yet.
                     </p>
                   ) : (
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {assignedCourseBatches.map((entry) => (
+                      {searchedAssignedCourseBatches.map((entry) => (
                         <div
                           key={entry.batchId}
                           className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2"
@@ -3466,16 +3795,16 @@ export default function FacultyDashboardPage() {
                         </p>
                       </div>
                       <span className="text-xs font-semibold text-blue-700 bg-white px-2.5 py-1 rounded-full border border-blue-100 shadow-sm">
-                        {dashboardStudents.length}
+                        {searchedDashboardStudents.length}
                       </span>
                     </div>
                     <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                      {dashboardStudents.length === 0 ? (
+                      {searchedDashboardStudents.length === 0 ? (
                         <p className="text-sm text-gray-500">
                           No enrolled students found.
                         </p>
                       ) : (
-                        dashboardStudents.map((student) => (
+                        searchedDashboardStudents.map((student) => (
                           <div
                             key={student.student_user_id}
                             className="rounded-xl border border-blue-100 bg-white/80 px-3 py-3 shadow-[0_1px_0_rgba(37,99,235,0.05)]"
@@ -3503,16 +3832,16 @@ export default function FacultyDashboardPage() {
                         </p>
                       </div>
                       <span className="text-xs font-semibold text-purple-700 bg-white px-2.5 py-1 rounded-full border border-purple-100 shadow-sm">
-                        {dashboardCourseUpcomingClasses.length}
+                        {searchedDashboardCourseUpcomingClasses.length}
                       </span>
                     </div>
                     <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                      {dashboardCourseUpcomingClasses.length === 0 ? (
+                      {searchedDashboardCourseUpcomingClasses.length === 0 ? (
                         <p className="text-sm text-gray-500">
                           No upcoming classes found.
                         </p>
                       ) : (
-                        dashboardCourseUpcomingClasses.map((s) => {
+                        searchedDashboardCourseUpcomingClasses.map((s) => {
                           const batch = unwrapOne(s.batches);
                           return (
                             <div
@@ -3568,16 +3897,16 @@ export default function FacultyDashboardPage() {
                         </p>
                       </div>
                       <span className="text-xs font-semibold text-amber-700 bg-white px-2.5 py-1 rounded-full border border-amber-100 shadow-sm">
-                        {dashboardUpcomingTests.length}
+                        {searchedDashboardUpcomingTests.length}
                       </span>
                     </div>
                     <div className="flex-1 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
-                      {dashboardUpcomingTests.length === 0 ? (
+                      {searchedDashboardUpcomingTests.length === 0 ? (
                         <p className="text-sm text-gray-500">
                           No upcoming tests found.
                         </p>
                       ) : (
-                        dashboardUpcomingTests.map((test) => {
+                        searchedDashboardUpcomingTests.map((test) => {
                           const batch = unwrapOne(test.batches);
                           const course = unwrapOne(test.courses);
                           return (
@@ -3656,19 +3985,28 @@ export default function FacultyDashboardPage() {
                   </div>
                 </div>
 
+                <SectionSearchField
+                  value={sectionSearch.attendance}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, attendance: value }))
+                  }
+                  placeholder="Search sessions, students, batch, or date"
+                  resultCount={attendanceVisibleResultCount}
+                />
+
                 <div className="grid lg:grid-cols-2 gap-6">
                   {/* session list */}
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <h2 className="font-bold text-gray-900 mb-3">
                       Select Session
                     </h2>
-                    {filteredAttendanceSessions.length === 0 ? (
+                    {searchedAttendanceSessions.length === 0 ? (
                       <p className="text-sm text-gray-500">
                         No completed class sessions found.
                       </p>
                     ) : (
                       <div className="space-y-2 max-h-80 overflow-y-auto">
-                        {filteredAttendanceSessions.map((s) => {
+                        {searchedAttendanceSessions.map((s) => {
                           const batch = unwrapOne(s.batches);
                           return (
                             <button
@@ -3730,13 +4068,13 @@ export default function FacultyDashboardPage() {
                             {attendanceMsg.text}
                           </div>
                         )}
-                        {sessionStudents.length === 0 ? (
+                        {searchedSessionStudents.length === 0 ? (
                           <p className="text-sm text-gray-500 text-center py-4">
                             No students found in this batch.
                           </p>
                         ) : (
                           <div className="space-y-2 max-h-72 overflow-y-auto">
-                            {sessionStudents.map((s) => (
+                            {searchedSessionStudents.map((s) => (
                               <div
                                 key={s.student_user_id}
                                 className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
@@ -3792,6 +4130,15 @@ export default function FacultyDashboardPage() {
                     students, and manage results
                   </p>
                 </div>
+
+                <SectionSearchField
+                  value={sectionSearch.mcq}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, mcq: value }))
+                  }
+                  placeholder="Search tests, questions, batch, course, or exam type"
+                  resultCount={mcqVisibleResultCount}
+                />
 
                 {mcqMsg && (
                   <div
@@ -4358,7 +4705,7 @@ export default function FacultyDashboardPage() {
                         )}
                         {/* questions list */}
                         <div className="space-y-3">
-                          {testQuestions.map((q, idx) => (
+                          {searchedTestQuestions.map((q, idx) => (
                             <div
                               key={q.id}
                               className="bg-gray-50 rounded-xl p-4 border border-gray-200"
@@ -4451,11 +4798,11 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   /* test list */
-                  filteredMcqTests.length > 0 && (
+                  searchedMcqTests.length > 0 && (
                     <div className="bg-white rounded-2xl shadow-sm p-5">
                       <h2 className="font-bold text-gray-900 mb-3">My Tests</h2>
                       <div className="space-y-3">
-                        {filteredMcqTests.map((t) => {
+                        {searchedMcqTests.map((t) => {
                           const qCount =
                             (
                               t.mcq_questions as unknown as { count: number }[]
@@ -4531,6 +4878,18 @@ export default function FacultyDashboardPage() {
                   </p>
                 </div>
 
+                <SectionSearchField
+                  value={sectionSearch.evaluations}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({
+                      ...prev,
+                      evaluations: value,
+                    }))
+                  }
+                  placeholder="Search tests, student names, questions, or submission details"
+                  resultCount={evaluationsVisibleResultCount}
+                />
+
                 {evaluationMsg && (
                   <div
                     className={`flex items-center gap-2 p-3 rounded-xl text-sm ${evaluationMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
@@ -4546,7 +4905,7 @@ export default function FacultyDashboardPage() {
 
                 {!selectedEvalTest ? (
                   <div className="bg-white rounded-2xl shadow-sm p-5">
-                    {filteredDescriptiveTests.length === 0 ? (
+                    {searchedEvaluationTests.length === 0 ? (
                       <div className="text-center py-12">
                         <FileQuestion className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500">
@@ -4559,7 +4918,7 @@ export default function FacultyDashboardPage() {
                           Select a Test
                         </h2>
                         <div className="space-y-3">
-                          {filteredDescriptiveTests.map((t) => (
+                          {searchedEvaluationTests.map((t) => (
                             <button
                               key={t.id}
                               onClick={() => {
@@ -4630,7 +4989,7 @@ export default function FacultyDashboardPage() {
                       </button>
                     </div>
 
-                    {mcqSubmissions.length === 0 ? (
+                    {searchedMcqSubmissions.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-gray-500 text-sm">
                           No MCQ submissions yet
@@ -4638,7 +4997,7 @@ export default function FacultyDashboardPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {mcqSubmissions.map((s) => (
+                        {searchedMcqSubmissions.map((s) => (
                           <div
                             key={s.id}
                             className="w-full text-left p-4 border border-indigo-200 bg-indigo-50 rounded-xl"
@@ -4694,7 +5053,7 @@ export default function FacultyDashboardPage() {
                       </button>
                     </div>
 
-                    {studentSubmissions.length === 0 ? (
+                    {searchedStudentSubmissions.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-gray-500 text-sm">
                           No submissions yet
@@ -4702,7 +5061,7 @@ export default function FacultyDashboardPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {studentSubmissions.map((s) => {
+                        {searchedStudentSubmissions.map((s) => {
                           const question = descriptiveQuestions.find(
                             (q) => q.id === s.question_id,
                           );
@@ -5099,6 +5458,15 @@ export default function FacultyDashboardPage() {
                   </p>
                 </div>
 
+                <SectionSearchField
+                  value={sectionSearch.classes}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, classes: value }))
+                  }
+                  placeholder="Search class title, batch, date, or time"
+                  resultCount={searchedUpcomingClasses.length}
+                />
+
                 {classMsg && (
                   <div
                     className={`flex items-center gap-2 p-3 rounded-xl text-sm ${classMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
@@ -5113,7 +5481,10 @@ export default function FacultyDashboardPage() {
                 )}
 
                 {showClassForm ? (
-                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100">
+                  <div
+                    ref={classFormRef}
+                    className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
                         {editingClassId
@@ -5298,13 +5669,13 @@ export default function FacultyDashboardPage() {
 
                 <div className="bg-white rounded-2xl shadow-sm p-5">
                   <h2 className="font-bold text-gray-900 mb-3">My Classes</h2>
-                  {filteredUpcomingClasses.length === 0 ? (
+                  {searchedUpcomingClasses.length === 0 ? (
                     <p className="text-sm text-gray-500">
                       No classes scheduled.
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {filteredUpcomingClasses.map((s) => {
+                      {searchedUpcomingClasses.map((s) => {
                         const batch = unwrapOne(s.batches);
                         return (
                           <div
@@ -5384,6 +5755,15 @@ export default function FacultyDashboardPage() {
                   </p>
                 </div>
 
+                <SectionSearchField
+                  value={sectionSearch.lectures}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, lectures: value }))
+                  }
+                  placeholder="Search lecture title, topic, batch, or description"
+                  resultCount={searchedLectures.length}
+                />
+
                 {lectureMsg && (
                   <div
                     className={`flex items-center gap-2 p-3 rounded-xl text-sm ${lectureMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
@@ -5398,7 +5778,10 @@ export default function FacultyDashboardPage() {
                 )}
 
                 {showLectureForm ? (
-                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-indigo-100">
+                  <div
+                    ref={lectureFormRef}
+                    className="bg-white rounded-2xl shadow-sm p-5 border border-indigo-100"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
                         {editingLectureId
@@ -5539,7 +5922,7 @@ export default function FacultyDashboardPage() {
                   </button>
                 )}
 
-                {filteredLectures.length === 0 ? (
+                {searchedLectures.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <PlayCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
@@ -5548,7 +5931,7 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {filteredLectures.map((lec) => {
+                    {searchedLectures.map((lec) => {
                       const batch = unwrapOne(lec.batches);
                       return (
                         <div
@@ -5621,6 +6004,18 @@ export default function FacultyDashboardPage() {
                   </p>
                 </div>
 
+                <SectionSearchField
+                  value={sectionSearch.studyMaterial}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({
+                      ...prev,
+                      studyMaterial: value,
+                    }))
+                  }
+                  placeholder="Search material title, topic, batch, or description"
+                  resultCount={searchedStudyMaterials.length}
+                />
+
                 {studyMaterialMsg && (
                   <div
                     className={`flex items-center gap-2 p-3 rounded-xl text-sm ${studyMaterialMsg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
@@ -5635,7 +6030,10 @@ export default function FacultyDashboardPage() {
                 )}
 
                 {showStudyMaterialForm ? (
-                  <div className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100">
+                  <div
+                    ref={studyMaterialFormRef}
+                    className="bg-white rounded-2xl shadow-sm p-5 border border-blue-100"
+                  >
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-gray-900">
                         {editingStudyMaterialId
@@ -5778,7 +6176,7 @@ export default function FacultyDashboardPage() {
                   </button>
                 )}
 
-                {filteredStudyMaterials.length === 0 ? (
+                {searchedStudyMaterials.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
@@ -5787,7 +6185,7 @@ export default function FacultyDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {filteredStudyMaterials.map((material) => {
+                    {searchedStudyMaterials.map((material) => {
                       const batch = unwrapOne(material.batches);
                       return (
                         <div
@@ -5858,6 +6256,15 @@ export default function FacultyDashboardPage() {
                     Assign and track tasks for your students
                   </p>
                 </div>
+
+                <SectionSearchField
+                  value={sectionSearch.tasks}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, tasks: value }))
+                  }
+                  placeholder="Search task title, status, student, batch, or due date"
+                  resultCount={searchedTasks.length}
+                />
 
                 {taskMsg && (
                   <div
@@ -6018,11 +6425,11 @@ export default function FacultyDashboardPage() {
                   </button>
                 )}
 
-                {filteredTasks.length > 0 && (
+                {searchedTasks.length > 0 && (
                   <div className="bg-white rounded-2xl shadow-sm p-5">
                     <h2 className="font-bold text-gray-900 mb-3">All Tasks</h2>
                     <div className="space-y-3">
-                      {filteredTasks.map((t) => {
+                      {searchedTasks.map((t) => {
                         const batch = unwrapOne(t.batches);
                         const student = unwrapOne(t.profiles);
                         return (
@@ -6145,7 +6552,16 @@ export default function FacultyDashboardPage() {
                   </div>
                 )}
 
-                {filteredBatchStudents.length === 0 ? (
+                <SectionSearchField
+                  value={sectionSearch.students}
+                  onChange={(value) =>
+                    setSectionSearch((prev) => ({ ...prev, students: value }))
+                  }
+                  placeholder="Search students by name, batch, or course"
+                  resultCount={searchedBatchStudents.length}
+                />
+
+                {searchedBatchStudents.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                     <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
@@ -6158,7 +6574,7 @@ export default function FacultyDashboardPage() {
                       Student Progress & Exam Scores
                     </h2>
                     <div className="space-y-4">
-                      {filteredBatchStudents.map((student) => {
+                      {searchedBatchStudents.map((student, index) => {
                         const progRows = filteredStudentProgress.filter(
                           (p) => p.student_user_id === student.student_user_id,
                         );
@@ -6171,7 +6587,7 @@ export default function FacultyDashboardPage() {
 
                         return (
                           <div
-                            key={student.student_user_id}
+                            key={`${student.student_user_id}_${student.batch_id}_${student.course_id ?? "na"}_${index}`}
                             className="bg-gray-50 rounded-xl p-4 border border-gray-200"
                           >
                             <div className="flex items-center gap-3 mb-3">
