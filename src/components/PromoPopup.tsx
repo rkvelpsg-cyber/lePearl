@@ -38,9 +38,9 @@ export function PromoPopup() {
       <div
         style={{
           position: "relative",
-          width: "25vw",
-          minWidth: "280px",
-          maxWidth: "92vw",
+          width: "min(55vw, 90vh)",
+          minWidth: "320px",
+          maxWidth: "95vw",
           borderRadius: "12px",
           overflow: "hidden",
           boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
