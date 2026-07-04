@@ -145,22 +145,22 @@ export const coursePaymentPlans: Record<
       },
       {
         label: "2nd Instalment",
-        amount: 2700,
+        amount: 2900,
         note: "Due 30 days after enrolment",
       },
       {
         label: "3rd Instalment",
-        amount: 2700,
+        amount: 2900,
         note: "Due 60 days after enrolment",
       },
       {
         label: "4th Instalment",
-        amount: 2700,
+        amount: 2900,
         note: "Due 90 days after enrolment",
       },
       {
         label: "5th Instalment",
-        amount: 2700,
+        amount: 2900,
         note: "Due 120 days after enrolment",
       },
     ],

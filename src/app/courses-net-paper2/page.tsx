@@ -337,10 +337,10 @@ const oneTimeFeatures = [
 
 const instalmentSchedule = [
   { label: "1st Instalment", amount: 4500 },
-  { label: "2nd Instalment", amount: 2700 },
-  { label: "3rd Instalment", amount: 2700 },
-  { label: "4th Instalment", amount: 2700 },
-  { label: "5th Instalment", amount: 2700 },
+  { label: "2nd Instalment", amount: 2900 },
+  { label: "3rd Instalment", amount: 2900 },
+  { label: "4th Instalment", amount: 2900 },
+  { label: "5th Instalment", amount: 2900 },
 ];
 
 const installmentFeatures = [
@@ -574,21 +574,21 @@ function EnrollmentSection() {
                       <td className="px-4 py-2">50% – 60%</td>
                       <td className="px-4 py-2">
                         Half fees —{" "}
-                        <span className="font-semibold">Rs. 1,350/-</span>
+                        <span className="font-semibold">Rs. 1,450/-</span>
                       </td>
                     </tr>
                     <tr className="bg-white/5">
                       <td className="px-4 py-2">45% – 50%</td>
                       <td className="px-4 py-2">
                         75% fees —{" "}
-                        <span className="font-semibold">Rs. 2,025/-</span>
+                        <span className="font-semibold">Rs. 2,175/-</span>
                       </td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2">Below 45%</td>
                       <td className="px-4 py-2 text-red-300">
                         No scholarship — Full fees{" "}
-                        <span className="font-semibold">Rs. 2,700/-</span>
+                        <span className="font-semibold">Rs. 2,900/-</span>
                       </td>
                     </tr>
                   </tbody>
