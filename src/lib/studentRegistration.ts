@@ -137,6 +137,33 @@ export const coursePaymentPlans: Record<
   },
   "NET Paper 2 (English)": {
     fullAmount: 15495,
+    instalments: [
+      {
+        label: "1st Instalment",
+        amount: 4500,
+        note: "Pay now · Instant access",
+      },
+      {
+        label: "2nd Instalment",
+        amount: 2700,
+        note: "Due 30 days after enrolment",
+      },
+      {
+        label: "3rd Instalment",
+        amount: 2700,
+        note: "Due 60 days after enrolment",
+      },
+      {
+        label: "4th Instalment",
+        amount: 2700,
+        note: "Due 90 days after enrolment",
+      },
+      {
+        label: "5th Instalment",
+        amount: 2700,
+        note: "Due 120 days after enrolment",
+      },
+    ],
   },
   GIC: {
     fullAmount: 9995,

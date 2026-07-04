@@ -100,6 +100,7 @@ type PaidEnrollmentFormState = {
   pearlianEligible: boolean;
   includeBooksAddon: boolean;
   paymentTenure: "full" | "instalment" | null;
+  selectedInstalmentIndex: number;
 };
 
 type FreeRegistrationFormState = {
@@ -155,6 +156,7 @@ const initialPaidForm = (): PaidEnrollmentFormState => ({
   pearlianEligible: false,
   includeBooksAddon: false,
   paymentTenure: null,
+  selectedInstalmentIndex: 0,
 });
 
 const initialFreeForm: FreeRegistrationFormState = {
@@ -716,6 +718,7 @@ function StudentRegistrationContent() {
     useState<InterviewPrepFeeOptionId>("full-preparation");
   const [modalResearchFeeChoice, setModalResearchFeeChoice] =
     useState<ResearchAssistanceFeeOptionId>("research-paper");
+  const [modalInstalmentIndex, setModalInstalmentIndex] = useState<number>(0);
   const safePaidFormData: PaidEnrollmentFormState = {
     ...initialPaidForm(),
     ...paidFormData,
@@ -810,7 +813,11 @@ function StudentRegistrationContent() {
         : isLTGradeCourse && selectedLTGradeFee?.tenure === "instalment"
           ? selectedLTGradeFee.instalments
           : currentPlan?.instalments;
-  const firstInstalmentAmount = activeInstalments?.[0]?.amount ?? 0;
+  const firstInstalmentAmount =
+    activeInstalments?.[safePaidFormData.selectedInstalmentIndex ?? 0]
+      ?.amount ??
+    activeInstalments?.[0]?.amount ??
+    0;
   const instalmentTotal =
     activeInstalments?.reduce((sum, item) => sum + item.amount, 0) ??
     baseCourseFee;
@@ -929,6 +936,7 @@ function StudentRegistrationContent() {
     const interviewPrepFeeOptionParam = searchParams.get(
       "interviewPrepFeeOption",
     );
+    const paymentParam = searchParams.get("payment");
     const hasPaidCourseFlow =
       modeParam === "paid" &&
       !!courseParam &&
@@ -1051,6 +1059,11 @@ function StudentRegistrationContent() {
         ).find((option) => option.id === resolvedInterviewPrepOption)?.tenure ??
         "full";
 
+      const hasInstalmentSelectionFromCoursePage =
+        paymentParam === "instalment" &&
+        !!coursePaymentPlans[courseParam as keyof typeof coursePaymentPlans]
+          ?.instalments;
+
       setPaidFormData((current) => ({
         ...current,
         course: courseParam,
@@ -1072,11 +1085,13 @@ function StudentRegistrationContent() {
                   ? resolvedCommunicationSkillsTenure
                   : hasInterviewPrepSelectionFromCoursePage
                     ? resolvedInterviewPrepTenure
-                    : null,
+                    : hasInstalmentSelectionFromCoursePage
+                      ? "instalment"
+                      : null,
       }));
 
       // Auto-open fee plan modal when arriving from course pages, except when
-      // UP GDC has an explicit fee option selected from the course card.
+      // a specific fee option or instalment plan is already determined.
       setModalPlanChoice(
         hasUPGDCSelectionFromCoursePage
           ? resolvedUPGDCTenure
@@ -1090,7 +1105,9 @@ function StudentRegistrationContent() {
                   ? resolvedCommunicationSkillsTenure
                   : hasInterviewPrepSelectionFromCoursePage
                     ? resolvedInterviewPrepTenure
-                    : "full",
+                    : hasInstalmentSelectionFromCoursePage
+                      ? "instalment"
+                      : "full",
       );
       setModalResearchFeeChoice(resolvedResearchAssistanceFeeType);
       setModalUPGDCFeeChoice(resolvedUPGDCOption);
@@ -1104,7 +1121,8 @@ function StudentRegistrationContent() {
           !hasGICSelectionFromCoursePage &&
           !hasLTGradeSelectionFromCoursePage &&
           !hasCommunicationSkillsSelectionFromCoursePage &&
-          !hasInterviewPrepSelectionFromCoursePage,
+          !hasInterviewPrepSelectionFromCoursePage &&
+          !hasInstalmentSelectionFromCoursePage,
       );
     }
 
@@ -1784,6 +1802,9 @@ function StudentRegistrationContent() {
                     setModalPlanChoice(
                       safePaidFormData.paymentTenure ?? "full",
                     );
+                    setModalInstalmentIndex(
+                      safePaidFormData.selectedInstalmentIndex ?? 0,
+                    );
                     setModalUPGDCFeeChoice(safePaidFormData.upgdcFeeOption);
                     setModalGICFeeChoice(safePaidFormData.gicFeeOption);
                     setModalLTGradeFeeChoice(safePaidFormData.ltGradeFeeOption);
@@ -1962,7 +1983,8 @@ function StudentRegistrationContent() {
                       <div
                         key={`${inst.label}-${idx}`}
                         className={`flex items-start justify-between rounded-lg px-4 py-2.5 ${
-                          idx === 0
+                          idx ===
+                          (safePaidFormData.selectedInstalmentIndex ?? 0)
                             ? "border border-violet-300 bg-violet-100"
                             : "border border-slate-200 bg-white text-slate-500"
                         }`}
@@ -1970,7 +1992,9 @@ function StudentRegistrationContent() {
                         <div>
                           <div className="flex items-center gap-2 font-medium text-slate-800">
                             {inst.label}
-                            {idx === 0 && (
+                            {idx ===
+                              (safePaidFormData.selectedInstalmentIndex ??
+                                0) && (
                               <span className="rounded-full bg-violet-600 px-2 py-0.5 text-xs text-white">
                                 Pay Now
                               </span>
@@ -1979,7 +2003,7 @@ function StudentRegistrationContent() {
                           <p className="text-xs text-slate-400">{inst.note}</p>
                         </div>
                         <span
-                          className={`font-semibold ${idx === 0 ? "text-violet-700" : "text-slate-500"}`}
+                          className={`font-semibold ${idx === (safePaidFormData.selectedInstalmentIndex ?? 0) ? "text-violet-700" : "text-slate-500"}`}
                         >
                           Rs. {inst.amount}
                         </span>
@@ -1996,7 +2020,13 @@ function StudentRegistrationContent() {
                   </div>
                   <div className="mt-4 h-px bg-violet-200" />
                   <div className="mt-3 flex items-center justify-between text-base font-bold text-slate-900">
-                    <span>Paying Now (1st Instalment)</span>
+                    <span>
+                      Paying Now (
+                      {activeInstalments?.[
+                        safePaidFormData.selectedInstalmentIndex ?? 0
+                      ]?.label ?? "1st Instalment"}
+                      )
+                    </span>
                     <span className="text-violet-700">Rs. {finalPayable}</span>
                   </div>
                 </>
@@ -2747,67 +2777,56 @@ function StudentRegistrationContent() {
                       </div>
                     </button>
 
-                    {/* Instalment Plan – only shown if plan data has instalments */}
-                    {currentPlan?.instalments && (
-                      <button
-                        type="button"
-                        onClick={() => setModalPlanChoice("instalment")}
-                        className={`w-full rounded-xl border-2 p-4 text-left transition ${
-                          modalPlanChoice === "instalment"
-                            ? "border-violet-600 bg-violet-50"
-                            : "border-slate-200 bg-white hover:border-violet-300"
-                        }`}
-                      >
-                        <div className="mb-3 flex items-center gap-3">
-                          <div
-                            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                              modalPlanChoice === "instalment"
-                                ? "border-violet-600"
-                                : "border-slate-400"
-                            }`}
-                          >
-                            {modalPlanChoice === "instalment" && (
-                              <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-900">
-                              Pay in Instalments
-                            </p>
-                            <p className="text-sm text-slate-500">
-                              Split across {currentPlan.instalments.length}{" "}
-                              payments
-                            </p>
-                          </div>
-                        </div>
-                        <div className="ml-8 space-y-1.5">
-                          {currentPlan.instalments.map((inst, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm"
-                            >
-                              <div>
-                                <span className="font-medium text-slate-700">
-                                  {inst.label}
-                                </span>
-                                <span className="ml-2 text-xs text-slate-400">
-                                  · {inst.note}
-                                </span>
-                              </div>
-                              <span
-                                className={`font-semibold ${
-                                  idx === 0
-                                    ? "text-violet-700"
-                                    : "text-slate-500"
+                    {/* Individual Instalment Options – one card per instalment */}
+                    {currentPlan?.instalments &&
+                      currentPlan.instalments.map((inst, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setModalPlanChoice("instalment");
+                            setModalInstalmentIndex(idx);
+                          }}
+                          className={`w-full rounded-xl border-2 p-4 text-left transition ${
+                            modalPlanChoice === "instalment" &&
+                            modalInstalmentIndex === idx
+                              ? "border-violet-600 bg-violet-50"
+                              : "border-slate-200 bg-white hover:border-violet-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                                  modalPlanChoice === "instalment" &&
+                                  modalInstalmentIndex === idx
+                                    ? "border-violet-600"
+                                    : "border-slate-400"
                                 }`}
                               >
-                                Rs. {inst.amount}
-                              </span>
+                                {modalPlanChoice === "instalment" &&
+                                  modalInstalmentIndex === idx && (
+                                    <div className="h-2.5 w-2.5 rounded-full bg-violet-600" />
+                                  )}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-900">
+                                  {inst.label}
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {inst.note}
+                                </p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </button>
-                    )}
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs. {inst.amount.toLocaleString("en-IN")}
+                              </p>
+                              <p className="text-xs text-slate-400">Pay now</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                   </div>
                 )}
 
@@ -2878,6 +2897,12 @@ function StudentRegistrationContent() {
                       );
                     } else {
                       updatePaidField("paymentTenure", modalPlanChoice);
+                      if (modalPlanChoice === "instalment") {
+                        updatePaidField(
+                          "selectedInstalmentIndex",
+                          modalInstalmentIndex,
+                        );
+                      }
                     }
                     setShowFeePlanModal(false);
                   }}

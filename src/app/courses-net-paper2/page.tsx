@@ -335,6 +335,14 @@ const oneTimeFeatures = [
   "Doubt sessions",
 ];
 
+const instalmentSchedule = [
+  { label: "1st Instalment", amount: 4500 },
+  { label: "2nd Instalment", amount: 2700 },
+  { label: "3rd Instalment", amount: 2700 },
+  { label: "4th Instalment", amount: 2700 },
+  { label: "5th Instalment", amount: 2700 },
+];
+
 const installmentFeatures = [
   "Full course access",
   "Study materials",
@@ -376,37 +384,34 @@ function EnrollmentSection() {
           </p>
         </div>
 
-        <div className="mx-auto grid max-w-5xl grid-cols-1 justify-items-center gap-8">
-          <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
+        {/* One-Time Payment Card */}
+        <div className="mx-auto mb-8 max-w-sm">
+          <div className="relative overflow-hidden rounded-2xl bg-white p-8 text-gray-900 shadow-2xl transition-transform hover:scale-[1.02]">
             <div className="absolute right-0 top-0 bg-amber-500 px-4 py-1 text-sm font-bold text-white">
               SAVE ₹3,001
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4 text-center">
               <h3 className="mb-2 text-2xl font-bold text-blue-900">
                 One-Time Payment
               </h3>
-              <div className="mb-1 flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-blue-900">
-                  Rs. 15,495/-
-                </span>
-              </div>
-              <p className="text-gray-500 line-through">₹12,000</p>
+              <span className="text-4xl font-bold text-blue-900">
+                Rs. 15,495/-
+              </span>
+              <p className="mt-1 text-gray-500 line-through">₹18,496</p>
             </div>
 
-            <div className="net-paper2-scholarship-blink mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="net-paper2-scholarship-blink mb-6 rounded-lg border border-amber-200 bg-amber-50 p-3 text-center">
               <p className="font-semibold text-amber-700">
                 Scholarship upto 100%
               </p>
               <p className="mt-1 text-sm font-medium text-blue-900">
-                After UGC NET qualification - one year Free access to all the
-                courses
+                After UGC NET qualification – 1 year Free access to all courses
               </p>
             </div>
 
-            <div className="mb-8">
-              <p className="mb-4 font-semibold text-blue-900">Includes:</p>
-              <ul className="space-y-3">
+            <div className="mb-6">
+              <ul className="space-y-2">
                 {oneTimeFeatures.map((feature) => (
                   <li key={feature} className="flex items-center gap-3">
                     <Check className="h-5 w-5 flex-shrink-0 text-green-600" />
@@ -418,11 +423,201 @@ function EnrollmentSection() {
 
             <a
               href="/student-registration?mode=paid&course=NET%20Paper%202%20(English)"
-              className="block w-full rounded-lg bg-blue-900 py-4 text-lg font-bold text-white text-center transition-colors hover:bg-blue-800"
+              className="block w-full rounded-lg bg-blue-900 py-4 text-center text-lg font-bold text-white transition-colors hover:bg-blue-800"
               style={{ color: "#ffffff" }}
             >
               Enroll Now
             </a>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="mx-auto mb-8 max-w-5xl text-center">
+          <p className="text-lg font-semibold uppercase tracking-widest text-blue-200">
+            — or choose an instalment —
+          </p>
+        </div>
+
+        {/* 5 Individual Instalment Cards */}
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {instalmentSchedule.map((inst, idx) => (
+            <div
+              key={inst.label}
+              className="relative flex flex-col overflow-hidden rounded-2xl bg-white p-6 text-gray-900 shadow-xl transition-transform hover:scale-[1.03]"
+            >
+              {/* Badge */}
+              <div
+                className="absolute right-0 top-0 px-3 py-1 text-xs font-bold text-white"
+                style={{
+                  background: idx === 0 ? "#4f46e5" : "#6366f1",
+                  borderBottomLeftRadius: "10px",
+                }}
+              >
+                {inst.label.toUpperCase()}
+              </div>
+
+              <div className="mb-4 mt-4 text-center">
+                <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-indigo-500">
+                  {inst.label}
+                </p>
+                <span className="text-4xl font-bold text-blue-900">
+                  Rs. {inst.amount.toLocaleString("en-IN")}/-
+                </span>
+                <p className="mt-1 text-xs text-gray-400">
+                  {idx === 0
+                    ? "Pay now · Instant access"
+                    : `Due ${idx * 30} days after enrolment`}
+                </p>
+              </div>
+
+              <div className="mb-5 flex-1">
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 flex-shrink-0 text-green-600" />
+                    <span>Full course access</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 flex-shrink-0 text-green-600" />
+                    <span>Study materials</span>
+                  </li>
+                  {idx === 0 && (
+                    <li className="flex items-center gap-2">
+                      <Check className="h-4 w-4 flex-shrink-0 text-green-600" />
+                      <span>Mock tests &amp; Doubt sessions</span>
+                    </li>
+                  )}
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 flex-shrink-0 text-green-600" />
+                    <span>Flexible payment</span>
+                  </li>
+                </ul>
+              </div>
+
+              <a
+                href="/student-registration?mode=paid&course=NET%20Paper%202%20(English)&payment=instalment"
+                className="block w-full rounded-lg py-3 text-center text-base font-bold text-white transition-colors"
+                style={{
+                  background: idx === 0 ? "#4338ca" : "#4f46e5",
+                  color: "#ffffff",
+                }}
+              >
+                Enroll Now
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {/* Scholarship Terms & Conditions */}
+        <div className="mx-auto mt-14 max-w-5xl rounded-2xl bg-white/10 p-8 text-white backdrop-blur-sm">
+          <div className="mb-6 text-center">
+            <h3 className="mb-1 text-2xl font-bold">
+              Terms &amp; Conditions for Scholarship
+            </h3>
+            <p className="text-lg font-semibold text-amber-300">
+              (Upto 100% Scholarship)
+            </p>
+            <p className="mt-2 text-blue-200">
+              📅 Announcement of Scholarship:{" "}
+              <span className="font-semibold text-white">
+                15th of Every Month
+              </span>
+            </p>
+          </div>
+
+          <p className="mb-6 leading-relaxed text-blue-100">
+            The Institute will be conducting fortnightly and monthly tests to
+            monitor the progress of the student. Tests will be conducted on
+            Sundays on an online platform simulating the realtime NET exam
+            pattern. Every month there will be 1 fortnight and 1 monthly test.
+            Fortnightly tests will consist of{" "}
+            <span className="font-semibold text-white">
+              50 Questions in 45 minutes
+            </span>
+            , while monthly tests will consist of{" "}
+            <span className="font-semibold text-white">
+              100 Questions in 90 minutes
+            </span>
+            .
+          </p>
+
+          <div className="mb-6 space-y-5">
+            <div className="rounded-xl border border-white/20 bg-white/10 p-5">
+              <p className="mb-2 font-bold text-amber-300">
+                Term 1 — Minimum 45% aggregate marks (mandatory)
+              </p>
+              <p className="mb-3 text-sm text-blue-100">
+                In aggregate the student must secure a minimum of 45% marks as
+                per the weightage given below to become eligible for
+                scholarship.
+              </p>
+              <p className="mb-3 text-sm text-blue-200">
+                <span className="font-semibold text-white">Note:</span>{" "}
+                Weightage for fortnightly and monthly test is same. A total of
+                150 marks will be converted into percentage.
+              </p>
+              <div className="overflow-hidden rounded-lg border border-white/20">
+                <table className="w-full text-sm">
+                  <thead className="bg-white/20 text-white">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Score Range</th>
+                      <th className="px-4 py-2 text-left">Monthly Fee</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10 text-blue-100">
+                    <tr className="bg-green-900/30">
+                      <td className="px-4 py-2">Above 60%</td>
+                      <td className="px-4 py-2 font-semibold text-green-300">
+                        ₹0 — Full Scholarship (No fees)
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2">50% – 60%</td>
+                      <td className="px-4 py-2">
+                        Half fees —{" "}
+                        <span className="font-semibold">Rs. 1,350/-</span>
+                      </td>
+                    </tr>
+                    <tr className="bg-white/5">
+                      <td className="px-4 py-2">45% – 50%</td>
+                      <td className="px-4 py-2">
+                        75% fees —{" "}
+                        <span className="font-semibold">Rs. 2,025/-</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-2">Below 45%</td>
+                      <td className="px-4 py-2 text-red-300">
+                        No scholarship — Full fees{" "}
+                        <span className="font-semibold">Rs. 2,700/-</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/20 bg-white/10 p-5">
+              <p className="mb-2 font-bold text-amber-300">
+                Term 2 — Minimum 80% attendance (mandatory)
+              </p>
+              <p className="text-sm text-blue-100">
+                Students must be actively present in all scheduled classes with
+                a minimum of{" "}
+                <span className="font-semibold text-white">80% attendance</span>{" "}
+                every month. Students must participate in discussions with{" "}
+                <span className="font-semibold text-white">Video ON</span>.
+                Failing to maintain 80% attendance requires payment of full
+                monthly fees regardless of test scores.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 text-center text-sm text-amber-200">
+            ⭐{" "}
+            <span className="font-semibold text-white">
+              Students maintaining 60%+ score AND 80%+ attendance every month
+              will receive full scholarship for that month.
+            </span>
           </div>
         </div>
 
