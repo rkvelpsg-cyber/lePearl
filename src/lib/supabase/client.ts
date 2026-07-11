@@ -41,12 +41,27 @@ export function clearAllAuthStorage() {
   if (typeof window === "undefined") return;
 
   const scopedKeys = Object.values(storageKeyByScope);
+
+  // Clear sessionStorage and localStorage (legacy / direct storage paths).
   for (const key of scopedKeys) {
     window.sessionStorage.removeItem(key);
     window.localStorage.removeItem(key);
+    // Also clear chunked variants used by @supabase/ssr v0.10+
+    for (let i = 0; i < 10; i++) {
+      window.sessionStorage.removeItem(`${key}.${i}`);
+      window.localStorage.removeItem(`${key}.${i}`);
+    }
   }
 
-  const legacyKeyPattern = /^sb-.*-auth-token$/;
+  // Clear cookies used by @supabase/ssr v0.10+ browser client.
+  for (const key of scopedKeys) {
+    clearCookieKey(key);
+    for (let i = 0; i < 10; i++) {
+      clearCookieKey(`${key}.${i}`);
+    }
+  }
+
+  const legacyKeyPattern = /^sb-.*-auth-token/;
   for (let i = window.localStorage.length - 1; i >= 0; i -= 1) {
     const key = window.localStorage.key(i);
     if (key && legacyKeyPattern.test(key)) {
@@ -60,4 +75,10 @@ export function clearAllAuthStorage() {
       window.sessionStorage.removeItem(key);
     }
   }
+}
+
+function clearCookieKey(name: string) {
+  // Expire the cookie on both the current path and root path.
+  document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; path=/`;
+  document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; path=/; SameSite=Lax`;
 }

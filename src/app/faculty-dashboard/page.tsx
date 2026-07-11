@@ -119,6 +119,7 @@ type McqTestFaculty = {
   scheduled_at: string | null;
   is_published: boolean;
   batch_id: number | null;
+  num_questions?: number | null;
   courses: { title: string } | null;
   batches: { batch_name: string } | null;
   mcq_questions?: { count: number }[];
@@ -532,7 +533,8 @@ export default function FacultyDashboardPage() {
     return (
       normalized.includes("refresh token not found") ||
       normalized.includes("invalid refresh token") ||
-      normalized.includes("refresh_token_not_found")
+      normalized.includes("refresh_token_not_found") ||
+      normalized.includes("auth session missing")
     );
   }
 
@@ -663,6 +665,7 @@ export default function FacultyDashboardPage() {
     scheduledAt: "",
     negativeMarking: "0",
     totalMarks: "100",
+    numQuestions: "",
   });
   const [qForm, setQForm] = useState({
     language: "English",
@@ -1258,7 +1261,7 @@ export default function FacultyDashboardPage() {
         supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            "id, title, total_marks, negative_marking, num_questions, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
           )
           .eq("created_by", uid)
           .order("created_at", { ascending: false }),
@@ -1308,7 +1311,7 @@ export default function FacultyDashboardPage() {
         const { data: legacyMcqData, error: legacyMcqError } = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            "id, title, total_marks, time_limit_minutes, num_questions, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
           )
           .eq("created_by", uid)
           .order("created_at", { ascending: false });
@@ -1435,7 +1438,7 @@ export default function FacultyDashboardPage() {
           const batchTestsRes = await supabase
             .from("mock_tests")
             .select(
-              "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+              "id, title, total_marks, negative_marking, num_questions, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
             )
             .in("batch_id", batchIds)
             .order("created_at", { ascending: false });
@@ -1448,7 +1451,7 @@ export default function FacultyDashboardPage() {
             const legacyBatchTestsRes = await supabase
               .from("mock_tests")
               .select(
-                "id, title, total_marks, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+                "id, title, total_marks, time_limit_minutes, num_questions, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
               )
               .in("batch_id", batchIds)
               .order("created_at", { ascending: false });
@@ -2003,6 +2006,7 @@ export default function FacultyDashboardPage() {
       scheduledAt: "",
       negativeMarking: "0",
       totalMarks: "100",
+      numQuestions: "",
     });
   }
 
@@ -2060,6 +2064,8 @@ export default function FacultyDashboardPage() {
       scheduledAt: toLocalDateTimeInput(test.scheduled_at),
       negativeMarking: String(test.negative_marking ?? 0),
       totalMarks: String(test.total_marks),
+      numQuestions:
+        test.num_questions != null ? String(test.num_questions) : "",
     });
   }
 
@@ -2074,6 +2080,10 @@ export default function FacultyDashboardPage() {
       const totalMarks = parseInt(mcqForm.totalMarks, 10);
       const timeLimitMinutes = parseInt(mcqForm.timeLimitMinutes, 10);
       const negativeMarking = parseFloat(mcqForm.negativeMarking || "0");
+      const numQuestions =
+        mcqForm.testType === "descriptive" && mcqForm.numQuestions.trim()
+          ? parseInt(mcqForm.numQuestions, 10)
+          : null;
 
       if (!Number.isFinite(batchId)) {
         setMcqMsg({ type: "err", text: "Please select a batch." });
@@ -2091,6 +2101,17 @@ export default function FacultyDashboardPage() {
         setMcqMsg({
           type: "err",
           text: "Negative marking must be 0 or a positive number.",
+        });
+        return;
+      }
+      if (
+        mcqForm.testType === "descriptive" &&
+        numQuestions !== null &&
+        (!Number.isFinite(numQuestions) || numQuestions <= 0)
+      ) {
+        setMcqMsg({
+          type: "err",
+          text: "Number of questions must be greater than 0.",
         });
         return;
       }
@@ -2119,6 +2140,7 @@ export default function FacultyDashboardPage() {
         negative_marking: mcqForm.testType === "mcq" ? negativeMarking : 0,
         batch_id: batchId,
         course_id: courseId,
+        num_questions: numQuestions,
         is_published: editingTestId ? editingTestWasPublished : false,
         scheduled_at: toUtcIsoFromLocalInput(mcqForm.scheduledAt),
         created_by: user.id,
@@ -2173,7 +2195,7 @@ export default function FacultyDashboardPage() {
         const refreshed = await supabase
           .from("mock_tests")
           .select(
-            "id, title, total_marks, negative_marking, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
+            "id, title, total_marks, negative_marking, num_questions, question_paper_file_url, time_limit_minutes, exam_type, test_type, scheduled_at, is_published, batch_id, courses(title), batches(batch_name), mcq_questions(count)",
           )
           .eq("id", editingTestId)
           .maybeSingle();
@@ -4292,6 +4314,26 @@ export default function FacultyDashboardPage() {
                           }
                         />
                       </div>
+                      {mcqForm.testType === "descriptive" && (
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                            Number of Questions
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                            placeholder="e.g., 5"
+                            value={mcqForm.numQuestions}
+                            onChange={(e) =>
+                              setMcqForm((p) => ({
+                                ...p,
+                                numQuestions: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      )}
                       <div>
                         <label className="text-xs font-semibold text-gray-600 mb-1 block">
                           Negative Marking (per wrong answer)
@@ -4803,10 +4845,14 @@ export default function FacultyDashboardPage() {
                       <h2 className="font-bold text-gray-900 mb-3">My Tests</h2>
                       <div className="space-y-3">
                         {searchedMcqTests.map((t) => {
-                          const qCount =
+                          const mcqCount =
                             (
                               t.mcq_questions as unknown as { count: number }[]
                             )?.[0]?.count ?? 0;
+                          const qCount =
+                            t.test_type === "descriptive"
+                              ? (t.num_questions ?? 0)
+                              : mcqCount;
                           return (
                             <div
                               key={t.id}

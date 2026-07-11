@@ -530,8 +530,42 @@ export default function AdminDashboardPage() {
       const supabase = createClient();
       let user = null;
 
+      // Pre-check session from storage to avoid triggering a network refresh
+      // when the stored refresh token is already stale.
       try {
-        const { data } = await supabase.auth.getUser();
+        const { data: sessionData, error: sessionError } =
+          await supabase.auth.getSession();
+        if (sessionError) {
+          if (isMissingRefreshTokenError(sessionError)) {
+            await supabase.auth.signOut({ scope: "local" });
+            router.replace("/admin-login");
+            return;
+          }
+        }
+        if (!sessionData.session) {
+          await supabase.auth.signOut({ scope: "local" });
+          router.replace("/admin-login");
+          return;
+        }
+      } catch (error) {
+        if (isMissingRefreshTokenError(error)) {
+          await supabase.auth.signOut({ scope: "local" });
+          router.replace("/admin-login");
+          return;
+        }
+        throw error;
+      }
+
+      try {
+        const { data, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          if (isMissingRefreshTokenError(userError)) {
+            await supabase.auth.signOut({ scope: "local" });
+            router.replace("/admin-login");
+            return;
+          }
+          throw userError;
+        }
         user = data.user;
       } catch (error) {
         if (isMissingRefreshTokenError(error)) {

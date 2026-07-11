@@ -33,6 +33,7 @@ import {
   Timer,
   Trash2,
   X,
+  Search,
 } from "lucide-react";
 
 /* â”€â”€ types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -446,6 +447,7 @@ export default function StudentDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("overview");
+  const [search, setSearch] = useState("");
 
   /* data states */
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -528,6 +530,11 @@ export default function StudentDashboardPage() {
   } | null>(null);
 
   const useUpiQrPayment = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
+
+  // Reset search query whenever the active section changes.
+  useEffect(() => {
+    setSearch("");
+  }, [activeSection]);
 
   useEffect(() => {
     if (!userId) return;
@@ -1902,6 +1909,38 @@ export default function StudentDashboardPage() {
     .filter((s) => isRecentSession(s.session_date, s.start_time))
     .slice(0, 10);
 
+  /* ── search filtering ──────────────────────────────────────── */
+  const searchNorm = search.trim().toLowerCase();
+  const matchSearch = (...values: Array<string | null | undefined>) =>
+    !searchNorm ||
+    values.some((v) => (v ?? "").toLowerCase().includes(searchNorm));
+
+  const filteredLiveSessions = liveSessions.filter((s) => matchSearch(s.title));
+  const filteredUpcomingSessions = upcomingSessions.filter((s) =>
+    matchSearch(s.title),
+  );
+  const filteredRecentSessions = recentSessions.filter((s) =>
+    matchSearch(s.title),
+  );
+  const filteredLectures = lectures.filter((lec) =>
+    matchSearch(lec.title, lec.subject, lec.description),
+  );
+  const filteredStudyMaterials = studyMaterials.filter((m) =>
+    matchSearch(m.title, m.subject, m.description),
+  );
+  const filteredFacultyTasks = facultyTasks.filter((t) =>
+    matchSearch(t.title, t.description),
+  );
+  const filteredAvailableTests = availableTests.filter((t) =>
+    matchSearch(t.title, t.exam_type),
+  );
+  const filteredDescriptiveTests = descriptiveTests.filter((t) =>
+    matchSearch(t.title, t.exam_type),
+  );
+  const filteredUpcomingTests = upcomingTests.filter((t) =>
+    matchSearch(t.title, t.exam_type),
+  );
+
   /* â”€â”€ loading / error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (loading)
     return (
@@ -2369,6 +2408,29 @@ export default function StudentDashboardPage() {
 
             {/* main content */}
             <section className="space-y-6 min-w-0">
+              {/* ── global search box ─────────────────────────────── */}
+              {activeSection !== "overview" &&
+                activeSection !== "attendance" &&
+                activeSection !== "fees" && (
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none bg-white shadow-sm"
+                      placeholder="Search classes, lectures, materials, tasks, tests…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                    {search && (
+                      <button
+                        onClick={() => setSearch("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
               {/* â•â• OVERVIEW â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
               {activeSection === "overview" && (
                 <>
@@ -2883,7 +2945,7 @@ export default function StudentDashboardPage() {
                     <>
                       {availableTests.length > 0 && (
                         <div className="grid gap-4 sm:grid-cols-2">
-                          {availableTests.map((t) => {
+                          {filteredAvailableTests.map((t) => {
                             const attempted = testAttempted.has(t.id);
                             const result = mcqResultsByTest[t.id];
                             return (
@@ -2984,7 +3046,7 @@ export default function StudentDashboardPage() {
                             Descriptive Tests
                           </h2>
                           <div className="grid gap-4 sm:grid-cols-2">
-                            {descriptiveTests.map((t) => {
+                            {filteredDescriptiveTests.map((t) => {
                               const result = mcqResultsByTest[t.id];
                               const testAnswers = descriptiveAnswers.filter(
                                 (a) => a.mock_test_id === t.id,
@@ -3125,7 +3187,7 @@ export default function StudentDashboardPage() {
                             Upcoming Tests
                           </h2>
                           <div className="space-y-3">
-                            {upcomingTests.map((t) => (
+                            {filteredUpcomingTests.map((t) => (
                               <div
                                 key={t.id}
                                 className="border border-amber-200 bg-amber-50 rounded-xl p-4"
@@ -3189,14 +3251,14 @@ export default function StudentDashboardPage() {
                       Join Google Meet or Zoom sessions assigned by your faculty
                     </p>
                   </div>
-                  {liveSessions.length > 0 && (
+                  {filteredLiveSessions.length > 0 && (
                     <div className="bg-white rounded-2xl shadow-sm p-5">
                       <div className="flex items-center gap-2 mb-4">
                         <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                         <h2 className="font-bold text-gray-900">Live Now</h2>
                       </div>
                       <div className="space-y-3">
-                        {liveSessions.map((s) => {
+                        {filteredLiveSessions.map((s) => {
                           const batch = unwrapOne(s.batches);
                           const course = unwrapOne(batch?.courses);
                           return (
@@ -3235,13 +3297,15 @@ export default function StudentDashboardPage() {
                     <h2 className="font-bold text-gray-900 mb-4">
                       Upcoming Classes
                     </h2>
-                    {upcomingSessions.length === 0 ? (
+                    {filteredUpcomingSessions.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-8">
-                        No upcoming classes scheduled.
+                        {searchNorm
+                          ? "No classes match your search."
+                          : "No upcoming classes scheduled."}
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {upcomingSessions.map((s) => {
+                        {filteredUpcomingSessions.map((s) => {
                           const batch = unwrapOne(s.batches);
                           const course = unwrapOne(batch?.courses);
                           const isToday = s.session_date === localDateKey();
@@ -3297,13 +3361,15 @@ export default function StudentDashboardPage() {
                     <h2 className="font-bold text-gray-900 mb-4">
                       Recent Classes
                     </h2>
-                    {recentSessions.length === 0 ? (
+                    {filteredRecentSessions.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-8">
-                        No recent class details available.
+                        {searchNorm
+                          ? "No classes match your search."
+                          : "No recent class details available."}
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        {recentSessions.map((s) => {
+                        {filteredRecentSessions.map((s) => {
                           const batch = unwrapOne(s.batches);
                           const course = unwrapOne(batch?.courses);
                           return (
@@ -3355,16 +3421,18 @@ export default function StudentDashboardPage() {
                       Click any lecture to open the recording in Google Drive
                     </p>
                   </div>
-                  {lectures.length === 0 ? (
+                  {filteredLectures.length === 0 ? (
                     <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                       <PlayCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500">
-                        No recorded lectures available yet.
+                        {searchNorm
+                          ? "No lectures match your search."
+                          : "No recorded lectures available yet."}
                       </p>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
-                      {lectures.map((lec) => {
+                      {filteredLectures.map((lec) => {
                         const batch = unwrapOne(lec.batches);
                         const course = unwrapOne(batch?.courses);
                         return (
@@ -3427,16 +3495,18 @@ export default function StudentDashboardPage() {
                       Drive
                     </p>
                   </div>
-                  {studyMaterials.length === 0 ? (
+                  {filteredStudyMaterials.length === 0 ? (
                     <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                       <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-gray-500">
-                        No study material available yet.
+                        {searchNorm
+                          ? "No materials match your search."
+                          : "No study material available yet."}
                       </p>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2">
-                      {studyMaterials.map((material) => {
+                      {filteredStudyMaterials.map((material) => {
                         const batch = unwrapOne(material.batches);
                         const course = unwrapOne(batch?.courses);
                         return (
@@ -3724,14 +3794,18 @@ export default function StudentDashboardPage() {
                       Tasks and assignments given by your faculty
                     </p>
                   </div>
-                  {facultyTasks.length === 0 ? (
+                  {filteredFacultyTasks.length === 0 ? (
                     <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
                       <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No tasks assigned yet.</p>
+                      <p className="text-gray-500">
+                        {searchNorm
+                          ? "No tasks match your search."
+                          : "No tasks assigned yet."}
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {facultyTasks.map((t) => {
+                      {filteredFacultyTasks.map((t) => {
                         const batch = unwrapOne(t.batches);
                         const faculty = unwrapOne(t.profiles);
                         const overdue =
