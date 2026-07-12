@@ -336,11 +336,11 @@ const oneTimeFeatures = [
 ];
 
 const instalmentSchedule = [
-  { label: "1st Instalment", amount: 4500 },
-  { label: "2nd Instalment", amount: 2900 },
-  { label: "3rd Instalment", amount: 2900 },
-  { label: "4th Instalment", amount: 2900 },
-  { label: "5th Instalment", amount: 2900 },
+  { label: "1st Instalment", amount: 2 },
+  { label: "2nd Instalment", amount: 2 },
+  { label: "3rd Instalment", amount: 2 },
+  { label: "4th Instalment", amount: 2 },
+  { label: "5th Instalment", amount: 2 },
 ];
 
 const installmentFeatures = [
@@ -395,9 +395,7 @@ function EnrollmentSection() {
               <h3 className="mb-2 text-2xl font-bold text-blue-900">
                 One-Time Payment
               </h3>
-              <span className="text-4xl font-bold text-blue-900">
-                Rs. 15,495/-
-              </span>
+              <span className="text-4xl font-bold text-blue-900">Rs. 2/-</span>
               <p className="mt-1 text-gray-500 line-through">₹18,496</p>
             </div>
 
