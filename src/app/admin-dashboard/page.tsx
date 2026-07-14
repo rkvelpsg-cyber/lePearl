@@ -636,7 +636,7 @@ export default function AdminDashboardPage() {
         supabase
           .from("batches")
           .select(
-            "id, batch_name, start_date, end_date, enrollments(count), courses(title), profiles(full_name)",
+            "id, batch_name, faculty_user_id, start_date, end_date, enrollments(count), courses(title), profiles(full_name)",
           ),
         supabase
           .from("student_registrations")
@@ -702,7 +702,7 @@ export default function AdminDashboardPage() {
           studentIds.length > 0
             ? supabase
                 .from("student_profiles")
-                .select("user_id, registration_no, enrollment_no")
+                .select("user_id, registration_no")
                 .in("user_id", studentIds)
             : Promise.resolve({ data: [], error: null }),
         ]);
@@ -757,7 +757,6 @@ export default function AdminDashboardPage() {
             | {
                 user_id: string;
                 registration_no: string | null;
-                enrollment_no: string | null;
               }[]
             | null
         )?.forEach((sp) => {
@@ -905,13 +904,18 @@ export default function AdminDashboardPage() {
           (
             batchesRes.data as unknown as {
               id: number;
-              profiles: { user_id: string } | null;
+              faculty_user_id: string | null;
             }[]
           ).forEach((b) => {
-            // Note: faculty_user_id not in this select, will use batches query
+            if (b.faculty_user_id) {
+              batchCounts[b.faculty_user_id] =
+                (batchCounts[b.faculty_user_id] ?? 0) + 1;
+            }
           });
         }
-        setFaculty(fRows.map((f) => ({ ...f, batchCount: 0 })));
+        setFaculty(
+          fRows.map((f) => ({ ...f, batchCount: batchCounts[f.user_id] ?? 0 })),
+        );
         setTotalFaculty(fRows.length);
       }
 
@@ -1249,6 +1253,7 @@ export default function AdminDashboardPage() {
           batchesRes.data as unknown as {
             id: number;
             batch_name: string;
+            faculty_user_id: string | null;
             start_date: string | null;
             end_date: string | null;
             enrollments: { count: number }[] | null;
@@ -1337,9 +1342,25 @@ export default function AdminDashboardPage() {
         );
       }
 
-      if (classesRes.data) {
+      let resolvedClassesData = classesRes.data;
+      if (classesRes.error && /is_live/i.test(classesRes.error.message ?? "")) {
+        const { data: legacyClassesData } = await supabase
+          .from("class_sessions")
+          .select(
+            "id, title, session_date, start_time, end_time, meeting_link, batches(batch_name), profiles(full_name)",
+          )
+          .order("session_date", { ascending: false })
+          .limit(100);
+        resolvedClassesData = (
+          (legacyClassesData ?? []) as Record<string, unknown>[]
+        ).map((c) => ({
+          ...c,
+          is_live: false,
+        })) as unknown as typeof classesRes.data;
+      }
+      if (resolvedClassesData) {
         const rows: LiveClassRow[] = (
-          classesRes.data as unknown as {
+          resolvedClassesData as unknown as {
             id: number;
             title: string;
             session_date: string;

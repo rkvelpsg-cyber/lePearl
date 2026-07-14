@@ -1670,6 +1670,22 @@ export default function FacultyDashboardPage() {
           } else {
             setTotalStudents(0);
           }
+
+          // Reload attendance sessions with full batch-filtered query (no 30-item cap)
+          const attSessionsFilteredRes = await supabase
+            .from("class_sessions")
+            .select(
+              "id, batch_id, title, session_date, start_time, batches(batch_name)",
+            )
+            .in("batch_id", batchIds)
+            .order("session_date", { ascending: false });
+          if (attSessionsFilteredRes.data) {
+            setAttendanceSessions(
+              (
+                attSessionsFilteredRes.data as unknown as AttendanceSession[]
+              ).filter((s) => isCompletedSession(s.session_date, s.start_time)),
+            );
+          }
         } else {
           setTotalStudents(0);
         }
