@@ -203,14 +203,21 @@ export async function POST(req: NextRequest) {
 
     const normalizedRequest = normalizeForMatch(canonicalCourseName);
 
-    let matchedCourse = (courseRows ?? []).find((c) => {
-      const current = normalizeForMatch(c.title);
-      return (
-        current === normalizedRequest ||
-        current.includes(normalizedRequest) ||
-        normalizedRequest.includes(current)
-      );
-    });
+    // 1st pass – exact match on canonical name
+    let matchedCourse = (courseRows ?? []).find(
+      (c) => normalizeForMatch(c.title) === normalizedRequest,
+    );
+
+    // 2nd pass – loose includes match (handles old/renamed legacy titles)
+    if (!matchedCourse) {
+      matchedCourse = (courseRows ?? []).find((c) => {
+        const current = normalizeForMatch(c.title);
+        return (
+          current.includes(normalizedRequest) ||
+          normalizedRequest.includes(current)
+        );
+      });
+    }
 
     if (!matchedCourse) {
       const courseCode = `${normalizeCode(canonicalCourseName)}-${Date.now().toString().slice(-5)}`;

@@ -719,23 +719,39 @@ async function ensurePaidStudentAccount(params: {
       };
     }
 
-    const requestedCourse = normalizeForMatch(payload.course);
-    let matchedCourse = (courseRows ?? []).find((row) => {
-      const current = normalizeForMatch(row.title);
-      return (
-        current === requestedCourse ||
-        current.includes(requestedCourse) ||
-        requestedCourse.includes(current)
-      );
-    });
+    // Resolve canonical course name via alias mapping first so that e.g.
+    // "NET Paper 2 (English)" never accidentally lands on the legacy DB
+    // course "NTA NET Paper 2 (English)" (which also satisfies an includes
+    // match but is the wrong target).
+    const canonicalRegistrationCourseName =
+      getCanonicalPaidEnrollmentBatch(payload.course)?.courseName ??
+      payload.course;
+    const normalizedCanonical = normalizeForMatch(canonicalRegistrationCourseName);
+
+    // 1st pass – exact match on canonical name
+    let matchedCourse = (courseRows ?? []).find(
+      (row) => normalizeForMatch(row.title) === normalizedCanonical,
+    );
+
+    // 2nd pass – loose includes match (handles old/renamed legacy titles)
+    if (!matchedCourse) {
+      const normalizedRequested = normalizeForMatch(payload.course);
+      matchedCourse = (courseRows ?? []).find((row) => {
+        const current = normalizeForMatch(row.title);
+        return (
+          current.includes(normalizedRequested) ||
+          normalizedRequested.includes(current)
+        );
+      });
+    }
 
     if (!matchedCourse) {
-      const courseCode = `${normalizeCode(payload.course)}-${Date.now().toString().slice(-5)}`;
+      const courseCode = `${normalizeCode(canonicalRegistrationCourseName)}-${Date.now().toString().slice(-5)}`;
       const { data: createdCourse, error: createCourseError } = await service
         .from("courses")
         .insert({
           code: courseCode,
-          title: payload.course,
+          title: canonicalRegistrationCourseName,
           is_active: true,
         })
         .select("id, title, code")
