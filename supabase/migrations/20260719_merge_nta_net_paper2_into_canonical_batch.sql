@@ -156,6 +156,11 @@ BEGIN
   RAISE NOTICE 'Moved % enrollment(s) to canonical batch "NET Paper 2 (English)".',
                v_moved_count;
 
+  -- Remove original enrollment rows from the alias batch so the batch becomes
+  -- empty and can be safely deleted in step 8.
+  DELETE FROM public.enrollments WHERE batch_id = v_alias_batch_id;
+  RAISE NOTICE 'Removed original enrollment rows from alias batch.';
+
   -- ── 7. Update student_registrations course name ───────────────────────────
   UPDATE public.student_registrations
      SET course = 'NET Paper 2 (English)'
