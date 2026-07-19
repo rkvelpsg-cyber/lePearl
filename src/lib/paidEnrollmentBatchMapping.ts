@@ -29,7 +29,7 @@ export const paidEnrollmentBatchMappings: PaidEnrollmentBatchMapping[] = [
   },
   {
     courseName: "NET Paper 2 (English)",
-    batchName: "NET-PAPER--Sadhana-A",
+    batchName: "NET Paper 2 (English)",
     facultyName: "Ms. Sadhana",
     aliases: ["NTA NET Paper 2 (English)"],
   },

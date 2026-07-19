@@ -1,30 +1,35 @@
 -- Merge duplicate "NTA NET Paper 2 (English)" batch into the canonical
--- "NET Paper 2 (English)" / NET-PAPER--Sadhana-A batch.
+-- "NET Paper 2 (English)" batch and give NET Paper 2 its own dedicated batch.
 --
 -- Background:
---   The ensure-enrollment endpoint previously used strict-exact course matching.
---   When students with target_exam = "NET Paper 2 (English)" logged in, the
---   endpoint failed to match the DB title "NTA NET Paper 2 (English)" and
---   silently created a second course + batch with the same batch_name under the
---   new course title.  The faculty dashboard for Ms. Sadhana therefore showed
---   two entries both called "NET-PAPER--Sadhana-A".
+--   NET Paper 1 and NET Paper 2 (English) both previously shared the batch name
+--   "NET-PAPER--Sadhana-A".  The ensure-enrollment endpoint's strict-exact course
+--   matching also silently created a second course "NTA NET Paper 2 (English)"
+--   with its own NET-PAPER--Sadhana-A batch.
+--
+-- After this migration:
+--   • NET Paper 1           → batch name "NET-PAPER--Sadhana-A"  (unchanged)
+--   • NET Paper 2 (English) → batch name "NET Paper 2 (English)" (own batch)
+--   • GIC, LT Grade, SET    → no changes
 --
 -- This migration:
---   1. Moves all enrollments from the duplicate (NTA …) batch to the canonical
---      (NET Paper 2 (English)) batch.
---   2. Updates student_registrations rows whose course = "NTA NET Paper 2 (English)"
+--   1. Resolves/creates canonical course "NET Paper 2 (English)".
+--   2. Renames any existing "NET-PAPER--Sadhana-A" batch under that course to
+--      "NET Paper 2 (English)", or creates a fresh batch with that name.
+--   3. Moves all enrollments from the NTA alias batch → canonical batch.
+--   4. Updates student_registrations rows whose course = "NTA NET Paper 2 (English)"
 --      to the canonical course name "NET Paper 2 (English)".
---   3. Deletes the duplicate batch once it is empty of enrollments and has no
+--   5. Deletes the duplicate batch once it is empty of enrollments and has no
 --      linked academic content (classes, tests, lectures, materials, tasks).
---   4. Deletes the orphaned "NTA NET Paper 2 (English)" course row only when it
+--   6. Deletes the orphaned "NTA NET Paper 2 (English)" course row only when it
 --      carries no remaining batches.
 --
 -- Safe-guards:
 --   * All steps are wrapped in a transaction via DO $$ … $$.
 --   * Students already enrolled in the canonical batch are silently skipped
 --     (ON CONFLICT DO NOTHING) so no duplicate enrollment is created.
---   * If the canonical batch does not yet exist the migration creates it so the
---     migration remains idempotent.
+--   * If the canonical batch already exists the migration is idempotent.
+--   * NET Paper 1 batch "NET-PAPER--Sadhana-A" is never touched.
 
 DO $$
 DECLARE
@@ -49,7 +54,7 @@ BEGIN
     RETURN;
   END IF;
 
-  -- ── 2. Resolve canonical course (NET Paper 2 (English)) ──────────────────
+  -- ── 2. Resolve canonical course "NET Paper 2 (English)" ──────────────────
   SELECT id
     INTO v_canonical_course_id
     FROM public.courses
@@ -58,7 +63,6 @@ BEGIN
    LIMIT 1;
 
   IF v_canonical_course_id IS NULL THEN
-    -- Create the canonical course if it somehow does not exist yet
     INSERT INTO public.courses (code, title, is_active)
     VALUES ('NET-PAPER-2-ENG', 'NET Paper 2 (English)', true)
     RETURNING id INTO v_canonical_course_id;
@@ -66,25 +70,49 @@ BEGIN
                  v_canonical_course_id;
   END IF;
 
-  -- ── 3. Resolve or create the canonical batch ──────────────────────────────
+  -- ── 3. Resolve or create the canonical batch "NET Paper 2 (English)" ──────
+  --      If the batch previously shared the name "NET-PAPER--Sadhana-A" under
+  --      this course, rename it so NET Paper 1 keeps its own dedicated batch.
+
+  -- Try the correct name first
   SELECT id
     INTO v_canonical_batch_id
     FROM public.batches
-   WHERE course_id        = v_canonical_course_id
-     AND faculty_user_id  = v_sadhana_user_id
-     AND batch_name       = 'NET-PAPER--Sadhana-A'
+   WHERE course_id       = v_canonical_course_id
+     AND faculty_user_id = v_sadhana_user_id
+     AND batch_name      = 'NET Paper 2 (English)'
    LIMIT 1;
 
   IF v_canonical_batch_id IS NULL THEN
-    INSERT INTO public.batches (course_id, batch_name, faculty_user_id, start_date)
-    VALUES (v_canonical_course_id, 'NET-PAPER--Sadhana-A', v_sadhana_user_id,
-            current_date)
-    RETURNING id INTO v_canonical_batch_id;
-    RAISE NOTICE 'Created canonical batch NET-PAPER--Sadhana-A (id=%).',
+    -- Fall back: old shared name exists → rename it
+    SELECT id
+      INTO v_canonical_batch_id
+      FROM public.batches
+     WHERE course_id       = v_canonical_course_id
+       AND faculty_user_id = v_sadhana_user_id
+       AND batch_name      = 'NET-PAPER--Sadhana-A'
+     LIMIT 1;
+
+    IF v_canonical_batch_id IS NOT NULL THEN
+      UPDATE public.batches
+         SET batch_name = 'NET Paper 2 (English)'
+       WHERE id = v_canonical_batch_id;
+      RAISE NOTICE 'Renamed batch NET-PAPER--Sadhana-A → "NET Paper 2 (English)" under NET Paper 2 course (id=%).',
+                   v_canonical_batch_id;
+    ELSE
+      -- No batch at all — create fresh
+      INSERT INTO public.batches (course_id, batch_name, faculty_user_id, start_date)
+      VALUES (v_canonical_course_id, 'NET Paper 2 (English)', v_sadhana_user_id, current_date)
+      RETURNING id INTO v_canonical_batch_id;
+      RAISE NOTICE 'Created canonical batch "NET Paper 2 (English)" (id=%).',
+                   v_canonical_batch_id;
+    END IF;
+  ELSE
+    RAISE NOTICE 'Canonical batch "NET Paper 2 (English)" already exists (id=%).',
                  v_canonical_batch_id;
   END IF;
 
-  -- ── 4. Resolve the alias course (NTA NET Paper 2 (English)) ──────────────
+  -- ── 4. Resolve the alias course "NTA NET Paper 2 (English)" ──────────────
   SELECT id
     INTO v_alias_course_id
     FROM public.courses
@@ -102,11 +130,10 @@ BEGIN
     FROM public.batches
    WHERE course_id       = v_alias_course_id
      AND faculty_user_id = v_sadhana_user_id
-     AND batch_name      = 'NET-PAPER--Sadhana-A'
    LIMIT 1;
 
   IF v_alias_batch_id IS NULL THEN
-    RAISE NOTICE 'Alias batch not found under "NTA NET Paper 2 (English)" — nothing to merge.';
+    RAISE NOTICE 'No batch found under alias course "NTA NET Paper 2 (English)" — nothing to merge.';
     RETURN;
   END IF;
 
@@ -126,18 +153,17 @@ BEGIN
   ON CONFLICT (student_user_id, batch_id) DO NOTHING;
 
   GET DIAGNOSTICS v_moved_count = ROW_COUNT;
-  RAISE NOTICE 'Moved % enrollment(s) to canonical batch.', v_moved_count;
+  RAISE NOTICE 'Moved % enrollment(s) to canonical batch "NET Paper 2 (English)".',
+               v_moved_count;
 
   -- ── 7. Update student_registrations course name ───────────────────────────
   UPDATE public.student_registrations
      SET course = 'NET Paper 2 (English)'
    WHERE regexp_replace(lower(course), '[^a-z0-9]+', '', 'g') = 'ntanetpaper2english';
 
-  RAISE NOTICE 'Updated % student_registration row(s) to canonical course name.',
-               (SELECT COUNT(*) FROM public.student_registrations
-                 WHERE course = 'NET Paper 2 (English)');
+  RAISE NOTICE 'Updated student_registration rows: course renamed to "NET Paper 2 (English)".';
 
-  -- ── 8. Delete the alias batch (only if now empty of all content) ──────────
+  -- ── 8. Delete alias batch (only when no linked content remains) ────────────
   IF NOT EXISTS (
         SELECT 1 FROM public.enrollments    WHERE batch_id = v_alias_batch_id
      UNION ALL
@@ -148,11 +174,11 @@ BEGIN
     DELETE FROM public.batches WHERE id = v_alias_batch_id;
     RAISE NOTICE 'Deleted alias batch (id=%).', v_alias_batch_id;
   ELSE
-    RAISE NOTICE 'Alias batch (id=%) still has linked content — batch kept, enrollments already moved.',
+    RAISE NOTICE 'Alias batch (id=%) still has linked content — batch kept, enrollments moved.',
                  v_alias_batch_id;
   END IF;
 
-  -- ── 9. Delete the alias course if it now has no remaining batches ─────────
+  -- ── 9. Delete alias course if it has no remaining batches ─────────────────
   IF NOT EXISTS (
         SELECT 1 FROM public.batches WHERE course_id = v_alias_course_id
   ) THEN
