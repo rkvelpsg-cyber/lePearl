@@ -726,7 +726,9 @@ async function ensurePaidStudentAccount(params: {
     const canonicalRegistrationCourseName =
       getCanonicalPaidEnrollmentBatch(payload.course)?.courseName ??
       payload.course;
-    const normalizedCanonical = normalizeForMatch(canonicalRegistrationCourseName);
+    const normalizedCanonical = normalizeForMatch(
+      canonicalRegistrationCourseName,
+    );
 
     // 1st pass – exact match on canonical name
     let matchedCourse = (courseRows ?? []).find(
