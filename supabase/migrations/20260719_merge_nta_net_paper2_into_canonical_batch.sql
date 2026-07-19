@@ -33,10 +33,10 @@
 
 DO $$
 DECLARE
-  v_canonical_course_id   uuid;
-  v_alias_course_id       uuid;
-  v_canonical_batch_id    uuid;
-  v_alias_batch_id        uuid;
+  v_canonical_course_id   bigint;
+  v_alias_course_id       bigint;
+  v_canonical_batch_id    bigint;
+  v_alias_batch_id        bigint;
   v_sadhana_user_id       uuid;
   v_moved_count           int;
 BEGIN
@@ -143,11 +143,11 @@ BEGIN
   END IF;
 
   -- ── 6. Move enrollments from alias batch → canonical batch ────────────────
-  INSERT INTO public.enrollments (student_user_id, batch_id, status, enrolled_at)
+  INSERT INTO public.enrollments (student_user_id, batch_id, status, enrolled_on)
   SELECT e.student_user_id,
          v_canonical_batch_id,
          e.status,
-         e.enrolled_at
+         e.enrolled_on
     FROM public.enrollments e
    WHERE e.batch_id = v_alias_batch_id
   ON CONFLICT (student_user_id, batch_id) DO NOTHING;
