@@ -195,17 +195,30 @@ export async function POST(req: NextRequest) {
 
     if (courseError) throw courseError;
 
-    let matchedCourse = (courseRows ?? []).find(
-      (c) => normalizeLabel(c.title) === normalizeLabel(courseName),
-    );
+    // Resolve canonical course name via alias mapping so that e.g.
+    // "NET Paper 2 (English)" correctly matches the DB title
+    // "NTA NET Paper 2 (English)" and avoids creating a duplicate course.
+    const canonicalCourseName =
+      getCanonicalPaidEnrollmentBatch(courseName)?.courseName ?? courseName;
+
+    const normalizedRequest = normalizeForMatch(canonicalCourseName);
+
+    let matchedCourse = (courseRows ?? []).find((c) => {
+      const current = normalizeForMatch(c.title);
+      return (
+        current === normalizedRequest ||
+        current.includes(normalizedRequest) ||
+        normalizedRequest.includes(current)
+      );
+    });
 
     if (!matchedCourse) {
-      const courseCode = `${normalizeCode(courseName)}-${Date.now().toString().slice(-5)}`;
+      const courseCode = `${normalizeCode(canonicalCourseName)}-${Date.now().toString().slice(-5)}`;
       const { data: createdCourse, error: createCourseError } = await service
         .from("courses")
         .insert({
           code: courseCode,
-          title: courseName,
+          title: canonicalCourseName,
           is_active: true,
         })
         .select("id, title, code")
