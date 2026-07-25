@@ -677,6 +677,7 @@ function StudentRegistrationContent() {
   const useUpiQrPayment = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
   const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
   const [courseBackHref, setCourseBackHref] = useState<string | null>(null);
+  const [pendingDownload, setPendingDownload] = useState<string | null>(null);
   const [hasLoadedPaidDraft, setHasLoadedPaidDraft] = useState(false);
   const [paidFormData, setPaidFormData] =
     useState<PaidEnrollmentFormState>(initialPaidForm());
@@ -1132,6 +1133,11 @@ function StudentRegistrationContent() {
       setActiveMode("paid");
     }
 
+    const downloadParam = searchParams.get("download");
+    if (downloadParam) {
+      setPendingDownload(downloadParam);
+    }
+
     setHasLoadedPaidDraft(true);
   }, []);
 
@@ -1555,6 +1561,14 @@ function StudentRegistrationContent() {
       });
       setFreeFormData(initialFreeForm);
       window.setTimeout(() => {
+        if (pendingDownload === "uphesc-syllabus") {
+          const link = document.createElement("a");
+          link.href = "/Adv 52_English Assistant Professor .pdf";
+          link.download = "UPHESC_Assistant_Professor_Syllabus.pdf";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
         router.push("/#pyqs");
       }, 1200);
     } catch (error) {
