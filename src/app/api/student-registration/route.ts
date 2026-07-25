@@ -436,7 +436,7 @@ function buildStudentPaidPaymentEmail(
     `Temporary Password: ${body.password ?? "N/A"}`,
     `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.communicationSkillsFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? (body.paymentTenure === "full" ? "Full Payment – Rs. " + (body.finalPayable ?? 0) : body.paymentTenure === "instalment" ? "Instalment – Rs. " + (body.finalPayable ?? 0) : "N/A")}`,
     `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
-    `Amount Paid: Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}`,`
+    `Amount Paid: Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}`,
     `Payment Mode: ${body.paymentMode ?? "razorpay"}`,
     `Transaction ID: ${body.razorpayPaymentId ?? "N/A"}`,
     `Order ID: ${body.razorpayOrderId ?? "N/A"}`,
