@@ -45,6 +45,7 @@ type RegistrationRequestBody = Partial<StudentRegistrationPayload> & {
   booksFee?: number;
   finalPayable?: number;
   researchAssistanceFeeLabel?: string;
+  communicationSkillsFeeLabel?: string;
   upgdcFeeLabel?: string;
   gicFeeLabel?: string;
   ltGradeFeeLabel?: string;
@@ -378,9 +379,9 @@ function buildModeAwareAdminEmail(
       `Registration No: ${body.registrationNo ?? "N/A"}`,
       `User ID / Username: ${body.username ?? "N/A"}`,
       `Temporary Password: ${body.password ?? "N/A"}`,
-      `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? "N/A"}`,
+      `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.communicationSkillsFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? (body.paymentTenure === "full" ? "Full Payment – Rs. " + (body.finalPayable ?? 0) : body.paymentTenure === "instalment" ? "Instalment – Rs. " + (body.finalPayable ?? 0) : "N/A")}`,
       `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
-      `Accepted Terms: ${body.acceptedTerms ? "Yes" : "No"}`,
+      `Accepted Terms: ${body.acceptedTerms ? "Yes" : "No"}`,`
       `Accepted Privacy: ${body.acceptedPrivacy ? "Yes" : "No"}`,
       `Accepted Refund: ${body.acceptedRefund ? "Yes" : "No"}`,
       `Pearlian: ${body.isPearlian ? "Yes" : "No"}`,
@@ -433,9 +434,9 @@ function buildStudentPaidPaymentEmail(
     `Registration No: ${body.registrationNo ?? "N/A"}`,
     `User ID / Username: ${body.username ?? "N/A"}`,
     `Temporary Password: ${body.password ?? "N/A"}`,
-    `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? "N/A"}`,
+    `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.communicationSkillsFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? (body.paymentTenure === "full" ? "Full Payment – Rs. " + (body.finalPayable ?? 0) : body.paymentTenure === "instalment" ? "Instalment – Rs. " + (body.finalPayable ?? 0) : "N/A")}`,
     `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
-    `Amount Paid: Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}`,
+    `Amount Paid: Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}`,`
     `Payment Mode: ${body.paymentMode ?? "razorpay"}`,
     `Transaction ID: ${body.razorpayPaymentId ?? "N/A"}`,
     `Order ID: ${body.razorpayOrderId ?? "N/A"}`,
@@ -457,7 +458,7 @@ function buildStudentPaidPaymentEmail(
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Registration No</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.registrationNo ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">User ID / Username</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.username ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Temporary Password</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.password ?? "N/A"}</td></tr>
-          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Selected Fee Plan</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.researchAssistanceFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? "N/A"}</td></tr>
+          <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Selected Fee Plan</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.researchAssistanceFeeLabel ?? body.communicationSkillsFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? (body.paymentTenure === "full" ? "Full Payment – Rs. " + (body.finalPayable ?? 0) : body.paymentTenure === "instalment" ? "Instalment – Rs. " + (body.finalPayable ?? 0) : "N/A")}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Payment Tenure</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.paymentTenure ?? "N/A"}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Amount Paid</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">Rs. ${body.paymentAmount ?? body.finalPayable ?? 0}</td></tr>
           <tr><td style="padding:10px 14px;border:1px solid #e5e7eb;background:#f8fafc;font-weight:600;">Payment Mode</td><td style="padding:10px 14px;border:1px solid #e5e7eb;">${body.paymentMode ?? "razorpay"}</td></tr>
@@ -1128,6 +1129,7 @@ export async function POST(req: NextRequest) {
           mode === "paid"
             ? sanitizeRegistrationValue(
                 body.researchAssistanceFeeLabel ??
+                  body.communicationSkillsFeeLabel ??
                   body.upgdcFeeLabel ??
                   body.gicFeeLabel ??
                   body.ltGradeFeeLabel ??
@@ -1277,65 +1279,76 @@ export async function POST(req: NextRequest) {
         ? sanitizeRegistrationValue(body.username ?? "").toLowerCase()
         : "";
 
+    // Track account setup result — we delay the error return until AFTER
+    // emails are sent so that both admin and student are always notified
+    // when a Razorpay payment completes, even if provisioning fails.
+    let accountSetupFailed = false;
+    let accountSetupError: string | null = null;
+    let accountSetupErrorStatus: 409 | 500 = 500;
+
     if (mode === "paid" && isRazorpayPayment) {
       try {
         const ensureResult = await ensurePaidStudentAccount({ payload, body });
         if (!ensureResult.ensured) {
           const reason = ensureResult.reason ?? "Account provisioning failed";
           const normalizedReason = reason.toLowerCase();
-          return NextResponse.json(
-            {
-              error: normalizedReason.includes("username already exists")
-                ? "This username is already in use. Please try another username or contact support."
-                : normalizedReason.includes(
-                      "registration number already exists",
-                    )
-                  ? "A registration number conflict occurred. Please refresh and retry the enrolment form."
-                  : `Paid registration completed but login account setup failed: ${reason}`,
-            },
-            {
-              status:
-                normalizedReason.includes("username already exists") ||
-                normalizedReason.includes("registration number already exists")
-                  ? 409
-                  : 500,
-            },
-          );
-        }
-
-        if (ensureResult.username) {
-          issuedUsername = ensureResult.username;
-          if (
-            supabase &&
-            issuedUsername !==
-              sanitizeRegistrationValue(body.username ?? "").toLowerCase()
-          ) {
-            await supabase
-              .from("student_registrations")
-              .update({ username: issuedUsername })
-              .eq(
-                "registration_no",
-                sanitizeRegistrationValue(body.registrationNo ?? ""),
-              )
-              .eq("email", payload.email)
-              .eq("mode", "paid");
+          accountSetupFailed = true;
+          accountSetupError = normalizedReason.includes("username already exists")
+            ? "This username is already in use. Please try another username or contact support."
+            : normalizedReason.includes("registration number already exists")
+              ? "A registration number conflict occurred. Please refresh and retry the enrolment form."
+              : `Paid registration completed but login account setup failed: ${reason}`;
+          accountSetupErrorStatus =
+            normalizedReason.includes("username already exists") ||
+            normalizedReason.includes("registration number already exists")
+              ? 409
+              : 500;
+        } else {
+          if (ensureResult.username) {
+            issuedUsername = ensureResult.username;
+            if (
+              supabase &&
+              issuedUsername !==
+                sanitizeRegistrationValue(body.username ?? "").toLowerCase()
+            ) {
+              await supabase
+                .from("student_registrations")
+                .update({ username: issuedUsername })
+                .eq(
+                  "registration_no",
+                  sanitizeRegistrationValue(body.registrationNo ?? ""),
+                )
+                .eq("email", payload.email)
+                .eq("mode", "paid");
+            }
           }
         }
       } catch (error) {
-        return NextResponse.json(
-          {
-            error: `Paid registration completed but login account setup failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-          },
-          { status: 500 },
-        );
+        accountSetupFailed = true;
+        accountSetupError = `Paid registration completed but login account setup failed: ${error instanceof Error ? error.message : "Unknown error"}`;
+        accountSetupErrorStatus = 500;
       }
     }
 
-    // SECONDARY: Try to send email (best-effort, don't fail if this doesn't work)
+    // SECONDARY: Try to send email (best-effort, don't fail if this doesn't work).
+    // Emails are sent regardless of accountSetupFailed so both admin and student
+    // are always notified when a Razorpay payment completes, even if account
+    // provisioning encountered an issue. The admin email is flagged so the team
+    // can manually provision the account when needed.
     const transporter = getTransporter();
     if (transporter) {
       try {
         const emailContent = buildModeAwareAdminEmail(payload, body, mode);
+        const adminSubject = accountSetupFailed
+          ? `[Action Required – Setup Failed] ${emailContent.subject}`
+          : emailContent.subject;
+        const adminSetupNote = accountSetupFailed
+          ? `\n\n⚠ ACCOUNT SETUP FAILED: ${accountSetupError}\nPlease provision this student's account manually.`
+          : "";
+        const adminHtmlNote = accountSetupFailed
+          ? `<p style="color:#dc2626;font-weight:600;padding:10px 14px;border:1px solid #dc2626;border-radius:6px;margin-bottom:16px;">⚠ Account setup failed: ${accountSetupError} — please provision manually.</p>`
+          : "";
+
         const studentEmail =
           mode === "paid"
             ? buildStudentPaidPaymentEmail(payload, {
@@ -1349,22 +1362,45 @@ export async function POST(req: NextRequest) {
           process.env.SMTP_USER ??
           recipientEmail;
 
-        await transporter.sendMail({
-          from: `LePearl Education <${fromAddress}>`,
-          to: recipientEmail,
-          replyTo: payload.email,
-          subject: emailContent.subject,
-          text: emailContent.text,
-          html: emailContent.html,
-        });
+        // Admin email — independent try so a failure here does NOT
+        // prevent the student confirmation email from being sent.
+        try {
+          await transporter.sendMail({
+            from: `LePearl Education <${fromAddress}>`,
+            to: recipientEmail,
+            replyTo: payload.email,
+            subject: adminSubject,
+            text: emailContent.text + adminSetupNote,
+            html: adminHtmlNote + emailContent.html,
+          });
+        } catch (adminEmailErr) {
+          console.error(
+            "[student-registration] Admin email send failed (non-critical):",
+            adminEmailErr instanceof Error
+              ? adminEmailErr.message
+              : adminEmailErr,
+          );
+        }
 
-        await transporter.sendMail({
-          from: `LePearl Education <${fromAddress}>`,
-          to: payload.email,
-          subject: studentEmail.subject,
-          text: studentEmail.text,
-          html: studentEmail.html,
-        });
+        // Student confirmation email — sent independently of the admin email.
+        if (isValidEmail(payload.email)) {
+          try {
+            await transporter.sendMail({
+              from: `LePearl Education <${fromAddress}>`,
+              to: payload.email,
+              subject: studentEmail.subject,
+              text: studentEmail.text,
+              html: studentEmail.html,
+            });
+          } catch (studentEmailErr) {
+            console.error(
+              "[student-registration] Student email send failed (non-critical):",
+              studentEmailErr instanceof Error
+                ? studentEmailErr.message
+                : studentEmailErr,
+            );
+          }
+        }
       } catch (error) {
         console.error(
           "Email send failed (non-critical):",
@@ -1373,6 +1409,13 @@ export async function POST(req: NextRequest) {
       } finally {
         transporter.close();
       }
+    }
+
+    if (accountSetupFailed) {
+      return NextResponse.json(
+        { error: accountSetupError ?? "Account provisioning failed" },
+        { status: accountSetupErrorStatus },
+      );
     }
 
     if (mode === "paid") {
