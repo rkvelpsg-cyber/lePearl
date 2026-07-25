@@ -381,7 +381,7 @@ function buildModeAwareAdminEmail(
       `Temporary Password: ${body.password ?? "N/A"}`,
       `Selected Fee Plan: ${body.researchAssistanceFeeLabel ?? body.communicationSkillsFeeLabel ?? body.upgdcFeeLabel ?? body.gicFeeLabel ?? body.ltGradeFeeLabel ?? body.interviewPrepFeeLabel ?? (body.paymentTenure === "full" ? "Full Payment – Rs. " + (body.finalPayable ?? 0) : body.paymentTenure === "instalment" ? "Instalment – Rs. " + (body.finalPayable ?? 0) : "N/A")}`,
       `Payment Tenure: ${body.paymentTenure ?? "N/A"}`,
-      `Accepted Terms: ${body.acceptedTerms ? "Yes" : "No"}`,`
+      `Accepted Terms: ${body.acceptedTerms ? "Yes" : "No"}`,
       `Accepted Privacy: ${body.acceptedPrivacy ? "Yes" : "No"}`,
       `Accepted Refund: ${body.acceptedRefund ? "Yes" : "No"}`,
       `Pearlian: ${body.isPearlian ? "Yes" : "No"}`,
