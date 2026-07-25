@@ -495,7 +495,7 @@ function EnrollmentSection() {
     {
       icon: CreditCard,
       title: "One-Time Payment",
-      price: "Rs. 14,995",
+      price: "Rs. 2",
       features: [
         "Full course access",
         "All video lectures",
