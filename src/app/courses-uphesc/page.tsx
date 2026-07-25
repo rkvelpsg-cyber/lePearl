@@ -495,14 +495,14 @@ function EnrollmentSection() {
     {
       icon: CreditCard,
       title: "One-Time Payment",
-      price: "Rs. 2",
+      price: "Rs. 14,995",
       features: [
         "Full course access",
         "All video lectures",
         "50+ mock tests",
         "Study materials",
         "Live doubt sessions",
-        "Lifetime validity",
+        "Two Years Validity from the Date of Registration or Completion of Exam whichever is Later",
       ],
     },
     {

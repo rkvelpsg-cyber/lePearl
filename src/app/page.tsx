@@ -14,7 +14,6 @@ import {
 import { Header } from "@/components/Header";
 import { SuccessStoriesSection } from "@/components/SuccessStoriesSection";
 import { CoursesBooksSection } from "@/components/CoursesBooksSection";
-import { PromoPopup } from "@/components/PromoPopup";
 
 // Lazy-load below-the-fold sections so the initial page paint is faster
 const FounderContent = dynamic(() =>
@@ -186,7 +185,6 @@ export default async function Home() {
 
   return (
     <div style={{ position: "relative", width: "100%", overflow: "hidden" }}>
-      <PromoPopup />
       {/* Background Video - Homepage Only */}
       <div
         style={{

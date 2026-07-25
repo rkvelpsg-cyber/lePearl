@@ -30,7 +30,7 @@ export const paidRegistrationCourseFees: Partial<
   Record<StudentRegistrationCourse, number>
 > = {
   MPPSC: 2,
-  UPHESC: 2,
+  UPHESC: 14995,
   "UP GDC": 13995,
   "NET Paper 1": 8995,
   "NET Paper 2 (English)": 2,
@@ -76,7 +76,7 @@ export const coursePaymentPlans: Record<
     ],
   },
   UPHESC: {
-    fullAmount: 2,
+    fullAmount: 14995,
     instalments: [
       {
         label: "1st Instalment",
