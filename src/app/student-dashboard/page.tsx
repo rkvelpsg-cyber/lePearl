@@ -2366,7 +2366,7 @@ export default function StudentDashboardPage() {
                   active={activeSection}
                   onClick={setActiveSection}
                   icon={FileQuestion}
-                  label="Mock &amp; Tests"
+                  label="Mock Tests"
                 />
                 <NavBtn
                   section="classes"
@@ -2731,9 +2731,7 @@ export default function StudentDashboardPage() {
               {activeSection === "tests" && (
                 <>
                   <div className="bg-gradient-to-r from-purple-600 to-violet-600 rounded-2xl p-6 text-white">
-                    <h1 className="text-xl font-bold mb-1">
-                      Mock &amp; Original Tests
-                    </h1>
+                    <h1 className="text-xl font-bold mb-1">Mock Tests</h1>
                     <p className="text-purple-100 text-sm">
                       Attempt MCQ tests or submit descriptive test answers
                     </p>
