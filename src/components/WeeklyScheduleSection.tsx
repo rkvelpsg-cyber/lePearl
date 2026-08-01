@@ -8,113 +8,94 @@ interface ScheduleEvent {
 }
 
 const scheduleData: ScheduleEvent[] = [
+  // 9-12:00 Noon
+  { day: "Sunday", timeSlot: "9-12:00 Noon", course: "NLP", color: "pink" },
+
+  // 7:30-8:30 PM — UP GIC by Sadhana
   {
     day: "Monday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-  {
-    day: "Monday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "MPPSC by Neelu Patel",
-    color: "green",
-  },
-  {
-    day: "Monday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
-    color: "blue",
-  },
-  {
-    day: "Tuesday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-  {
-    day: "Tuesday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
-    color: "blue",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "6:00 - 7:30 PM",
-    course: "LT Grade by Sadhana",
+    timeSlot: "7:30-8:30 PM",
+    course: "UP GIC by Sadhana",
     color: "orange",
   },
   {
     day: "Wednesday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "MPPSC by Neelu Patel",
-    color: "green",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
-    color: "blue",
-  },
-  {
-    day: "Thursday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-  {
-    day: "Thursday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
-    color: "blue",
-  },
-  {
-    day: "Friday",
-    timeSlot: "7:45 - 9:00 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-  {
-    day: "Friday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "MPPSC by Neelu Patel",
-    color: "green",
-  },
-  {
-    day: "Friday",
-    timeSlot: "8:30 - 9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
-    color: "blue",
-  },
-  {
-    day: "Saturday",
-    timeSlot: "6:00 - 7:30 PM",
-    course: "LT Grade by Sadhana",
+    timeSlot: "7:30-8:30 PM",
+    course: "UP GIC by Sadhana",
     color: "orange",
   },
   {
-    day: "Saturday",
-    timeSlot: "7:45 - 9:00 PM",
+    day: "Friday",
+    timeSlot: "7:30-8:30 PM",
+    course: "UP GIC by Sadhana",
+    color: "orange",
+  },
+
+  // 8:30-9:30 PM
+  {
+    day: "Monday",
+    timeSlot: "8:30-9:30 PM",
+    course: "MPPSC by Neelu Patel",
+    color: "green",
+  },
+  {
+    day: "Monday",
+    timeSlot: "8:30-9:30 PM",
     course: "NET by Sadhana",
     color: "purple",
   },
   {
-    day: "Saturday",
-    timeSlot: "8:30 - 9:30 PM",
+    day: "Monday",
+    timeSlot: "8:30-9:30 PM",
     course: "UP GDC by Dr Prem Shankar",
     color: "blue",
   },
+
   {
-    day: "Sunday",
-    timeSlot: "9:00 - 12:00 Noon",
-    course: "NLP",
-    color: "pink",
+    day: "Tuesday",
+    timeSlot: "8:30-9:30 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+
+  {
+    day: "Wednesday",
+    timeSlot: "8:30-9:30 PM",
+    course: "MPPSC by Neelu Patel",
+    color: "green",
+  },
+  {
+    day: "Wednesday",
+    timeSlot: "8:30-9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+
+  {
+    day: "Thursday",
+    timeSlot: "8:30-9:30 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+
+  {
+    day: "Friday",
+    timeSlot: "8:30-9:30 PM",
+    course: "MPPSC by Neelu Patel",
+    color: "green",
+  },
+  {
+    day: "Friday",
+    timeSlot: "8:30-9:30 PM",
+    course: "UP GDC by Dr Prem Shankar",
+    color: "blue",
+  },
+
+  {
+    day: "Saturday",
+    timeSlot: "8:30-9:30 PM",
+    course: "NET by Sadhana",
+    color: "purple",
   },
 ];
 
@@ -128,12 +109,7 @@ const days = [
   "Sunday",
 ];
 
-const timeSlots = [
-  "9:00 - 12:00 Noon",
-  "6:00 - 7:30 PM",
-  "7:45 - 9:00 PM",
-  "8:30 - 9:30 PM",
-];
+const timeSlots = ["9-12:00 Noon", "7:30-8:30 PM", "8:30-9:30 PM"];
 
 const colorClasses = {
   purple: "bg-purple-100 border-purple-300 hover:bg-purple-200",

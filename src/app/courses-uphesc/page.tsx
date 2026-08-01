@@ -52,7 +52,8 @@ function HeroSection() {
   };
 
   const downloadSyllabus = () => {
-    window.location.href = "/student-registration?mode=free&download=uphesc-syllabus";
+    window.location.href =
+      "/student-registration?mode=free&download=uphesc-syllabus";
   };
 
   return (

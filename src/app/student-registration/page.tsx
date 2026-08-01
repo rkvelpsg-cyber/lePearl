@@ -221,7 +221,7 @@ function getInterviewPrepFeeOptions(course: InterviewPrepCourseId) {
     {
       id: "full-preparation" as const,
       title: "Full Preparation Package",
-      totalAmount: 2,
+      totalAmount: 7495,
       tenure: "full" as const,
       note: "Classes + Mock Interviews",
     },
@@ -394,7 +394,7 @@ const upgdcFeeOptions: {
   {
     id: "general-studies-full",
     title: "General Studies (Full Payment)",
-    totalAmount: 2,
+    totalAmount: 5495,
     tenure: "full",
     note: "One-time payment for General Studies",
   },

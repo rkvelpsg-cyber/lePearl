@@ -523,7 +523,7 @@ function Pricing() {
                 One-Time Payment
               </h3>
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-4xl font-bold text-blue-900">₹2</span>
+                <span className="text-4xl font-bold text-blue-900">₹8,999</span>
               </div>
               <p className="text-gray-500 line-through">₹12,000</p>
             </div>

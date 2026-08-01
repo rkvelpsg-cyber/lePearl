@@ -29,11 +29,11 @@ export type StudentRegistrationPayload = {
 export const paidRegistrationCourseFees: Partial<
   Record<StudentRegistrationCourse, number>
 > = {
-  MPPSC: 2,
+  MPPSC: 8999,
   UPHESC: 14995,
   "UP GDC": 13995,
   "NET Paper 1": 8995,
-  "NET Paper 2 (English)": 2,
+  "NET Paper 2 (English)": 15495,
   GIC: 9995,
   "LT Grade": 9995,
   "Interview Preparation - Assistant Professor": 7495,
@@ -61,7 +61,7 @@ export const coursePaymentPlans: Record<
   CoursePaymentPlan
 > = {
   MPPSC: {
-    fullAmount: 2,
+    fullAmount: 8999,
     instalments: [
       {
         label: "1st Instalment",
@@ -136,7 +136,7 @@ export const coursePaymentPlans: Record<
     ],
   },
   "NET Paper 2 (English)": {
-    fullAmount: 2,
+    fullAmount: 15495,
     instalments: [
       {
         label: "1st Instalment",

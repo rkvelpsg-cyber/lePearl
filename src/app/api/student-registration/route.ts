@@ -1293,7 +1293,9 @@ export async function POST(req: NextRequest) {
           const reason = ensureResult.reason ?? "Account provisioning failed";
           const normalizedReason = reason.toLowerCase();
           accountSetupFailed = true;
-          accountSetupError = normalizedReason.includes("username already exists")
+          accountSetupError = normalizedReason.includes(
+            "username already exists",
+          )
             ? "This username is already in use. Please try another username or contact support."
             : normalizedReason.includes("registration number already exists")
               ? "A registration number conflict occurred. Please refresh and retry the enrolment form."

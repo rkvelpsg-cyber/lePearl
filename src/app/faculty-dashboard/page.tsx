@@ -620,6 +620,7 @@ export default function FacultyDashboardPage() {
   const [tasks, setTasks] = useState<FacultyTask[]>([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [taskSubmitting, setTaskSubmitting] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [taskMsg, setTaskMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -3362,18 +3363,35 @@ export default function FacultyDashboardPage() {
         }
       }
 
-      const { error } = await supabase.from("faculty_tasks").insert({
-        faculty_user_id: user.id,
-        batch_id: batchId,
-        student_user_id: studentUserId,
-        title: taskForm.title,
-        description: taskForm.description || null,
-        due_date: taskForm.dueDate || null,
-        status: "pending",
-      });
-      if (error) throw error;
-      setTaskMsg({ type: "ok", text: "Task assigned!" });
+      if (editingTaskId) {
+        const { error } = await supabase
+          .from("faculty_tasks")
+          .update({
+            batch_id: batchId,
+            student_user_id: studentUserId,
+            title: taskForm.title,
+            description: taskForm.description || null,
+            due_date: taskForm.dueDate || null,
+          })
+          .eq("id", editingTaskId)
+          .eq("faculty_user_id", user.id);
+        if (error) throw error;
+        setTaskMsg({ type: "ok", text: "Task updated!" });
+      } else {
+        const { error } = await supabase.from("faculty_tasks").insert({
+          faculty_user_id: user.id,
+          batch_id: batchId,
+          student_user_id: studentUserId,
+          title: taskForm.title,
+          description: taskForm.description || null,
+          due_date: taskForm.dueDate || null,
+          status: "pending",
+        });
+        if (error) throw error;
+        setTaskMsg({ type: "ok", text: "Task assigned!" });
+      }
       setShowTaskForm(false);
+      setEditingTaskId(null);
       setTaskForm({
         batchId: "",
         studentId: "",
@@ -3383,10 +3401,59 @@ export default function FacultyDashboardPage() {
       });
       load();
     } catch {
-      setTaskMsg({ type: "err", text: "Failed to assign task." });
+      setTaskMsg({
+        type: "err",
+        text: editingTaskId
+          ? "Failed to update task."
+          : "Failed to assign task.",
+      });
     } finally {
       setTaskSubmitting(false);
     }
+  }
+
+  function startEditTask(t: FacultyTask) {
+    setEditingTaskId(t.id);
+    setShowTaskForm(true);
+    setTaskMsg(null);
+    setTaskForm({
+      batchId: t.batch_id ? String(t.batch_id) : "",
+      studentId: t.student_user_id ?? "",
+      title: t.title,
+      description: t.description ?? "",
+      dueDate: t.due_date ?? "",
+    });
+  }
+
+  function cancelTaskEdit() {
+    setEditingTaskId(null);
+    setShowTaskForm(false);
+    setTaskForm({
+      batchId: "",
+      studentId: "",
+      title: "",
+      description: "",
+      dueDate: "",
+    });
+  }
+
+  async function deleteTask(id: number) {
+    if (!confirm("Delete this task? This cannot be undone.")) return;
+    const supabase = createClient();
+    const user = await getFacultyUserSafe(supabase);
+    if (!user) return;
+    const { error } = await supabase
+      .from("faculty_tasks")
+      .delete()
+      .eq("id", id)
+      .eq("faculty_user_id", user.id);
+    if (error) {
+      setTaskMsg({ type: "err", text: "Failed to delete task." });
+      return;
+    }
+    if (editingTaskId === id) cancelTaskEdit();
+    setTaskMsg({ type: "ok", text: "Task deleted." });
+    load();
   }
 
   async function updateTaskStatus(taskId: number, status: string) {
@@ -6344,9 +6411,11 @@ export default function FacultyDashboardPage() {
                 {showTaskForm ? (
                   <div className="bg-white rounded-2xl shadow-sm p-5 border border-amber-100">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="font-bold text-gray-900">Assign Task</h2>
+                      <h2 className="font-bold text-gray-900">
+                        {editingTaskId ? "Edit Task" : "Assign Task"}
+                      </h2>
                       <button
-                        onClick={() => setShowTaskForm(false)}
+                        onClick={cancelTaskEdit}
                         className="text-gray-400 hover:text-gray-600"
                       >
                         <X className="w-5 h-5" />
@@ -6402,7 +6471,13 @@ export default function FacultyDashboardPage() {
                                   (s) =>
                                     s.batch_id === parseInt(taskForm.batchId),
                                 )
-                              : filteredBatchStudents
+                              : filteredBatchStudents.filter(
+                                  (s, i, arr) =>
+                                    arr.findIndex(
+                                      (x) =>
+                                        x.student_user_id === s.student_user_id,
+                                    ) === i,
+                                )
                             ).map((s) => (
                               <option
                                 key={s.student_user_id}
@@ -6463,20 +6538,30 @@ export default function FacultyDashboardPage() {
                         />
                       </div>
                     </div>
-                    <button
-                      onClick={submitTask}
-                      disabled={
-                        taskSubmitting || !taskForm.batchId || !taskForm.title
-                      }
-                      className="mt-4 flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-xl font-semibold text-sm disabled:opacity-60"
-                    >
-                      {taskSubmitting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
+                    <div className="mt-4 flex items-center gap-3">
+                      <button
+                        onClick={submitTask}
+                        disabled={
+                          taskSubmitting || !taskForm.batchId || !taskForm.title
+                        }
+                        className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-xl font-semibold text-sm disabled:opacity-60"
+                      >
+                        {taskSubmitting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                        {editingTaskId ? "Save Changes" : "Assign Task"}
+                      </button>
+                      {editingTaskId && (
+                        <button
+                          onClick={cancelTaskEdit}
+                          className="px-4 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900"
+                        >
+                          Cancel
+                        </button>
                       )}
-                      Assign Task
-                    </button>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -6533,19 +6618,35 @@ export default function FacultyDashboardPage() {
                                   </p>
                                 )}
                               </div>
-                              {t.status !== "completed" && (
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                {t.status !== "completed" && (
+                                  <button
+                                    onClick={() =>
+                                      updateTaskStatus(
+                                        t.id,
+                                        NEXT_STATUS[t.status] ?? "completed",
+                                      )
+                                    }
+                                    className="text-xs px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl font-semibold hover:bg-emerald-200 capitalize"
+                                  >
+                                    Mark {NEXT_STATUS[t.status]}
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() =>
-                                    updateTaskStatus(
-                                      t.id,
-                                      NEXT_STATUS[t.status] ?? "completed",
-                                    )
-                                  }
-                                  className="text-xs px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl font-semibold hover:bg-emerald-200 flex-shrink-0 capitalize"
+                                  onClick={() => startEditTask(t)}
+                                  title="Edit task"
+                                  className="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100"
                                 >
-                                  Mark {NEXT_STATUS[t.status]}
+                                  <Edit3 className="w-3.5 h-3.5" />
                                 </button>
-                              )}
+                                <button
+                                  onClick={() => deleteTask(t.id)}
+                                  title="Delete task"
+                                  className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );

@@ -448,7 +448,7 @@ function InterviewContent() {
                 </h3>
                 <p className="text-white/90 mb-6">Classes + Mock Interviews</p>
                 <div className="flex items-baseline justify-center gap-2 mb-6">
-                  <span className="text-5xl md:text-6xl font-bold">₹2</span>
+                  <span className="text-5xl md:text-6xl font-bold">₹7,495</span>
                   <span className="text-white/80">/-</span>
                 </div>
               </div>
