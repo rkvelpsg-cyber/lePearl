@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -519,6 +519,10 @@ export default function StudentDashboardPage() {
     Record<number, McqResultSummary>
   >({});
   const [reviewTest, setReviewTest] = useState<McqReviewState | null>(null);
+  const [markedForReview, setMarkedForReview] = useState<Set<number>>(
+    new Set(),
+  );
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   /* fee/payment state */
   const [payAmount, setPayAmount] = useState("");
@@ -1357,6 +1361,20 @@ export default function StudentDashboardPage() {
     }
   }, [activeTest, testAnswers]);
 
+  // Shows confirmation dialog when questions are unanswered or marked for review; otherwise submits directly.
+  function requestSubmit() {
+    if (!activeTest) return;
+    const unanswered = activeTest.questions.filter(
+      (q) => !testAnswers[q.id] && !markedForReview.has(q.id),
+    ).length;
+    const marked = markedForReview.size;
+    if (unanswered > 0 || marked > 0) {
+      setShowSubmitConfirm(true);
+    } else {
+      handleSubmitTest();
+    }
+  }
+
   useEffect(() => {
     if (!activeTest || testSubmitted) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -1415,6 +1433,7 @@ export default function StudentDashboardPage() {
     }
     setActiveTest({ test, questions: qData as McqQuestion[] });
     setTestAnswers({});
+    setMarkedForReview(new Set());
     setTestSubmitted(false);
     setTimerSecs(test.time_limit_minutes * 60);
   }
@@ -2080,6 +2099,69 @@ export default function StudentDashboardPage() {
       )}
 
       {/* â”€â”€ MCQ TEST OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* Submit confirmation dialog */}
+      {showSubmitConfirm && activeTest && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Ready to Submit?
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Please review your progress before submitting.
+            </p>
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center justify-between rounded-xl bg-green-50 border border-green-200 px-4 py-2.5">
+                <span className="text-sm font-medium text-green-700">
+                  Answered
+                </span>
+                <span className="font-bold text-green-700">
+                  {Object.keys(testAnswers).length} /{" "}
+                  {activeTest.questions.length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-red-50 border border-red-200 px-4 py-2.5">
+                <span className="text-sm font-medium text-red-600">
+                  Not Answered
+                </span>
+                <span className="font-bold text-red-600">
+                  {
+                    activeTest.questions.filter(
+                      (q) => !testAnswers[q.id] && !markedForReview.has(q.id),
+                    ).length
+                  }
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5">
+                <span className="text-sm font-medium text-amber-600">
+                  Marked for Review
+                </span>
+                <span className="font-bold text-amber-600">
+                  {markedForReview.size}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSubmitConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-sm hover:bg-gray-50"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => {
+                  setShowSubmitConfirm(false);
+                  handleSubmitTest();
+                }}
+                disabled={testSubmitting}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm disabled:opacity-60 hover:bg-purple-700"
+              >
+                Yes, Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTest && (
         <div className="fixed inset-0 z-50 bg-black/60">
           <div className="h-screen w-screen bg-white flex flex-col shadow-2xl">
@@ -2113,7 +2195,7 @@ export default function StudentDashboardPage() {
                     {String(timerSecs % 60).padStart(2, "0")}
                   </div>
                   <button
-                    onClick={handleSubmitTest}
+                    onClick={requestSubmit}
                     disabled={testSubmitting}
                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-semibold text-sm disabled:opacity-60"
                   >
@@ -2194,79 +2276,183 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-                {activeTest.questions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    className="bg-gray-50 rounded-xl p-5 border border-gray-200"
-                  >
-                    <p className="font-semibold text-gray-900 mb-3 leading-7">
-                      <span className="text-purple-600 mr-2">Q{idx + 1}.</span>
-                      {shouldIndentMcqQuestion(q.question_text) ? (
-                        <span className="block pl-6 mt-1 whitespace-pre-line border-l-2 border-purple-200">
-                          {q.question_text}
-                        </span>
-                      ) : (
-                        q.question_text
-                      )}
-                      <span className="ml-2 text-xs text-gray-500 align-middle">
-                        ({q.marks} mark{q.marks > 1 ? "s" : ""})
-                      </span>
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {(["A", "B", "C", "D"] as const).map((opt) => {
-                        const text =
-                          q[
-                            `option_${opt.toLowerCase()}` as
-                              | "option_a"
-                              | "option_b"
-                              | "option_c"
-                              | "option_d"
-                          ];
-                        const selected = testAnswers[q.id] === opt;
-                        return (
-                          <label
-                            key={opt}
-                            className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-200"}`}
-                          >
-                            <input
-                              type="radio"
-                              name={`q_${q.id}`}
-                              value={opt}
-                              checked={selected}
-                              onChange={() =>
-                                setTestAnswers((prev) => ({
-                                  ...prev,
-                                  [q.id]: opt,
-                                }))
-                              }
-                              className="mt-0.5 accent-purple-600"
-                            />
-                            <span className="text-sm text-gray-800">
-                              <strong className="text-purple-600">
-                                {opt}.
-                              </strong>{" "}
-                              {text}
+              <div className="flex-1 overflow-hidden flex">
+                {/* ── Question list (scrollable) ── */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                  {activeTest.questions.map((q, idx) => {
+                    const isAnswered = !!testAnswers[q.id];
+                    const isMarked = markedForReview.has(q.id);
+                    return (
+                      <div
+                        key={q.id}
+                        id={`mcq-question-${idx}`}
+                        className={`rounded-xl p-5 border-2 transition-colors ${isMarked ? "border-amber-400 bg-amber-50" : "border-gray-200 bg-gray-50"}`}
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <p className="font-semibold text-gray-900 leading-7">
+                            <span className="text-purple-600 mr-2">
+                              Q{idx + 1}.
                             </span>
-                          </label>
-                        );
-                      })}
+                            {shouldIndentMcqQuestion(q.question_text) ? (
+                              <span className="block pl-6 mt-1 whitespace-pre-line border-l-2 border-purple-200">
+                                {q.question_text}
+                              </span>
+                            ) : (
+                              q.question_text
+                            )}
+                            <span className="ml-2 text-xs text-gray-500 align-middle">
+                              ({q.marks} mark{q.marks > 1 ? "s" : ""})
+                            </span>
+                          </p>
+                          <button
+                            onClick={() =>
+                              setMarkedForReview((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(q.id)) next.delete(q.id);
+                                else next.add(q.id);
+                                return next;
+                              })
+                            }
+                            className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${isMarked ? "bg-amber-400 border-amber-400 text-white" : "bg-white border-amber-400 text-amber-600 hover:bg-amber-50"}`}
+                          >
+                            {isMarked ? "★ Marked" : "☆ Mark for Review"}
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {(["A", "B", "C", "D"] as const).map((opt) => {
+                            const text =
+                              q[
+                                `option_${opt.toLowerCase()}` as
+                                  | "option_a"
+                                  | "option_b"
+                                  | "option_c"
+                                  | "option_d"
+                              ];
+                            const selected = testAnswers[q.id] === opt;
+                            return (
+                              <label
+                                key={opt}
+                                className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${selected ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:border-purple-200"}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`q_${q.id}`}
+                                  value={opt}
+                                  checked={selected}
+                                  onChange={() =>
+                                    setTestAnswers((prev) => ({
+                                      ...prev,
+                                      [q.id]: opt,
+                                    }))
+                                  }
+                                  className="mt-0.5 accent-purple-600"
+                                />
+                                <span className="text-sm text-gray-800">
+                                  <strong className="text-purple-600">
+                                    {opt}.
+                                  </strong>{" "}
+                                  {text}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-end pt-2">
+                    <button
+                      onClick={requestSubmit}
+                      disabled={testSubmitting}
+                      className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold disabled:opacity-60"
+                    >
+                      {testSubmitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      Submit Exam
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Question Palette side panel ── */}
+                <div className="hidden md:flex w-56 shrink-0 flex-col border-l border-gray-200 bg-gray-50 overflow-y-auto p-4 gap-4">
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                    Question Palette
+                  </p>
+                  {/* Legend */}
+                  <div className="space-y-1.5 text-xs text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-green-500 shrink-0" />
+                      Answered
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-red-400 shrink-0" />
+                      Not Answered
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-amber-400 shrink-0" />
+                      Marked for Review
                     </div>
                   </div>
-                ))}
-                <div className="flex justify-end pt-2">
-                  <button
-                    onClick={handleSubmitTest}
-                    disabled={testSubmitting}
-                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold disabled:opacity-60"
-                  >
-                    {testSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4" />
-                    )}
-                    Submit Exam
-                  </button>
+                  {/* Number grid */}
+                  <div className="flex flex-wrap gap-2">
+                    {activeTest.questions.map((q, idx) => {
+                      const isAnswered = !!testAnswers[q.id];
+                      const isMarked = markedForReview.has(q.id);
+                      const bg = isMarked
+                        ? "bg-amber-400 text-white"
+                        : isAnswered
+                          ? "bg-green-500 text-white"
+                          : "bg-red-400 text-white";
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => {
+                            const el = document.getElementById(
+                              `mcq-question-${idx}`,
+                            );
+                            if (el)
+                              el.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              });
+                          }}
+                          className={`w-9 h-9 rounded-full text-xs font-bold flex items-center justify-center transition-transform hover:scale-110 ${bg}`}
+                          title={`Q${idx + 1}`}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Summary counts */}
+                  <div className="mt-auto space-y-1 text-xs text-gray-600 border-t border-gray-200 pt-3">
+                    <p>
+                      Answered:{" "}
+                      <span className="font-bold text-green-600">
+                        {Object.keys(testAnswers).length}
+                      </span>
+                    </p>
+                    <p>
+                      Not Answered:{" "}
+                      <span className="font-bold text-red-500">
+                        {
+                          activeTest.questions.filter(
+                            (q) =>
+                              !testAnswers[q.id] && !markedForReview.has(q.id),
+                          ).length
+                        }
+                      </span>
+                    </p>
+                    <p>
+                      Marked for Review:{" "}
+                      <span className="font-bold text-amber-500">
+                        {markedForReview.size}
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

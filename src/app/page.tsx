@@ -387,11 +387,11 @@ export default async function Home() {
                 .concat([
                   {
                     href: "/courses-net-paper1",
-                    label: "NTA NET December 2026 Paper 1",
+                    label: "NTA NET Paper 1",
                   },
                   {
                     href: "/courses-net-paper2",
-                    label: "NTA NET December 2026 Paper 2 (English)",
+                    label: "NTA NET Paper 2 (English)",
                   },
                   { href: "/courses-mppsc", label: "MPPSC" },
                   { href: "/courses-uphesc", label: "UPHESC" },
