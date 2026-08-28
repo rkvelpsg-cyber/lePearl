@@ -2687,7 +2687,7 @@ export default function AdminDashboardPage() {
       <main className="w-full px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
           {/* sidebar */}
-          <aside className="bg-amber-50 border border-amber-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24">
+          <aside className="bg-amber-50 border border-amber-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2">
             <div className="pb-4 border-b border-amber-100">
               <p className="text-lg font-bold text-gray-900">Admin</p>
               <p className="text-xs text-amber-700 font-semibold mt-0.5">

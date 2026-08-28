@@ -197,6 +197,8 @@ type StudyMaterial = {
   created_at: string;
   batches: { batch_name: string; courses: { title: string } | null } | null;
 };
+type ItemProgressStatus = "Complete" | "In-Progress" | "Pending";
+type ItemProgressMap = Record<string, ItemProgressStatus>;
 type EnrollmentRow = {
   batch_id: number;
   batches: {
@@ -504,6 +506,43 @@ export default function StudentDashboardPage() {
     useState<PaidRegistrationSummary | null>(null);
   const [facultyTasks, setFacultyTasks] = useState<StudentTask[]>([]);
   const [mockStat, setMockStat] = useState({ scored: 0, total: 0 });
+  const [itemStatuses, setItemStatuses] = useState<ItemProgressMap>({});
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const storageKey = `lepearl-student-item-statuses-${userId}`;
+    const saved = window.localStorage.getItem(storageKey);
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as ItemProgressMap;
+        if (parsed && typeof parsed === "object") {
+          setItemStatuses(parsed);
+          return;
+        }
+      } catch {
+        // Ignore malformed saved state and fall back to an empty map.
+      }
+    }
+
+    setItemStatuses({});
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    window.localStorage.setItem(
+      `lepearl-student-item-statuses-${userId}`,
+      JSON.stringify(itemStatuses),
+    );
+  }, [itemStatuses, userId]);
+
+  const updateItemStatus = (itemKey: string, status: ItemProgressStatus) => {
+    setItemStatuses((prev) => ({
+      ...prev,
+      [itemKey]: status,
+    }));
+  };
 
   /* MCQ test state */
   const [activeTest, setActiveTest] = useState<{
@@ -2501,7 +2540,7 @@ export default function StudentDashboardPage() {
         <main className="w-full px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
             {/* sidebar */}
-            <aside className="bg-purple-50 border border-purple-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24">
+            <aside className="bg-purple-50 border border-purple-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2">
               <div className="flex items-center gap-3 pb-4 border-b border-purple-100">
                 <div className="w-14 h-14 rounded-full bg-purple-200 overflow-hidden flex items-center justify-center text-purple-700 font-bold text-xl">
                   {profilePhotoPreview ? (
@@ -3652,6 +3691,43 @@ export default function StudentDashboardPage() {
                                 </p>
                               </div>
                             </div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {(
+                                [
+                                  "Complete",
+                                  "In-Progress",
+                                  "Pending",
+                                ] as ItemProgressStatus[]
+                              ).map((status) => {
+                                const isSelected =
+                                  itemStatuses[`lecture:${lec.id}`] === status;
+                                const baseClass =
+                                  "rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold transition-colors";
+                                const selectedClass = isSelected
+                                  ? status === "Complete"
+                                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                    : status === "In-Progress"
+                                      ? "border-amber-500 bg-amber-50 text-amber-700"
+                                      : "border-slate-400 bg-slate-100 text-slate-700"
+                                  : "border-gray-200 bg-white text-gray-600 hover:border-indigo-200 hover:text-indigo-700";
+
+                                return (
+                                  <button
+                                    key={status}
+                                    type="button"
+                                    onClick={() =>
+                                      updateItemStatus(
+                                        `lecture:${lec.id}`,
+                                        status,
+                                      )
+                                    }
+                                    className={`${baseClass} ${selectedClass}`}
+                                  >
+                                    {status}
+                                  </button>
+                                );
+                              })}
+                            </div>
                             <a
                               href={lec.drive_link}
                               target="_blank"
@@ -3725,6 +3801,44 @@ export default function StudentDashboardPage() {
                                   {fmtDate(material.created_at)}
                                 </p>
                               </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {(
+                                [
+                                  "Complete",
+                                  "In-Progress",
+                                  "Pending",
+                                ] as ItemProgressStatus[]
+                              ).map((status) => {
+                                const isSelected =
+                                  itemStatuses[`material:${material.id}`] ===
+                                  status;
+                                const baseClass =
+                                  "rounded-xl border px-2.5 py-1.5 text-[11px] font-semibold transition-colors";
+                                const selectedClass = isSelected
+                                  ? status === "Complete"
+                                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                    : status === "In-Progress"
+                                      ? "border-amber-500 bg-amber-50 text-amber-700"
+                                      : "border-slate-400 bg-slate-100 text-slate-700"
+                                  : "border-gray-200 bg-white text-gray-600 hover:border-blue-200 hover:text-blue-700";
+
+                                return (
+                                  <button
+                                    key={status}
+                                    type="button"
+                                    onClick={() =>
+                                      updateItemStatus(
+                                        `material:${material.id}`,
+                                        status,
+                                      )
+                                    }
+                                    className={`${baseClass} ${selectedClass}`}
+                                  >
+                                    {status}
+                                  </button>
+                                );
+                              })}
                             </div>
                             <a
                               href={material.drive_link}

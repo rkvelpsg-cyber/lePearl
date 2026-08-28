@@ -3689,7 +3689,7 @@ export default function FacultyDashboardPage() {
       <main className="w-full px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
           {/* sidebar */}
-          <aside className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24">
+          <aside className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 h-fit lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2">
             <div className="flex items-center gap-3 pb-4 border-b border-emerald-100">
               <div className="w-14 h-14 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-700 font-bold text-xl">
                 {profile?.full_name?.charAt(0) ?? "F"}
