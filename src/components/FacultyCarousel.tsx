@@ -6,7 +6,6 @@ import Image, { type StaticImageData } from "next/image";
 import sadhanaImg from "../../public/sadhana_faculty1.jpeg";
 import babliImg from "../../public/DrBablick.png";
 import neeluImg from "../../public/facultyneelunew.png";
-import harendraImg from "../../public/harendranewpic.png";
 
 interface FacultyMember {
   id: number;
@@ -33,12 +32,6 @@ const facultyData: FacultyMember[] = [
     name: "Ms. Neelu Patel",
     image: neeluImg,
     description: "NET-JRF, Assistant Professor, Faculty-LePearl Education",
-  },
-  {
-    id: 4,
-    name: "Dr. Harendra K Tripathi",
-    image: harendraImg,
-    description: "GS Expert, Faculty-LePearl Education",
   },
 ];
 

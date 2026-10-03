@@ -160,47 +160,4 @@ export const facultyProfiles: FacultyProfile[] = [
     ],
     experience: "7+ Years",
   },
-  {
-    id: 4,
-    name: "Dr. Harendra K Tripathi",
-    title:
-      "Educator | Sociologist | Public Sector Professional | Mentor for GS & UGC NET",
-    designation:
-      "Educator | Sociologist | Public Sector Professional | Mentor for GS & UGC NET",
-    image: "/harendranewpic.png",
-    shortBio:
-      "Experienced educator, sociologist, and public sector professional with multidisciplinary expertise",
-    fullBio:
-      'Dr. Harendra K Tripathi is an experienced educator, sociologist, and public sector professional with over two decades of multidisciplinary expertise. He combines strong academic scholarship with practical governance experience and has made significant contributions in teaching, research, and mentoring students for competitive examinations and academic careers. With more than 20 years in the public sector, Dr. Tripathi has worked across IT (System Administration, Software Development & Testing), Finance & Accounting (Cost Analysis, Payroll & Fund Management), and General Administration & Training. His diverse professional background gives him deep insight into governance, institutional functioning, and workforce development. His research focuses on Sociology of Health, Social Capital, Labour Studies, and Qualitative Research. His Ph.D. thesis is titled: "Social Construction of Positive Health: A Sociological Study among Informal Workers in Chandigarh (U.T. and Capital Region)". He has published research papers in reputed journals, including a Scopus-indexed journal and a Q4-ranked academic journal. For the past five years, Dr. Tripathi has been associated with Lepearl Education as a General Studies expert and faculty for NTA UGC NET Paper 1. He specializes in mentoring students for UGC-NET, Assistant Professor recruitment, and other competitive examinations. His exam-oriented guidance and conceptual teaching approach have helped students achieve a high success rate. Dr. Harendra K Tripathi\'s unique combination of academic depth, public sector experience, and mentoring skills makes him an invaluable faculty member for research methodology, academic writing, and competitive examination preparation programs.',
-    qualifications: [
-      "Ph.D. in Sociology",
-      "Qualifications in Computer Science, Sociology, Administrative & Labour Law, Human Resource Management, and Translation Studies",
-      "UGC-NET (Sociology) Qualified",
-    ],
-    expertise: [
-      "Sociology of Health",
-      "Social Capital",
-      "Labour Studies",
-      "Qualitative Research",
-      "General Studies (UGC NET Paper 1)",
-      "Research Methodology",
-      "Academic Writing",
-      "Competitive Exam Mentorship",
-    ],
-    subjects: [
-      "NTA UGC NET Paper 1",
-      "General Studies",
-      "Research Methodology",
-      "Academic Writing",
-      "Competitive Examination Preparation",
-    ],
-    achievements: [
-      "Over 20 years of public sector multidisciplinary experience",
-      "Published in reputed journals including Scopus-indexed and Q4-ranked journals",
-      "Associated with Lepearl Education for the last five years as GS Expert",
-      "Mentored students for UGC-NET, Assistant Professor recruitment, and competitive exams",
-      "Delivered high-success, exam-oriented conceptual guidance",
-    ],
-    experience: "20+ Years",
-  },
 ];

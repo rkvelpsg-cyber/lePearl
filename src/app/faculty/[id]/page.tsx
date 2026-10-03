@@ -25,8 +25,7 @@ export default async function FacultyProfilePage({
   const { id } = await params;
   const faculty = facultyProfiles.find((f) => f.id === Number(id));
   if (!faculty) notFound();
-  const profileImagePosition =
-    faculty.id === 4 ? "center top" : (faculty.imagePosition ?? "center");
+  const profileImagePosition = faculty.imagePosition ?? "center";
 
   const others = facultyProfiles.filter((f) => f.id !== faculty.id);
 
