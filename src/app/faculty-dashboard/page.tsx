@@ -15,6 +15,7 @@ import {
   utcToIstDateTimeInput,
 } from "@/lib/timezone";
 import { isCanonicalPaidEnrollmentBatch } from "@/lib/paidEnrollmentBatchMapping";
+import { canAccessFacultySection, isMockOnlyBatch } from "@/lib/mockOnlyBatch";
 import {
   Bell,
   LogOut,
@@ -261,6 +262,13 @@ function normalizeAttendanceTitle(title: string) {
   return title.replace(/\s*\(upcoming\)\s*$/i, "").trim();
 }
 
+function isMockOnlyFacultyBatch(batch: Batch) {
+  return isMockOnlyBatch({
+    batchName: batch.batch_name,
+    courseName: unwrapOne(batch.courses)?.title,
+  });
+}
+
 function normalizeSearchQuery(value: string) {
   return value.trim().toLowerCase();
 }
@@ -439,18 +447,22 @@ function NavBtn({
   onClick,
   icon: Icon,
   label,
+  disabled = false,
 }: {
   section: Section;
   active: Section;
   onClick: (s: Section) => void;
   icon: React.ElementType;
   label: string;
+  disabled?: boolean;
 }) {
   const isActive = section === active;
   return (
     <button
+      disabled={disabled}
+      title={disabled ? "Not included in this mock-only batch" : undefined}
       onClick={() => onClick(section)}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-sm font-medium ${isActive ? "bg-white text-emerald-700 font-semibold shadow-sm border border-emerald-100" : "text-gray-700 hover:bg-white hover:shadow-sm"}`}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-sm font-medium ${isActive ? "bg-white text-emerald-700 font-semibold shadow-sm border border-emerald-100" : disabled ? "text-gray-400 cursor-not-allowed opacity-60" : "text-gray-700 hover:bg-white hover:shadow-sm"}`}
     >
       <Icon className="w-4 h-4" />
       {label}
@@ -852,6 +864,45 @@ export default function FacultyDashboardPage() {
           );
           return courseObj?.id === selectedCourseId;
         });
+  const isMockOnlyScope =
+    filteredBatches.length > 0 && filteredBatches.every(isMockOnlyFacultyBatch);
+  const teachingBatches = filteredBatches.filter((batch) => !isMockOnlyFacultyBatch(batch));
+  const teachingBatchIds = new Set(teachingBatches.map((batch) => batch.id));
+
+  function navigateToSection(section: Section) {
+    if (canAccessFacultySection(section, isMockOnlyScope)) {
+      setActiveSection(section);
+    }
+  }
+
+  useEffect(() => {
+    if (!canAccessFacultySection(activeSection, isMockOnlyScope)) {
+      setActiveSection("dashboard");
+    }
+  }, [activeSection, isMockOnlyScope]);
+
+  useEffect(() => {
+    if (!isMockOnlyScope) return;
+    if (mcqForm.batchId && !filteredBatches.some((batch) => String(batch.id) === mcqForm.batchId)) {
+      setEditingTestId(null);
+      setEditingTestWasPublished(false);
+      setShowMcqForm(false);
+      setMcqForm((current) => ({
+        ...current,
+        courseId: selectedCourseId === "all" ? "" : String(selectedCourseId),
+        batchId: "",
+        title: "",
+        examType: "mock",
+      }));
+    }
+    if (selectedTest && !filteredBatches.some((batch) => batch.id === selectedTest.batch_id)) {
+      setSelectedTest(null);
+    }
+    if (selectedEvalTest && !filteredBatches.some((batch) => batch.id === selectedEvalTest.batch_id)) {
+      setSelectedEvalTest(null);
+      setSelectedSubmission(null);
+    }
+  }, [isMockOnlyScope, filteredBatches, selectedTest, selectedEvalTest, mcqForm.batchId, selectedCourseId]);
 
   const scrollToEditorForm = useCallback(
     (ref: { current: HTMLDivElement | null }) => {
@@ -917,6 +968,7 @@ export default function FacultyDashboardPage() {
   );
   const filteredStudentProgress = studentProgress.filter((p) => {
     if (!filteredStudentIds.has(p.student_user_id)) return false;
+    if (!teachingBatches.some((batch) => unwrapOne(batch.courses)?.id === p.course_id)) return false;
     if (selectedCourseId === "all") return true;
     return filteredCourseIds.has(p.course_id);
   });
@@ -927,22 +979,24 @@ export default function FacultyDashboardPage() {
     (t) => t.batch_id != null && filteredBatchIds.has(t.batch_id),
   );
   const filteredUpcomingClasses = upcomingClasses.filter((s) =>
-    filteredBatchIds.has(s.batch_id),
+    teachingBatchIds.has(s.batch_id),
   );
   const filteredLectures = lectures.filter(
     (lecture) =>
-      lecture.batch_id != null && filteredBatchIds.has(lecture.batch_id),
+      lecture.batch_id != null && teachingBatchIds.has(lecture.batch_id),
   );
   const filteredStudyMaterials = studyMaterials.filter(
     (material) =>
-      material.batch_id != null && filteredBatchIds.has(material.batch_id),
+      material.batch_id != null && teachingBatchIds.has(material.batch_id),
   );
   const filteredAttendanceSessions = attendanceSessions.filter((s) =>
-    filteredBatchIds.has(s.batch_id),
+    teachingBatchIds.has(s.batch_id),
   );
   const filteredTasks = tasks.filter((t) => {
-    if (t.batch_id != null) return filteredBatchIds.has(t.batch_id);
-    if (t.student_user_id) return filteredStudentIds.has(t.student_user_id);
+    if (t.batch_id != null) return teachingBatchIds.has(t.batch_id);
+    if (t.student_user_id) return filteredBatchStudents.some(
+      (student) => student.student_user_id === t.student_user_id && teachingBatchIds.has(student.batch_id),
+    );
     return false;
   });
   const dashboardSearchQuery = normalizeSearchQuery(sectionSearch.dashboard);
@@ -1172,6 +1226,12 @@ export default function FacultyDashboardPage() {
   const selectedMcqBatch = batches.find(
     (b) => b.id === parseInt(mcqForm.batchId || "0", 10),
   );
+  const isMockOnlyTestBatch = !!selectedMcqBatch && isMockOnlyFacultyBatch(selectedMcqBatch);
+  useEffect(() => {
+    if (isMockOnlyTestBatch && mcqForm.examType !== "mock") {
+      setMcqForm((current) => ({ ...current, examType: "mock" }));
+    }
+  }, [isMockOnlyTestBatch, mcqForm.examType]);
   const selectedMcqBatchCourse = unwrapOne(
     selectedMcqBatch?.courses as
       | { id: number; title: string }
@@ -2134,6 +2194,14 @@ export default function FacultyDashboardPage() {
       }
 
       const batch = batches.find((b) => b.id === batchId);
+      if (isMockOnlyScope && (!batch || !isMockOnlyFacultyBatch(batch))) {
+        setMcqMsg({ type: "err", text: "Select the UPHESC-Mock Only batch for this course." });
+        return;
+      }
+      if (batch && isMockOnlyFacultyBatch(batch) && mcqForm.examType !== "mock") {
+        setMcqMsg({ type: "err", text: "Only mock tests can be assigned to UPHESC-Mock Only." });
+        return;
+      }
       const courseId = unwrapOne(
         batch?.courses as
           | { id: number; title: string }
@@ -2875,6 +2943,10 @@ export default function FacultyDashboardPage() {
       if (!user) return;
 
       const batchId = parseInt(classForm.batchId, 10);
+      if (isMockOnlyScope || batches.some((batch) => batch.id === batchId && isMockOnlyFacultyBatch(batch))) {
+        setClassMsg({ type: "err", text: "Live classes are not included in UPHESC-Mock Only." });
+        return;
+      }
       if (!classForm.title.trim()) {
         setClassMsg({ type: "err", text: "Please enter class title." });
         return;
@@ -3097,6 +3169,10 @@ export default function FacultyDashboardPage() {
       const user = await getFacultyUserSafe(supabase);
       if (!user) return;
       const batchId = parseInt(lectureForm.batchId, 10);
+      if (isMockOnlyScope || batches.some((batch) => batch.id === batchId && isMockOnlyFacultyBatch(batch))) {
+        setLectureMsg({ type: "err", text: "Recorded lectures are not included in UPHESC-Mock Only." });
+        return;
+      }
       if (!Number.isFinite(batchId)) {
         setLectureMsg({ type: "err", text: "Please select a valid batch." });
         return;
@@ -3206,6 +3282,10 @@ export default function FacultyDashboardPage() {
       const user = await getFacultyUserSafe(supabase);
       if (!user) return;
       const batchId = parseInt(studyMaterialForm.batchId, 10);
+      if (isMockOnlyScope || batches.some((batch) => batch.id === batchId && isMockOnlyFacultyBatch(batch))) {
+        setStudyMaterialMsg({ type: "err", text: "Study material is not included in UPHESC-Mock Only." });
+        return;
+      }
       if (!Number.isFinite(batchId)) {
         setStudyMaterialMsg({
           type: "err",
@@ -3322,6 +3402,10 @@ export default function FacultyDashboardPage() {
       if (!user) return;
 
       const batchId = parseInt(taskForm.batchId, 10);
+      if (isMockOnlyScope || batches.some((batch) => batch.id === batchId && isMockOnlyFacultyBatch(batch))) {
+        setTaskMsg({ type: "err", text: "Tasks are not included in UPHESC-Mock Only. Assign a mock test instead." });
+        return;
+      }
       if (!Number.isFinite(batchId)) {
         setTaskMsg({ type: "err", text: "Please select a valid batch." });
         return;
@@ -3468,6 +3552,12 @@ export default function FacultyDashboardPage() {
     courseId: number,
     newPct: number,
   ) {
+    if (isMockOnlyScope || batches.some((batch) =>
+      isMockOnlyFacultyBatch(batch) && unwrapOne(batch.courses)?.id === courseId,
+    )) {
+      setProgressMsg({ type: "err", text: "Use mock-test evaluations to report results for UPHESC-Mock Only." });
+      return;
+    }
     const supabase = createClient();
     const key = `${studentUserId}_${courseId}`;
     setProgressUpdating(key);
@@ -3742,63 +3832,69 @@ export default function FacultyDashboardPage() {
               <NavBtn
                 section="dashboard"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
                 icon={LayoutDashboard}
                 label="Dashboard"
               />
               <NavBtn
                 section="attendance"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
+                disabled={isMockOnlyScope}
                 icon={Calendar}
                 label="Attendance"
               />
               <NavBtn
                 section="mcq"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
                 icon={FileQuestion}
                 label="Mock Tests"
               />
               <NavBtn
                 section="evaluations"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
                 icon={CheckCircle}
                 label="Evaluations"
               />
               <NavBtn
                 section="classes"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
+                disabled={isMockOnlyScope}
                 icon={Video}
                 label="Live Classes"
               />
               <NavBtn
                 section="lectures"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
+                disabled={isMockOnlyScope}
                 icon={PlayCircle}
                 label="Recorded Lectures"
               />
               <NavBtn
                 section="studyMaterial"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
+                disabled={isMockOnlyScope}
                 icon={BookOpen}
                 label="Study Material"
               />
               <NavBtn
                 section="tasks"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
+                disabled={isMockOnlyScope}
                 icon={ClipboardList}
                 label="Tasks"
               />
               <NavBtn
                 section="students"
                 active={activeSection}
-                onClick={setActiveSection}
+                onClick={navigateToSection}
+                disabled={isMockOnlyScope}
                 icon={Users}
                 label="Student Progress"
               />
@@ -3815,7 +3911,7 @@ export default function FacultyDashboardPage() {
                     Welcome, {profile?.full_name ?? "Faculty"}!
                   </h1>
                   <p className="text-emerald-200 text-sm">
-                    Manage your students, classes, and tests from here
+                    {isMockOnlyScope ? "Assign mock tests, evaluate answers, and report results for this batch" : "Manage your students, classes, and tests from here"}
                   </p>
                 </div>
 
@@ -3840,13 +3936,13 @@ export default function FacultyDashboardPage() {
                     iconBg="bg-blue-100"
                     iconColor="text-blue-600"
                   />
-                  <StatCard
+                  {!isMockOnlyScope && <StatCard
                     label="Upcoming Classes"
                     value={searchedDashboardCourseUpcomingClasses.length}
                     icon={Video}
                     iconBg="bg-purple-100"
                     iconColor="text-purple-600"
-                  />
+                  />}
                   <StatCard
                     label="Upcoming Tests (MCQ + Descriptive)"
                     value={searchedDashboardUpcomingTests.length}
@@ -3926,7 +4022,7 @@ export default function FacultyDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm p-5 border border-purple-100 min-h-[520px] flex flex-col">
+                  {!isMockOnlyScope && <div className="bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm p-5 border border-purple-100 min-h-[520px] flex flex-col">
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div>
                         <h2 className="text-base font-bold text-purple-900">
@@ -3989,8 +4085,7 @@ export default function FacultyDashboardPage() {
                         })
                       )}
                     </div>
-                  </div>
-
+                  </div>}
                   <div className="bg-gradient-to-b from-amber-50 to-white rounded-2xl shadow-sm p-5 border border-amber-100 min-h-[520px] flex flex-col">
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div>
@@ -4378,7 +4473,7 @@ export default function FacultyDashboardPage() {
                           }
                         >
                           <option value="mock">Mock Test</option>
-                          <option value="original">Original Test</option>
+                          {!isMockOnlyTestBatch && <option value="original">Original Test</option>}
                         </select>
                       </div>
                       <div>
@@ -5676,7 +5771,7 @@ export default function FacultyDashboardPage() {
                           }
                         >
                           <option value="">Select batch</option>
-                          {filteredBatches.map((b) => (
+                          {teachingBatches.map((b) => (
                             <option key={b.id} value={b.id}>
                               {b.batch_name}
                             </option>
@@ -5962,7 +6057,7 @@ export default function FacultyDashboardPage() {
                             }
                           >
                             <option value="">Select batch</option>
-                            {filteredBatches.map((b) => (
+                            {teachingBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
                               </option>
@@ -6214,7 +6309,7 @@ export default function FacultyDashboardPage() {
                             }
                           >
                             <option value="">Select batch</option>
-                            {filteredBatches.map((b) => (
+                            {teachingBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
                               </option>
@@ -6444,7 +6539,7 @@ export default function FacultyDashboardPage() {
                             }
                           >
                             <option value="">Select batch</option>
-                            {filteredBatches.map((b) => (
+                            {teachingBatches.map((b) => (
                               <option key={b.id} value={b.id}>
                                 {b.batch_name}
                               </option>

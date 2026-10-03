@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCanonicalPaidEnrollmentBatch } from "@/lib/paidEnrollmentBatchMapping";
+import { isMockOnlyCourse } from "@/lib/mockOnlyBatch";
 
 export const runtime = "nodejs";
 
@@ -209,7 +210,7 @@ export async function POST(req: NextRequest) {
     );
 
     // 2nd pass – loose includes match (handles old/renamed legacy titles)
-    if (!matchedCourse) {
+    if (!matchedCourse && !isMockOnlyCourse(courseName)) {
       matchedCourse = (courseRows ?? []).find((c) => {
         const current = normalizeForMatch(c.title);
         return (

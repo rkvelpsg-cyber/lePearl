@@ -9,7 +9,8 @@
     "dev": "cross-env TZ=Asia/Kolkata next dev",
     "build": "cross-env TZ=Asia/Kolkata next build",
     "start": "cross-env TZ=Asia/Kolkata next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:mock-only": "node --test tests/uphesc-mock-only.test.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -28,6 +29,7 @@
     "slick-carousel": "^1.8.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@netlify/plugin-nextjs": "^5.15.9",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^24.3.0",

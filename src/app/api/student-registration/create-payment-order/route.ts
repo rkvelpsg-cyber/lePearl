@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
+import { createServerClient } from "@/lib/supabase/server";
+import {
+  isMockOnlyCourse,
+  UPHESC_MOCK_ONLY_COURSE,
+  UPHESC_MOCK_ONLY_FEE,
+} from "@/lib/mockOnlyBatch";
 
 export const runtime = "nodejs";
 
@@ -21,6 +27,46 @@ export async function POST(req: NextRequest) {
         { error: "Invalid amount. Must be between Rs. 1 and Rs. 5,00,000." },
         { status: 400 },
       );
+    }
+
+    if (isMockOnlyCourse(body.course)) {
+      if (amount !== UPHESC_MOCK_ONLY_FEE) {
+        return NextResponse.json(
+          { error: `The UPHESC mock-only fee is Rs. ${UPHESC_MOCK_ONLY_FEE}.` },
+          { status: 400 },
+        );
+      }
+      if (!body.registrationNo?.trim() || !body.email?.trim()) {
+        return NextResponse.json(
+          { error: "Registration number and email are required for mock-only payment." },
+          { status: 400 },
+        );
+      }
+
+      const service = createServerClient();
+      const { data: batch, error: batchError } = await service
+        .from("batches")
+        .select("id, faculty_user_id, courses!inner(title, is_active)")
+        .eq("batch_name", UPHESC_MOCK_ONLY_COURSE)
+        .eq("courses.title", UPHESC_MOCK_ONLY_COURSE)
+        .eq("courses.is_active", true)
+        .maybeSingle();
+      if (batchError) throw batchError;
+      const { data: faculty, error: facultyError } = batch?.faculty_user_id
+        ? await service.from("profiles")
+            .select("full_name")
+            .eq("user_id", batch.faculty_user_id)
+            .eq("role", "faculty")
+            .eq("is_active", true)
+            .maybeSingle()
+        : { data: null, error: null };
+      if (facultyError) throw facultyError;
+      if (!faculty || faculty.full_name.toLowerCase().replace(/[^a-z0-9]/g, "") !== "drpremshankarpandey") {
+        return NextResponse.json(
+          { error: "The UPHESC mock-only batch is not ready for enrolment. Please contact support." },
+          { status: 503 },
+        );
+      }
     }
 
     const keyId =

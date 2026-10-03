@@ -33,6 +33,52 @@ npm run lint
 npm run build
 ```
 
+## UPHESC mock-only enrolment
+
+The UPHESC page includes a separate **Mock - Only** payment card alongside the
+unchanged full-course and instalment cards. This option enrols students in
+`UPHESC-Mock Only`, a dedicated course/batch assigned to Dr Prem Shankar Pandey.
+The configured one-time fee is **Rs. 1**, as requested; it is defined in
+`src/lib/mockOnlyBatch.ts`. There are no instalments, discounts, or recorded-class/
+study-material access add-ons for this purchase.
+
+**Before enabling this option in production:**
+
+1. Apply `supabase/migrations/20261003_add_uphesc_mock_only_batch.sql` after all
+   earlier migrations. It requires exactly one active faculty profile for
+   Dr Prem Shankar Pandey. It creates only the new course/batch and its access
+   guards; it does not move students or alter existing batches.
+2. Ensure Razorpay keys, automatic payment capture, and the existing registration
+   email provider are configured. This option always uses Razorpay, even if
+   other courses use the site's manual/UPI registration mode. Checkout is blocked
+   until the new batch and active default faculty exist.
+3. Validate a payment using Razorpay **test-mode** keys first. Successful
+   registration reuses the existing student-account provisioning, admin/student
+   credential emails, first-login password reset, and panel listings.
+
+Students in this batch can use Dashboard, Mock Tests, and Fees & Payments only.
+Other sidebar sections and their dashboard shortcuts are disabled/hidden.
+Faculty can assign MCQ/descriptive mock tests and evaluate/report results through
+the existing Mock Tests and Evaluations tools. When the mock-only course is
+selected, non-test sections are disabled; when another course (or All Courses)
+is selected, the existing teaching tools remain available for full-course batches.
+Mock-only batches are excluded from class, lecture, material, task, and general
+course-progress assignments, including database-level checks.
+
+Run the focused regression suite with:
+
+```bash
+npm run test:mock-only
+```
+
+The suite uses mocked payment/email/Supabase services and an in-memory PostgreSQL
+database (PGlite); it does not charge cards, send emails, or access production data.
+The migration is transactional and repeatable. Roll back the application release
+to hide new purchases if necessary; do not delete a batch that already has paid
+enrollments, payments, or test submissions. For a future full rollback, review
+those records before removing the migration's `uphesc_mock_only_*` policies,
+helper functions, and scoped payment index.
+
 ## Student registration email setup
 
 The student registration flow is available at `/student-registration` and submits through `/api/student-registration`.

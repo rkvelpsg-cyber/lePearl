@@ -22,6 +22,7 @@ import {
   studentRegistrationCourses,
 } from "@/lib/studentRegistration";
 import { markFreeResourceAccess } from "@/lib/freeResourceAccess";
+import { isMockOnlyCourse, UPHESC_MOCK_ONLY_COURSE } from "@/lib/mockOnlyBatch";
 
 type RazorpayOrderResponse = {
   order_id: string;
@@ -239,6 +240,8 @@ function getCourseBackHref(
   course: StudentRegistrationPayload["course"],
 ): string | null {
   switch (course) {
+    case UPHESC_MOCK_ONLY_COURSE:
+      return "/courses-uphesc";
     case "UP GDC":
       return "/courses-upgdc";
     case "NET Paper 1":
@@ -674,7 +677,6 @@ function StudentRegistrationContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const useUpiQrPayment = process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
   const [activeMode, setActiveMode] = useState<"paid" | "free">("paid");
   const [courseBackHref, setCourseBackHref] = useState<string | null>(null);
   const [pendingDownload, setPendingDownload] = useState<string | null>(null);
@@ -723,6 +725,15 @@ function StudentRegistrationContent() {
   const safePaidFormData: PaidEnrollmentFormState = {
     ...initialPaidForm(),
     ...paidFormData,
+    ...(isMockOnlyCourse(paidFormData.course)
+      ? {
+          paymentTenure: "full" as const,
+          selectedInstalmentIndex: 0,
+          isPearlian: false,
+          pearlianEligible: false,
+          includeBooksAddon: false,
+        }
+      : {}),
   };
   const safeFreeFormData: FreeRegistrationFormState = {
     ...initialFreeForm,
@@ -731,6 +742,9 @@ function StudentRegistrationContent() {
 
   const isResearchAssistanceCourse =
     safePaidFormData.course === "Research Assistance";
+  const isMockOnlyRegistration = isMockOnlyCourse(safePaidFormData.course);
+  const useUpiQrPayment =
+    !isMockOnlyRegistration && process.env.NEXT_PUBLIC_PAYMENT_MODE !== "razorpay";
   const isUPGDCCourse = safePaidFormData.course === "UP GDC";
   const isGICCourse = safePaidFormData.course === "GIC";
   const isLTGradeCourse = safePaidFormData.course === "LT Grade";
@@ -793,6 +807,7 @@ function StudentRegistrationContent() {
   // Discounts apply only on full payment
   const pearlianDiscount =
     !isResearchAssistanceCourse &&
+    !isMockOnlyRegistration &&
     safePaidFormData.paymentTenure === "full" &&
     safePaidFormData.isPearlian &&
     safePaidFormData.pearlianEligible
@@ -800,6 +815,7 @@ function StudentRegistrationContent() {
       : 0;
   const additionalAccessDiscount =
     !isResearchAssistanceCourse &&
+    !isMockOnlyRegistration &&
     safePaidFormData.paymentTenure === "full" &&
     safePaidFormData.includeBooksAddon
       ? Math.round(baseCourseFee * 0.1)
@@ -1086,9 +1102,11 @@ function StudentRegistrationContent() {
                   ? resolvedCommunicationSkillsTenure
                   : hasInterviewPrepSelectionFromCoursePage
                     ? resolvedInterviewPrepTenure
-                    : hasInstalmentSelectionFromCoursePage
-                      ? "instalment"
-                      : null,
+                    : isMockOnlyCourse(courseParam)
+                      ? "full"
+                      : hasInstalmentSelectionFromCoursePage
+                        ? "instalment"
+                        : null,
       }));
 
       // Auto-open fee plan modal when arriving from course pages, except when
@@ -1123,6 +1141,7 @@ function StudentRegistrationContent() {
           !hasLTGradeSelectionFromCoursePage &&
           !hasCommunicationSkillsSelectionFromCoursePage &&
           !hasInterviewPrepSelectionFromCoursePage &&
+          !isMockOnlyCourse(courseParam) &&
           !hasInstalmentSelectionFromCoursePage,
       );
     }
@@ -1217,7 +1236,7 @@ function StudentRegistrationContent() {
       interviewPrepFeeOption: isInterviewPrepCourseId(newCourse)
         ? "full-preparation"
         : current.interviewPrepFeeOption,
-      paymentTenure: null,
+      paymentTenure: isMockOnlyCourse(newCourse) ? "full" : null,
     }));
     setModalPlanChoice("full");
     setModalUPGDCFeeChoice("combined-full");
@@ -1226,7 +1245,7 @@ function StudentRegistrationContent() {
     setModalCommunicationSkillsFeeChoice("beginner");
     setModalInterviewPrepFeeChoice("full-preparation");
     setModalResearchFeeChoice("research-paper");
-    setShowFeePlanModal(true);
+    setShowFeePlanModal(!isMockOnlyCourse(newCourse));
   }
 
   function updatePaidField<K extends keyof PaidEnrollmentFormState>(
@@ -1622,8 +1641,9 @@ function StudentRegistrationContent() {
             Enrolment & Registration Hub
           </h1>
           <p className="mt-3 text-xl text-slate-600">
-            Choose paid enrolment for full dashboard access or free registration
-            for PYQs and demo content.
+            {isMockOnlyRegistration && activeMode === "paid"
+              ? "Register for UPHESC mock tests, faculty evaluation, and test results."
+              : "Choose paid enrolment for full dashboard access or free registration for PYQs and demo content."}
           </p>
         </section>
 
@@ -1853,7 +1873,9 @@ function StudentRegistrationContent() {
               ) : safePaidFormData.paymentTenure === "full" ? (
                 <>
                   <p className="mt-2 text-sm text-violet-700/80">
-                    {isResearchAssistanceCourse
+                    {isMockOnlyRegistration
+                      ? "Mock tests only. One-time payment via Razorpay."
+                      : isResearchAssistanceCourse
                       ? "Selected fee type from Research Assistance course page."
                       : isUPGDCCourse
                         ? "Selected UP GDC plan from course page."
@@ -1914,7 +1936,7 @@ function StudentRegistrationContent() {
                       <span>Course Fee</span>
                       <span className="font-semibold">Rs. {baseCourseFee}</span>
                     </div>
-                    {!isResearchAssistanceCourse && (
+                    {!isResearchAssistanceCourse && !isMockOnlyRegistration && (
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
@@ -1931,7 +1953,7 @@ function StudentRegistrationContent() {
                         like recorded classes and study material
                       </label>
                     )}
-                    {!isResearchAssistanceCourse && (
+                    {!isResearchAssistanceCourse && !isMockOnlyRegistration && (
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
@@ -1945,6 +1967,7 @@ function StudentRegistrationContent() {
                       </label>
                     )}
                     {!isResearchAssistanceCourse &&
+                      !isMockOnlyRegistration &&
                       safePaidFormData.isPearlian && (
                         <label className="ml-6 flex items-center gap-2 text-sm">
                           <input
@@ -2235,7 +2258,7 @@ function StudentRegistrationContent() {
                   className={inputClassName}
                 >
                   <option value="">Select one</option>
-                  {studentRegistrationCourses.map((course) => (
+                  {studentRegistrationCourses.filter((course) => !isMockOnlyCourse(course)).map((course) => (
                     <option key={course} value={course}>
                       {course}
                     </option>
@@ -2769,10 +2792,12 @@ function StudentRegistrationContent() {
                           </div>
                           <div>
                             <p className="font-semibold text-slate-900">
-                              Full Payment
+                              {isMockOnlyRegistration ? "Mock - Only" : "Full Payment"}
                             </p>
                             <p className="text-sm text-slate-500">
-                              One-time payment · Best value · Discounts eligible
+                              {isMockOnlyRegistration
+                                ? "One-time payment for UPHESC mock tests only"
+                                : "One-time payment · Best value · Discounts eligible"}
                             </p>
                           </div>
                         </div>
@@ -2782,7 +2807,7 @@ function StudentRegistrationContent() {
                               ? `Rs. ${baseCourseFee}`
                               : "Contact Support"}
                           </p>
-                          {hasPublishedFee && (
+                          {hasPublishedFee && !isMockOnlyRegistration && (
                             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                               Save with discounts
                             </span>

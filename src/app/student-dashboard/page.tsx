@@ -11,6 +11,11 @@ import {
   localDateKeyIST,
 } from "@/lib/timezone";
 import {
+  canAccessStudentSection,
+  isMockOnlyBatch,
+  isMockOnlyCourse,
+} from "@/lib/mockOnlyBatch";
+import {
   Bell,
   LogOut,
   BookOpen,
@@ -416,21 +421,27 @@ function NavBtn({
   onClick,
   icon: Icon,
   label,
+  disabled = false,
 }: {
   section: Section;
   active: Section;
   onClick: (s: Section) => void;
   icon: React.ElementType;
   label: string;
+  disabled?: boolean;
 }) {
   const isActive = section === active;
   return (
     <button
+      disabled={disabled}
+      title={disabled ? "Not included in this mock-only batch" : undefined}
       onClick={() => onClick(section)}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-sm font-medium ${
         isActive
           ? "bg-white text-purple-700 font-semibold shadow-sm border border-purple-100"
-          : "text-gray-700 hover:bg-white hover:shadow-sm"
+          : disabled
+            ? "text-gray-400 cursor-not-allowed opacity-60"
+            : "text-gray-700 hover:bg-white hover:shadow-sm"
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -469,6 +480,7 @@ export default function StudentDashboardPage() {
   >({});
   const [batchLabel, setBatchLabel] = useState<string | null>(null);
   const [batchIds, setBatchIds] = useState<number[]>([]);
+  const [mockOnlyEnrollment, setMockOnlyEnrollment] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<
     AttendanceRecord[]
   >([]);
@@ -504,6 +516,22 @@ export default function StudentDashboardPage() {
   const [feePlan, setFeePlan] = useState<FeePlan | null>(null);
   const [paidRegistration, setPaidRegistration] =
     useState<PaidRegistrationSummary | null>(null);
+  const isMockOnlyStudent =
+    mockOnlyEnrollment ||
+    isMockOnlyCourse(studentProfile?.target_exam) ||
+    isMockOnlyCourse(paidRegistration?.course);
+
+  function navigateToSection(section: Section) {
+    if (canAccessStudentSection(section, isMockOnlyStudent)) {
+      setActiveSection(section);
+    }
+  }
+
+  useEffect(() => {
+    if (!canAccessStudentSection(activeSection, isMockOnlyStudent)) {
+      setActiveSection("overview");
+    }
+  }, [activeSection, isMockOnlyStudent]);
   const [facultyTasks, setFacultyTasks] = useState<StudentTask[]>([]);
   const [mockStat, setMockStat] = useState({ scored: 0, total: 0 });
   const [itemStatuses, setItemStatuses] = useState<ItemProgressMap>({});
@@ -709,6 +737,16 @@ export default function StudentDashboardPage() {
 
       const enrollRows =
         (enrollRes.data as unknown as EnrollmentRow[] | null) ?? [];
+      const mockOnlyAccess =
+        isMockOnlyCourse(spRes.data?.target_exam) ||
+        (enrollRows.length > 0 && enrollRows.every((row) => {
+          const batch = unwrapOne(row.batches);
+          return isMockOnlyBatch({
+            batchName: batch?.batch_name,
+            courseName: unwrapOne(batch?.courses)?.title,
+          });
+        }));
+      setMockOnlyEnrollment(mockOnlyAccess);
 
       const facultyIds = Array.from(
         new Set(
@@ -823,7 +861,7 @@ export default function StudentDashboardPage() {
               .limit(1)
               .maybeSingle()
           : Promise.resolve({ data: null, error: null }),
-        ids.length > 0
+        !mockOnlyAccess && ids.length > 0
           ? supabase
               .from("class_sessions")
               .select(
@@ -833,18 +871,19 @@ export default function StudentDashboardPage() {
               .order("session_date", { ascending: false })
               .limit(50)
           : Promise.resolve({ data: [], error: null }),
-        supabase
+        !mockOnlyAccess ? supabase
           .from("student_attendance")
           .select(
             "id, status, marked_at, class_sessions(session_date, title, batches(batch_name))",
           )
           .eq("student_user_id", uid)
-          .order("marked_at", { ascending: false }),
+          .order("marked_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
         supabase
           .from("mock_test_attempts")
           .select("scored_marks, mock_test_id, mock_tests(total_marks)")
           .eq("student_user_id", uid),
-        ids.length > 0
+        !mockOnlyAccess && ids.length > 0
           ? supabase
               .from("faculty_tasks")
               .select(
@@ -853,7 +892,7 @@ export default function StudentDashboardPage() {
               .in("batch_id", ids)
               .order("due_date", { ascending: true })
           : Promise.resolve({ data: [], error: null }),
-        ids.length > 0
+        !mockOnlyAccess && ids.length > 0
           ? supabase
               .from("recorded_lectures")
               .select(
@@ -863,7 +902,7 @@ export default function StudentDashboardPage() {
               .eq("is_active", true)
               .order("created_at", { ascending: false })
           : Promise.resolve({ data: [], error: null }),
-        ids.length > 0
+        !mockOnlyAccess && ids.length > 0
           ? supabase
               .from("study_materials")
               .select(
@@ -1103,7 +1142,8 @@ export default function StudentDashboardPage() {
           const enrolledBatchIdSet = new Set(ids);
           const batchScopedTests = allPublishedTests.filter(
             (test) =>
-              test.batch_id != null && enrolledBatchIdSet.has(test.batch_id),
+              test.batch_id != null && enrolledBatchIdSet.has(test.batch_id) &&
+              (!mockOnlyAccess || test.exam_type === "mock"),
           );
 
           // Filter tests based on availability window
@@ -2575,56 +2615,61 @@ export default function StudentDashboardPage() {
                 <NavBtn
                   section="overview"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
                   icon={LayoutDashboard}
                   label="Dashboard"
                 />
                 <NavBtn
                   section="attendance"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
+                  disabled={isMockOnlyStudent}
                   icon={Calendar}
                   label="Attendance"
                 />
                 <NavBtn
                   section="tests"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
                   icon={FileQuestion}
                   label="Mock Tests"
                 />
                 <NavBtn
                   section="classes"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
+                  disabled={isMockOnlyStudent}
                   icon={Video}
                   label="Live Classes"
                 />
                 <NavBtn
                   section="lectures"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
+                  disabled={isMockOnlyStudent}
                   icon={PlayCircle}
                   label="Recorded Lectures"
                 />
                 <NavBtn
                   section="studyMaterials"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
+                  disabled={isMockOnlyStudent}
                   icon={BookOpen}
                   label="Study Material"
                 />
                 <NavBtn
                   section="fees"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
                   icon={CreditCard}
                   label="Fees &amp; Payments"
                 />
                 <NavBtn
                   section="tasks"
                   active={activeSection}
-                  onClick={setActiveSection}
+                  onClick={navigateToSection}
+                  disabled={isMockOnlyStudent}
                   icon={ClipboardList}
                   label="My Tasks"
                 />
@@ -2642,7 +2687,7 @@ export default function StudentDashboardPage() {
                     <input
                       type="text"
                       className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none bg-white shadow-sm"
-                      placeholder="Search classes, lectures, materials, tasks, tests…"
+                      placeholder={isMockOnlyStudent ? "Search mock tests..." : "Search classes, lectures, materials, tasks, tests…"}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
@@ -2747,7 +2792,7 @@ export default function StudentDashboardPage() {
                       iconBg="bg-indigo-100"
                       iconColor="text-indigo-600"
                     />
-                    <StatCard
+                    {!isMockOnlyStudent && <StatCard
                       label="Overall Attendance"
                       value={
                         attendanceRecords.length > 0
@@ -2757,7 +2802,7 @@ export default function StudentDashboardPage() {
                       icon={Calendar}
                       iconBg="bg-green-100"
                       iconColor="text-green-600"
-                    />
+                    />}
                     <StatCard
                       label="Avg. Test Score"
                       value={
@@ -2769,15 +2814,15 @@ export default function StudentDashboardPage() {
                       iconBg="bg-purple-100"
                       iconColor="text-purple-600"
                     />
-                    <StatCard
+                    {!isMockOnlyStudent && <StatCard
                       label="Course Progress"
                       value={courses.length > 0 ? `${overallProgress}%` : "-"}
                       icon={TrendingUp}
                       iconBg="bg-orange-100"
                       iconColor="text-orange-500"
-                    />
+                    />}
                   </div>
-                  {courses.length > 0 && (
+                  {!isMockOnlyStudent && courses.length > 0 && (
                     <div className="bg-white rounded-2xl shadow-sm p-5">
                       <h2 className="text-lg font-bold text-gray-900 mb-4">
                         My Courses
@@ -2837,10 +2882,10 @@ export default function StudentDashboardPage() {
                         icon: CreditCard,
                         color: "bg-amber-600",
                       },
-                    ].map((q) => (
+                    ].filter((q) => canAccessStudentSection(q.section, isMockOnlyStudent)).map((q) => (
                       <button
                         key={q.label}
-                        onClick={() => setActiveSection(q.section)}
+                        onClick={() => navigateToSection(q.section)}
                         className={`${q.color} text-white rounded-2xl p-4 flex flex-col items-center gap-2 hover:opacity-90 transition-opacity`}
                       >
                         <q.icon className="w-6 h-6" />

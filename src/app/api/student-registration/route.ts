@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 import { createServerClient } from "@/lib/supabase/server";
@@ -9,6 +10,11 @@ import {
   StudentRegistrationPayload,
 } from "@/lib/studentRegistration";
 import { getCanonicalPaidEnrollmentBatch } from "@/lib/paidEnrollmentBatchMapping";
+import {
+  isMockOnlyCourse,
+  isValidMockOnlyPurchase,
+  UPHESC_MOCK_ONLY_FEE,
+} from "@/lib/mockOnlyBatch";
 import {
   sendStudentPaymentWhatsAppNotification,
   sendWhatsAppTextNotification,
@@ -737,7 +743,7 @@ async function ensurePaidStudentAccount(params: {
     );
 
     // 2nd pass – loose includes match (handles old/renamed legacy titles)
-    if (!matchedCourse) {
+    if (!matchedCourse && !isMockOnlyCourse(payload.course)) {
       const normalizedRequested = normalizeForMatch(payload.course);
       matchedCourse = (courseRows ?? []).find((row) => {
         const current = normalizeForMatch(row.title);
@@ -942,6 +948,15 @@ export async function POST(req: NextRequest) {
       (normalizedPaymentMode === null ||
         normalizedPaymentMode === "" ||
         normalizedPaymentMode === "razorpay");
+    const isMockOnlyRegistration = isMockOnlyCourse(payload.course);
+    if (isMockOnlyRegistration && (
+      mode !== "paid" || !isRazorpayPayment || !isValidMockOnlyPurchase(body)
+    )) {
+      return NextResponse.json(
+        { error: `UPHESC-Mock Only requires a one-time Razorpay payment of Rs. ${UPHESC_MOCK_ONLY_FEE}, without add-ons or discounts.` },
+        { status: 400 },
+      );
+    }
     const paidStatus =
       mode === "paid"
         ? isRazorpayPayment
@@ -998,6 +1013,87 @@ export async function POST(req: NextRequest) {
           },
           { status: 400 },
         );
+      }
+
+      const keyId =
+        process.env.RAZORPAY_KEY_ID ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        process.env.RAZORPAY_KEY;
+      if (!keyId || keyId.includes("REPLACE")) {
+        return NextResponse.json(
+          { error: "Payment gateway is not configured. Please contact support." },
+          { status: 503 },
+        );
+      }
+      const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+      const order = await razorpay.orders.fetch(orderId);
+      const notes = order.notes;
+      if (
+        !isMockOnlyRegistration && notes && "course" in notes &&
+        isMockOnlyCourse(String(notes.course))
+      ) {
+        return NextResponse.json(
+          { error: "A mock-only payment cannot be used to enrol in a full course." },
+          { status: 400 },
+        );
+      }
+
+      if (isMockOnlyRegistration) {
+        let payment = await razorpay.payments.fetch(paymentId);
+        if (
+          Number(order.amount) !== UPHESC_MOCK_ONLY_FEE * 100 ||
+          order.currency !== "INR" ||
+          Number(payment.amount) !== UPHESC_MOCK_ONLY_FEE * 100 ||
+          payment.currency !== "INR" ||
+          payment.order_id !== orderId ||
+          !["captured", "authorized"].includes(payment.status) ||
+          !notes ||
+          !("course" in notes) ||
+          notes.course !== payload.course ||
+          notes.registration_no !== body.registrationNo ||
+          String(notes.student_email ?? "").trim().toLowerCase() !== payload.email
+        ) {
+          return NextResponse.json(
+            { error: "The captured Razorpay payment does not match this mock-only registration. Contact support if payment is still processing." },
+            { status: 400 },
+          );
+        }
+        const service = createServerClient();
+        const { data: usedPayment, error: paymentLookupError } = await service
+          .from("student_registrations")
+          .select("id")
+          .eq("razorpay_payment_id", paymentId)
+          .limit(1)
+          .maybeSingle();
+        if (paymentLookupError) throw paymentLookupError;
+        if (usedPayment) {
+          return NextResponse.json(
+            { error: "This payment has already been used for registration. Please sign in or contact support." },
+            { status: 409 },
+          );
+        }
+        if (payment.status === "authorized") {
+          try {
+            payment = await razorpay.payments.capture(
+              paymentId, UPHESC_MOCK_ONLY_FEE * 100, "INR",
+            );
+          } catch (captureError) {
+            // Automatic capture may race this request; reconcile with Razorpay.
+            payment = await razorpay.payments.fetch(paymentId);
+            if (payment.status !== "captured") throw captureError;
+          }
+        }
+        if (
+          payment.status !== "captured" ||
+          Number(payment.amount) !== UPHESC_MOCK_ONLY_FEE * 100 ||
+          payment.currency !== "INR" ||
+          payment.order_id !== orderId
+        ) {
+          return NextResponse.json(
+            { error: "Mock-only payment capture could not be confirmed. Please contact support." },
+            { status: 400 },
+          );
+        }
       }
 
       const paymentAmount = Number(body.paymentAmount ?? 0);
