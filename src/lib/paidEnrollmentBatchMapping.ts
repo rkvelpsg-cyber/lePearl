@@ -1,5 +1,3 @@
-import { UPHESC_MOCK_ONLY_COURSE } from "./mockOnlyBatch";
-
 type PaidEnrollmentBatchMapping = {
   courseName: string;
   batchName: string;
@@ -16,11 +14,6 @@ export const paidEnrollmentBatchMappings: PaidEnrollmentBatchMapping[] = [
   {
     courseName: "UPHESC",
     batchName: "UPHESC-Pandey-A",
-    facultyName: "Dr Prem Shankar Pandey",
-  },
-  {
-    courseName: UPHESC_MOCK_ONLY_COURSE,
-    batchName: UPHESC_MOCK_ONLY_COURSE,
     facultyName: "Dr Prem Shankar Pandey",
   },
   {

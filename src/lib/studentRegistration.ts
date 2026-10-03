@@ -1,5 +1,3 @@
-import { UPHESC_MOCK_ONLY_COURSE, UPHESC_MOCK_ONLY_FEE } from "./mockOnlyBatch";
-
 export const studentRegistrationCourses = [
   "MPPSC",
   "UPHESC",
@@ -13,7 +11,6 @@ export const studentRegistrationCourses = [
   "Communication Skills",
   "SET",
   "Research Assistance",
-  UPHESC_MOCK_ONLY_COURSE,
 ] as const;
 
 export type StudentRegistrationCourse =
@@ -44,7 +41,6 @@ export const paidRegistrationCourseFees: Partial<
   "Communication Skills": 3995,
   SET: 12495,
   "Research Assistance": 2995,
-  [UPHESC_MOCK_ONLY_COURSE]: UPHESC_MOCK_ONLY_FEE,
 };
 
 export const defaultPaidRegistrationCourseFee = 15999;
@@ -189,9 +185,6 @@ export const coursePaymentPlans: Record<
   },
   "Research Assistance": {
     fullAmount: 2995,
-  },
-  [UPHESC_MOCK_ONLY_COURSE]: {
-    fullAmount: UPHESC_MOCK_ONLY_FEE,
   },
 };
 

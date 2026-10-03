@@ -33,7 +33,6 @@ import {
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
-import { UPHESC_MOCK_ONLY_COURSE, UPHESC_MOCK_ONLY_FEE } from "@/lib/mockOnlyBatch";
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -521,18 +520,6 @@ function EnrollmentSection() {
       ],
       popular: true,
     },
-    {
-      icon: ClipboardCheck,
-      title: "Mock - Only",
-      price: `Rs. ${UPHESC_MOCK_ONLY_FEE}`,
-      mockOnly: true,
-      features: [
-        "UPHESC mock tests only",
-        "MCQ and descriptive mock tests",
-        "Faculty evaluation and test results",
-        "One-time payment",
-      ],
-    },
   ];
 
   return (
@@ -578,7 +565,7 @@ function EnrollmentSection() {
                     {option.price}
                   </div>
                   <p className="text-gray-600 text-sm">
-                    {option.mockOnly ? "Mock test package only" : "Complete course package"}
+                    Complete course package
                   </p>
                 </div>
 
@@ -594,9 +581,7 @@ function EnrollmentSection() {
                 </ul>
 
                 <a
-                  href={option.mockOnly
-                    ? `/student-registration?mode=paid&course=${encodeURIComponent(UPHESC_MOCK_ONLY_COURSE)}`
-                    : "/student-registration?mode=paid&course=UPHESC"}
+                  href="/student-registration?mode=paid&course=UPHESC"
                   className={`block w-full py-4 rounded-lg font-bold text-lg text-center transition-all duration-300 ${
                     option.popular
                       ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-teal-900 hover:shadow-xl hover:scale-105"
