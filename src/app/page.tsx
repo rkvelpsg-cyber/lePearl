@@ -31,11 +31,6 @@ const FounderBooks = dynamic(() =>
     default: m.FounderBooks,
   })),
 );
-const LiveClassesPortalSection = dynamic(() =>
-  import("@/components/LiveClassesPortalSection").then((m) => ({
-    default: m.LiveClassesPortalSection,
-  })),
-);
 const NeedHelpSection = dynamic(() =>
   import("@/components/LiveClassesPortalSection").then((m) => ({
     default: m.NeedHelpSection,
@@ -497,7 +492,6 @@ export default async function Home() {
           <WhyChooseSection />
           <FounderBooks />
           <MockTestsSection />
-          <LiveClassesPortalSection />
           <WeeklyScheduleSection />
         </main>
 

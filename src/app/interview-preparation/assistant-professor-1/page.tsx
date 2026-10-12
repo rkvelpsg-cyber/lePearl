@@ -236,7 +236,7 @@ function InterviewContent() {
       </Section>
 
       {/* The Three Pillars */}
-      <Section id={pricingSectionId}>
+      <Section>
         <motion.h2
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -414,7 +414,7 @@ function InterviewContent() {
       </Section>
 
       {/* Pricing */}
-      <Section>
+      <Section id={pricingSectionId}>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}

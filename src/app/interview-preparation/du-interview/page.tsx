@@ -20,7 +20,7 @@ function Header() {
   const scrollToEnrollment = () => {
     document
       .getElementById("enrollment")
-      ?.scrollIntoView({ behavior: "smooth" });
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return <CoursePageHeader onEnroll={scrollToEnrollment} />;
@@ -376,9 +376,8 @@ function InterviewContent() {
         </motion.div>
       </Section>
 
-      <Section>
+      <Section id="enrollment">
         <motion.div
-          id="enrollment"
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -522,12 +521,14 @@ function InterviewContent() {
 function Section({
   children,
   className = "",
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
-    <section className={`px-6 py-20 ${className}`}>
+    <section id={id} className={`scroll-mt-28 px-6 py-20 ${className}`}>
       <div className="mx-auto max-w-7xl">{children}</div>
     </section>
   );
@@ -598,5 +599,3 @@ export default function DUInterviewPage() {
     </div>
   );
 }
-
-

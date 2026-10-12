@@ -68,7 +68,7 @@ export function DUInterviewMergedContent() {
         </div>
       </Section>
 
-      <Section id={pricingSectionId}>
+      <Section>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -355,7 +355,7 @@ export function DUInterviewMergedContent() {
         </motion.div>
       </Section>
 
-      <Section>
+      <Section id={pricingSectionId}>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}

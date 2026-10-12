@@ -97,7 +97,7 @@ export function FacultyCarousel() {
       <div className="faculty-carousel-wrapper max-w-7xl mx-auto">
         <div
           ref={mobileScrollRef}
-          className="hide-scrollbar flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none scroll-smooth gap-3 sm:gap-4 md:gap-5 lg:gap-6 px-1 sm:px-0 pb-2"
+          className="hide-scrollbar flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:max-w-[calc(75%_-_6px)] xl:mx-auto overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none scroll-smooth gap-3 sm:gap-4 md:gap-5 lg:gap-6 px-1 sm:px-0 pb-2"
         >
           {facultyData.map((faculty) => (
             <div
