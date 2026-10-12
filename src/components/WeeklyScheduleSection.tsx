@@ -8,93 +8,85 @@ interface ScheduleEvent {
 }
 
 const scheduleData: ScheduleEvent[] = [
-  // 9-12:00 Noon
-  { day: "Sunday", timeSlot: "9-12:00 Noon", course: "NLP", color: "pink" },
-
-  // 7:30-8:30 PM — UP GIC by Sadhana
   {
     day: "Monday",
-    timeSlot: "7:30-8:30 PM",
-    course: "UP GIC by Sadhana",
-    color: "orange",
+    timeSlot: "4:00-5:30 PM",
+    course: "UPHESC by Dr Prem Shankar",
+    color: "blue",
   },
   {
     day: "Wednesday",
-    timeSlot: "7:30-8:30 PM",
-    course: "UP GIC by Sadhana",
-    color: "orange",
+    timeSlot: "4:00-5:30 PM",
+    course: "UPHESC by Dr Prem Shankar",
+    color: "blue",
   },
   {
     day: "Friday",
-    timeSlot: "7:30-8:30 PM",
-    course: "UP GIC by Sadhana",
-    color: "orange",
+    timeSlot: "4:00-5:30 PM",
+    course: "UPHESC by Dr Prem Shankar",
+    color: "blue",
   },
 
-  // 8:30-9:30 PM
   {
     day: "Monday",
-    timeSlot: "8:30-9:30 PM",
-    course: "MPPSC by Neelu Patel",
+    timeSlot: "7:45-9:00 PM",
+    course: "UP PGT by Sadhana",
     color: "green",
   },
   {
-    day: "Monday",
-    timeSlot: "8:30-9:30 PM",
+    day: "Tuesday",
+    timeSlot: "7:45-9:00 PM",
     course: "NET by Sadhana",
     color: "purple",
   },
   {
-    day: "Monday",
-    timeSlot: "8:30-9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
-    color: "blue",
+    day: "Wednesday",
+    timeSlot: "7:45-9:00 PM",
+    course: "UP PGT by Sadhana",
+    color: "green",
+  },
+  {
+    day: "Thursday",
+    timeSlot: "7:45-9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
+  },
+  {
+    day: "Friday",
+    timeSlot: "7:45-9:00 PM",
+    course: "UP PGT by Sadhana",
+    color: "green",
+  },
+  {
+    day: "Saturday",
+    timeSlot: "7:45-9:00 PM",
+    course: "NET by Sadhana",
+    color: "purple",
   },
 
   {
     day: "Tuesday",
-    timeSlot: "8:30-9:30 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-
-  {
-    day: "Wednesday",
-    timeSlot: "8:30-9:30 PM",
-    course: "MPPSC by Neelu Patel",
-    color: "green",
-  },
-  {
-    day: "Wednesday",
-    timeSlot: "8:30-9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
+    timeSlot: "8:00-9:00 PM",
+    course: "UPHESC by Dr Prem Shankar",
     color: "blue",
   },
-
   {
     day: "Thursday",
-    timeSlot: "8:30-9:30 PM",
-    course: "NET by Sadhana",
-    color: "purple",
-  },
-
-  {
-    day: "Friday",
-    timeSlot: "8:30-9:30 PM",
-    course: "MPPSC by Neelu Patel",
-    color: "green",
+    timeSlot: "8:00-9:00 PM",
+    course: "UPHESC by Dr Prem Shankar",
+    color: "blue",
   },
   {
-    day: "Friday",
-    timeSlot: "8:30-9:30 PM",
-    course: "UP GDC by Dr Prem Shankar",
+    day: "Saturday",
+    timeSlot: "8:00-9:00 PM",
+    course: "UPHESC by Dr Prem Shankar",
     color: "blue",
   },
 
   {
-    day: "Saturday",
-    timeSlot: "8:30-9:30 PM",
-    course: "NET by Sadhana",
+    day: "Monday",
+    timeSlot: "9:00-10:00 PM",
+    course: "NET by Sadhana (Paper 1)",
     color: "purple",
   },
 ];
@@ -109,7 +101,12 @@ const days = [
   "Sunday",
 ];
 
-const timeSlots = ["9-12:00 Noon", "7:30-8:30 PM", "8:30-9:30 PM"];
+const timeSlots = [
+  "4:00-5:30 PM",
+  "7:45-9:00 PM",
+  "8:00-9:00 PM",
+  "9:00-10:00 PM",
+];
 
 const colorClasses = {
   purple: "bg-purple-100 border-purple-300 hover:bg-purple-200",
@@ -165,7 +162,7 @@ export function WeeklyScheduleSection() {
               <thead>
                 <tr>
                   <th className="rounded-tl-2xl border-b-2 border-gray-200 bg-[#EEF2FF] p-4 text-left font-semibold text-[#1E3A8A]">
-                    Time
+                    Day/Time
                   </th>
                   {days.map((day) => (
                     <th

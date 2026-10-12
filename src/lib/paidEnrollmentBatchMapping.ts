@@ -44,6 +44,21 @@ export const paidEnrollmentBatchMappings: PaidEnrollmentBatchMapping[] = [
     facultyName: "Ms. Sadhana",
   },
   {
+    courseName: "PGT",
+    batchName: "PGT-Sadhana-A",
+    facultyName: "Ms. Sadhana",
+  },
+  {
+    courseName: "TGT",
+    batchName: "TGT-Sadhana-A",
+    facultyName: "Ms. Sadhana",
+  },
+  {
+    courseName: "PGT + TGT",
+    batchName: "PGT-TGT-Sadhana-A",
+    facultyName: "Ms. Sadhana",
+  },
+  {
     courseName: "Interview Preparation - Assistant Professor",
     batchName: "INTERVIEW--Pandey-A",
     facultyName: "Dr Prem Shankar Pandey",

@@ -239,6 +239,10 @@ function getCourseBackHref(
   course: StudentRegistrationPayload["course"],
 ): string | null {
   switch (course) {
+    case "PGT":
+    case "TGT":
+    case "PGT + TGT":
+      return "/courses-pgt";
     case "UP GDC":
       return "/courses-upgdc";
     case "NET Paper 1":

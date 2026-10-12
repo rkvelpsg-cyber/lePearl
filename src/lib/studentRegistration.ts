@@ -6,6 +6,9 @@ export const studentRegistrationCourses = [
   "NET Paper 2 (English)",
   "GIC",
   "LT Grade",
+  "PGT",
+  "TGT",
+  "PGT + TGT",
   "Interview Preparation - Assistant Professor",
   "Interview Preparation - Ph.D Interview",
   "Communication Skills",
@@ -36,6 +39,9 @@ export const paidRegistrationCourseFees: Partial<
   "NET Paper 2 (English)": 15495,
   GIC: 9995,
   "LT Grade": 9995,
+  PGT: 4995,
+  TGT: 3995,
+  "PGT + TGT": 7495,
   "Interview Preparation - Assistant Professor": 7495,
   "Interview Preparation - Ph.D Interview": 7495,
   "Communication Skills": 3995,
@@ -170,6 +176,15 @@ export const coursePaymentPlans: Record<
   },
   "LT Grade": {
     fullAmount: 9995,
+  },
+  PGT: {
+    fullAmount: 4995,
+  },
+  TGT: {
+    fullAmount: 3995,
+  },
+  "PGT + TGT": {
+    fullAmount: 7495,
   },
   "Interview Preparation - Assistant Professor": {
     fullAmount: 7495,

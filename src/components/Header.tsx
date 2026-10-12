@@ -151,6 +151,7 @@ export function Header() {
             <DrawerSubSection label="Other Teaching Exams">
               <DrawerLink href="/courses-gic" label="GIC" />
               <DrawerLink href="/courses-ltgrade" label="LT Grade" />
+              <DrawerLink href="/courses-pgt" label="PGT TGT" />
             </DrawerSubSection>
             <DrawerSubSection label="Interview Preparation">
               <DrawerLink
@@ -412,6 +413,7 @@ function DesktopHeader() {
                   submenu: [
                     { label: "GIC", href: "/courses-gic" },
                     { label: "LT Grade", href: "/courses-ltgrade" },
+                    { label: "PGT TGT", href: "/courses-pgt" },
                   ],
                 },
                 {
