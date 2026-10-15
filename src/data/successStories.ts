@@ -285,6 +285,14 @@ export const successStoriesData: SuccessStoryVideo[] = [
     achievement: "",
     thumbnailUrl: "https://img.youtube.com/vi/aKzlx4V-3rU/maxresdefault.jpg",
   },
+  {
+    id: "33",
+    videoId: "YFIMlONpmAU",
+    videoUrl: "https://youtu.be/YFIMlONpmAU?si=1BqFA_FAaYE8Ia8m",
+    studentName: "Ms Neha Tyagi",
+    achievement: "NTA-NET English, June 2026",
+    thumbnailUrl: "https://img.youtube.com/vi/YFIMlONpmAU/hqdefault.jpg",
+  },
 ];
 
 const NTA_NET_STORY_REGEX = /(nta\s*[-]?\s*net|net\s*[-]?\s*jrf|\bjrf\b)/i;

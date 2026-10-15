@@ -149,19 +149,19 @@ export default function AdminLoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSignIn} className="space-y-5">
-            {/* Email Input */}
+            {/* Username Input */}
             <div>
               <label
                 htmlFor="email"
                 className="block text-sm font-semibold text-gray-700 mb-2"
               >
-                Email Address
+                Username
               </label>
               <input
                 id="email"
                 type="email"
                 required
-                placeholder="admin@lepearl.education"
+                placeholder="Enter username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}

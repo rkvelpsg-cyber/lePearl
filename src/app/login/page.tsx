@@ -189,19 +189,19 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSignIn} className="space-y-5">
-            {/* Username / Email Input */}
+            {/* Username Input */}
             <div>
               <label
                 htmlFor="login-id"
                 className="block text-sm font-semibold text-gray-700 mb-2"
               >
-                Username (recommended) or Email
+                Username
               </label>
               <input
                 id="login-id"
                 type="text"
                 required
-                placeholder="Enter username (or email if single account)"
+                placeholder="Enter username"
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
                 disabled={loading}

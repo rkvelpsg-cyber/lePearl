@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ChevronRight,
@@ -16,30 +15,9 @@ import {
 import { CoursePageHeader } from "@/components/CoursePageHeader";
 import { CoursePageFooter } from "@/components/CoursePageFooter";
 import { OnlineCourseHighlights } from "@/components/OnlineCourseHighlights";
-import { DUInterviewMergedContent } from "@/components/DUInterviewMergedContent";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
-type InterviewPanelId = "assistant-professor" | "du-interview";
-
 const pricingSectionId = "payment-plans";
-
-const interviewPanels: {
-  id: InterviewPanelId;
-  label: string;
-  summary: string;
-}[] = [
-  {
-    id: "assistant-professor",
-    label: "Assistant Professor Interview Preparation",
-    summary: "Core interview communication, presence, and mock interview prep.",
-  },
-  {
-    id: "du-interview",
-    label: "Delhi University Interview Preparation",
-    summary:
-      "Teaching-focused DU panel guidance and classroom-ready responses.",
-  },
-];
 
 function Header() {
   const scrollToEnrollment = () => {
@@ -632,10 +610,6 @@ function SkillCard({
   );
 }
 export default function AssistantProfessorInterviewPage() {
-  const [activePanel, setActivePanel] = useState<InterviewPanelId>(
-    "assistant-professor",
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header />
@@ -650,79 +624,36 @@ export default function AssistantProfessorInterviewPage() {
                   Interview Tracks
                 </p>
                 <nav className="flex flex-col gap-2">
-                  {interviewPanels.map((panel) => {
-                    const isActive = activePanel === panel.id;
-                    return (
-                      <button
-                        key={panel.id}
-                        type="button"
-                        onClick={() => setActivePanel(panel.id)}
-                        className={`w-full rounded-xl px-4 py-3 text-left transition-all duration-200 ${
-                          isActive
-                            ? "bg-teal-800 text-white shadow-md"
-                            : "bg-teal-50 text-teal-900 hover:bg-teal-100"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <span
-                            className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
-                              isActive ? "bg-white/20" : "bg-white"
-                            }`}
-                          >
-                            <ChevronRight
-                              className={`h-4 w-4 ${
-                                isActive ? "text-amber-300" : "text-teal-700"
-                              }`}
-                            />
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold leading-tight">
-                              {panel.label}
-                            </p>
-                            <p
-                              className={`mt-1 text-xs leading-relaxed ${
-                                isActive ? "text-teal-50" : "text-teal-700"
-                              }`}
-                            >
-                              {panel.summary}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  <div className="w-full rounded-xl bg-teal-800 px-4 py-3 text-left text-white shadow-md">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white/20">
+                        <ChevronRight className="h-4 w-4 text-amber-300" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold leading-tight">
+                          Assistant Professor Interview Preparation
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-teal-50">
+                          Core interview communication, presence, and mock
+                          interview prep.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </nav>
               </div>
             </aside>
 
             <div className="lg:hidden overflow-x-auto border-y border-teal-100 bg-white px-3 py-3">
               <div className="flex gap-2">
-                {interviewPanels.map((panel) => {
-                  const isActive = activePanel === panel.id;
-                  return (
-                    <button
-                      key={panel.id}
-                      type="button"
-                      onClick={() => setActivePanel(panel.id)}
-                      className={`rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition-all ${
-                        isActive
-                          ? "bg-teal-800 text-white"
-                          : "bg-teal-50 text-teal-700"
-                      }`}
-                    >
-                      {panel.label}
-                    </button>
-                  );
-                })}
+                <span className="rounded-lg bg-teal-800 px-3 py-2 text-xs font-semibold whitespace-nowrap text-white">
+                  Assistant Professor Interview Preparation
+                </span>
               </div>
             </div>
 
             <div className="min-w-0 flex-1">
-              {activePanel === "assistant-professor" ? (
-                <InterviewContent />
-              ) : (
-                <DUInterviewMergedContent />
-              )}
+              <InterviewContent />
             </div>
           </div>
         </div>
