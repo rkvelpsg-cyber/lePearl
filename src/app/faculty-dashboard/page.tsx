@@ -147,7 +147,7 @@ type DescriptiveAnswer = {
   id: number;
   mock_test_id: number;
   student_user_id: string;
-  question_id: number;
+  question_id: number | null;
   answer_file_url: string | null;
   evaluated_answer_file_url: string | null;
   submitted_at: string | null;
@@ -2702,6 +2702,126 @@ export default function FacultyDashboardPage() {
     }
   }
 
+  function exportEvaluationResults() {
+    if (!selectedEvalTest) return;
+
+    const filenameTitle =
+      selectedEvalTest.title
+        .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 80) || "test";
+
+    if (selectedEvalTest.test_type !== "descriptive") {
+      if (mcqSubmissions.length === 0) {
+        setEvaluationMsg({
+          type: "err",
+          text: "There are no test results to export.",
+        });
+        return;
+      }
+
+      downloadCsv(
+        `test-${selectedEvalTest.id}-${filenameTitle}-results.csv`,
+        ["Student Name", "Student ID", "Submitted At", "Marks Obtained", "Total Marks"],
+        mcqSubmissions.map((submission) => [
+          submission.student_name || "Unknown Student",
+          submission.student_user_id,
+          submission.submitted_at || "",
+          submission.scored_marks ?? "",
+          selectedEvalTest.total_marks,
+        ]),
+      );
+    } else {
+      if (studentSubmissions.length === 0) {
+        setEvaluationMsg({
+          type: "err",
+          text: "There are no test results to export.",
+        });
+        return;
+      }
+
+      const submissionsByStudent = new Map<string, DescriptiveAnswer[]>();
+      studentSubmissions.forEach((submission) => {
+        const studentRows =
+          submissionsByStudent.get(submission.student_user_id) ?? [];
+        studentRows.push(submission);
+        submissionsByStudent.set(submission.student_user_id, studentRows);
+      });
+
+      const rows = [...submissionsByStudent.values()]
+        .map((submissions) => {
+          const evaluatedSubmissions = submissions.filter(
+            (submission) => submission.marks_obtained !== null,
+          );
+          const firstSubmission = submissions[0];
+          const submittedAt = submissions.reduce<string | null>(
+            (latest, submission) => {
+              if (!submission.submitted_at) return latest;
+              if (!latest || submission.submitted_at > latest) {
+                return submission.submitted_at;
+              }
+              return latest;
+            },
+            null,
+          );
+
+          return {
+            studentName: firstSubmission.student_name || "Unknown Student",
+            studentId: firstSubmission.student_user_id,
+            submittedAt: submittedAt || "",
+            marksObtained:
+              evaluatedSubmissions.length > 0
+                ? evaluatedSubmissions.reduce(
+                    (total, submission) =>
+                      total + (submission.marks_obtained ?? 0),
+                    0,
+                  )
+                : "",
+            submittedAnswers: submissions.length,
+            evaluatedAnswers: evaluatedSubmissions.length,
+            evaluationStatus:
+              evaluatedSubmissions.length === 0
+                ? "Pending"
+                : evaluatedSubmissions.length === submissions.length
+                  ? "Fully evaluated"
+                  : "Partially evaluated",
+          };
+        })
+        .sort((a, b) => a.studentName.localeCompare(b.studentName));
+
+      downloadCsv(
+        `test-${selectedEvalTest.id}-${filenameTitle}-results.csv`,
+        [
+          "Student Name",
+          "Student ID",
+          "Submitted At",
+          "Marks Obtained (Evaluated Answers)",
+          "Total Test Marks",
+          "Answers Submitted",
+          "Answers Evaluated",
+          "Evaluation Status",
+        ],
+        rows.map((row) => [
+          row.studentName,
+          row.studentId,
+          row.submittedAt,
+          row.marksObtained,
+          selectedEvalTest.total_marks,
+          row.submittedAnswers,
+          row.evaluatedAnswers,
+          row.evaluationStatus,
+        ]),
+      );
+    }
+
+    setEvaluationMsg({
+      type: "ok",
+      text: "Test results exported.",
+    });
+  }
+
   async function handleEvaluatedSheetUpload(file: File | null) {
     if (!file || !selectedSubmission || !selectedEvalTest) return;
 
@@ -5105,17 +5225,28 @@ export default function FacultyDashboardPage() {
                           {selectedEvalTest.total_marks}
                         </p>
                       </div>
-                      <button
-                        onClick={() => {
-                          setSelectedEvalTest(null);
-                          setMcqSubmissions([]);
-                          setStudentSubmissions([]);
-                          setDescriptiveQuestions([]);
-                        }}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={exportEvaluationResults}
+                          disabled={mcqSubmissions.length === 0}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-100 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <FileDown className="h-4 w-4" />
+                          Export CSV
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedEvalTest(null);
+                            setMcqSubmissions([]);
+                            setStudentSubmissions([]);
+                            setDescriptiveQuestions([]);
+                          }}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
 
                     {searchedMcqSubmissions.length === 0 ? (
@@ -5169,17 +5300,28 @@ export default function FacultyDashboardPage() {
                           {selectedEvalTest.batches?.batch_name}
                         </p>
                       </div>
-                      <button
-                        onClick={() => {
-                          setSelectedEvalTest(null);
-                          setMcqSubmissions([]);
-                          setStudentSubmissions([]);
-                          setDescriptiveQuestions([]);
-                        }}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={exportEvaluationResults}
+                          disabled={studentSubmissions.length === 0}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <FileDown className="h-4 w-4" />
+                          Export CSV
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedEvalTest(null);
+                            setMcqSubmissions([]);
+                            setStudentSubmissions([]);
+                            setDescriptiveQuestions([]);
+                          }}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
 
                     {searchedStudentSubmissions.length === 0 ? (

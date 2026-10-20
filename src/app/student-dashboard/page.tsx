@@ -1011,7 +1011,6 @@ export default function StudentDashboardPage() {
       } else {
         setMockStat({ scored: 0, total: 0 });
         setTestAttempted(new Set());
-        setMcqResultsByTest({});
       }
 
       if (attemptedTestIds.length > 0) {
@@ -1040,7 +1039,10 @@ export default function StudentDashboardPage() {
             Object.entries(data.summaries ?? {}).forEach(([key, value]) => {
               summaryMap[Number(key)] = value;
             });
-            setMcqResultsByTest(summaryMap);
+            setMcqResultsByTest((previous) => ({
+              ...previous,
+              ...summaryMap,
+            }));
           }
         }
       }
@@ -1492,49 +1494,111 @@ export default function StudentDashboardPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [questionsRes, answersRes] = await Promise.all([
-      supabase
-        .from("mcq_questions")
-        .select(
-          "id, question_text, question_order, marks, option_a, option_b, option_c, option_d, correct_option",
-        )
-        .eq("mock_test_id", test.id)
-        .order("question_order", { ascending: true }),
-      supabase
-        .from("mcq_student_answers")
-        .select("question_id, chosen_option, is_correct")
-        .eq("mock_test_id", test.id)
-        .eq("student_user_id", user.id),
-    ]);
-
-    if (questionsRes.error || !questionsRes.data) {
-      alert("Failed to load test review.");
-      return;
-    }
-
-    const answerMap = new Map(
-      (answersRes.data ?? []).map((row) => [
-        row.question_id,
+    try {
+      const [
+        questionsRes,
+        answersRes,
         {
-          chosen_option: row.chosen_option as "A" | "B" | "C" | "D" | null,
-          is_correct: !!row.is_correct,
+          data: { session },
         },
-      ]),
-    );
+      ] = await Promise.all([
+        supabase
+          .from("mcq_questions")
+          .select(
+            "id, question_text, question_order, marks, option_a, option_b, option_c, option_d, correct_option",
+          )
+          .eq("mock_test_id", test.id)
+          .order("question_order", { ascending: true }),
+        supabase
+          .from("mcq_student_answers")
+          .select("question_id, chosen_option, is_correct")
+          .eq("mock_test_id", test.id)
+          .eq("student_user_id", user.id),
+        supabase.auth.getSession(),
+      ]);
 
-    setReviewTest({
-      test,
-      summary: mcqResultsByTest[test.id] ?? null,
-      questions: (questionsRes.data as McqQuestion[]).map((question) => {
-        const answer = answerMap.get(question.id);
-        return {
-          ...question,
-          correct_option: question.correct_option ?? null,
-          chosen_option: answer?.chosen_option ?? null,
-          is_correct: answer?.is_correct ?? false,
-        };
-      }),
-    });
+      if (questionsRes.error || !questionsRes.data) {
+        throw new Error("Failed to load test questions.");
+      }
+      if (answersRes.error) {
+        throw new Error("Failed to load your submitted answers.");
+      }
+
+      const cachedSummary = mcqResultsByTest[test.id] ?? null;
+      let summary = cachedSummary;
+      const accessToken = session?.access_token;
+      if (accessToken) {
+        try {
+          const response = await fetch("/api/student/test-results", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ testIds: [test.id] }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to load your test score and rank.");
+          }
+
+          const data = (await response.json()) as {
+            summaries?: Record<string, McqResultSummary>;
+          };
+          summary = data.summaries?.[String(test.id)] ?? cachedSummary;
+        } catch (error) {
+          if (!cachedSummary) throw error;
+          console.error(
+            "Failed to refresh MCQ test results; using the cached summary:",
+            error,
+          );
+        }
+      } else if (!summary) {
+        throw new Error("Your session has expired. Please sign in again.");
+      }
+
+      if (!summary) {
+        throw new Error(
+          "Your score and rank are not available for this test yet.",
+        );
+      }
+
+      setMcqResultsByTest((previous) => ({
+        ...previous,
+        [test.id]: summary,
+      }));
+
+      const answerMap = new Map(
+        (answersRes.data ?? []).map((row) => [
+          row.question_id,
+          {
+            chosen_option: row.chosen_option as "A" | "B" | "C" | "D" | null,
+            is_correct: !!row.is_correct,
+          },
+        ]),
+      );
+
+      setReviewTest({
+        test,
+        summary,
+        questions: (questionsRes.data as McqQuestion[]).map((question) => {
+          const answer = answerMap.get(question.id);
+          return {
+            ...question,
+            correct_option: question.correct_option ?? null,
+            chosen_option: answer?.chosen_option ?? null,
+            is_correct: answer?.is_correct ?? false,
+          };
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to load MCQ test review:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to load test review.",
+      );
+    }
   }
 
   async function loadDescriptiveQuestions(test: McqTest) {
