@@ -33,6 +33,35 @@ npm run lint
 npm run build
 ```
 
+## Faculty MCQ CSV import
+
+Manual question entry remains available. To add questions in bulk:
+
+1. Open **Faculty Dashboard > Mock Tests > Create New Test** and enter the
+   batch, title, total marks, time limit, schedule, and negative marking as usual.
+2. Create the draft, or open **Questions** on an existing draft MCQ test.
+3. In **Bulk import MCQ questions**, download the CSV template, replace its
+   sample questions, and save the spreadsheet as **CSV UTF-8**.
+4. Select the CSV, check the question count, marks, and preview, then select
+   **Import Questions**. Invalid files report the offending row before saving.
+5. Review the imported questions, adjust **Details > Total Marks** if needed,
+   then publish using the existing Publish button.
+
+Required columns (order may vary):
+`question_text,option_a,option_b,option_c,option_d,correct_option,marks`.
+Question text and all four options are required. Correct answers must be
+`A`, `B`, `C`, or `D` (case-insensitive); marks must be positive whole numbers.
+Commas, line breaks, and quotes inside fields must follow standard CSV quoting
+(quote the field and double embedded quotes). Blank rows are ignored.
+
+Files up to 5 MB are supported, including tests with 100 or more questions.
+Import appends questions in CSV order after the existing questions; it never
+replaces existing questions or changes test details. All questions are inserted
+in a single database operation, so a failed insert does not leave a partially
+imported file. A successful import clears the preview to prevent accidental
+repeat imports. Re-uploading the same file will append it again.
+Unpublish a published test before importing. Descriptive tests are unchanged.
+
 ## Student registration email setup
 
 The student registration flow is available at `/student-registration` and submits through `/api/student-registration`.

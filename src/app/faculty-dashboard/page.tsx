@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import McqCsvImport from "@/components/McqCsvImport";
 import { signOut } from "@/lib/supabase/auth";
 import {
   clearScopedAuthStorage,
@@ -644,6 +645,7 @@ export default function FacultyDashboardPage() {
   const [testQuestions, setTestQuestions] = useState<McqQuestion[]>([]);
   const [showMcqForm, setShowMcqForm] = useState(false);
   const [showQForm, setShowQForm] = useState(false);
+  const [csvImporting, setCsvImporting] = useState(false);
   const [mcqMsg, setMcqMsg] = useState<{
     type: "ok" | "err";
     text: string;
@@ -2284,11 +2286,19 @@ export default function FacultyDashboardPage() {
     setSelectedTest(test);
 
     if (test.test_type === "mcq") {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("mcq_questions")
         .select("*")
         .eq("mock_test_id", test.id)
         .order("question_order", { ascending: true });
+      if (error) {
+        console.error("Failed to load MCQ questions:", error);
+        setMcqMsg({
+          type: "err",
+          text: "Failed to refresh questions. Reopen Questions to reload the saved test.",
+        });
+        return;
+      }
       setTestQuestions((data ?? []) as McqQuestion[]);
     } else {
       setTestQuestions([]);
@@ -4655,6 +4665,7 @@ export default function FacultyDashboardPage() {
                         </p>
                       </div>
                       <button
+                        disabled={csvImporting}
                         onClick={() => setSelectedTest(null)}
                         className="text-gray-400 hover:text-gray-600"
                       >
@@ -4746,6 +4757,18 @@ export default function FacultyDashboardPage() {
                     )}
                     {selectedTest.test_type === "mcq" && (
                       <>
+                        <McqCsvImport
+                          key={selectedTest.id}
+                          testId={selectedTest.id}
+                          totalMarks={selectedTest.total_marks}
+                          published={selectedTest.is_published}
+                          disabled={mcqSubmitting || showQForm}
+                          onBusyChange={setCsvImporting}
+                          onImported={() => {
+                            void loadQuestions(selectedTest);
+                            void load();
+                          }}
+                        />
                         {/* add question */}
                         {showQForm ? (
                           <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 mb-4 space-y-3">
@@ -4939,6 +4962,7 @@ export default function FacultyDashboardPage() {
                           </div>
                         ) : (
                           <button
+                            disabled={csvImporting}
                             onClick={() => {
                               setEditingQuestionId(null);
                               setShowQForm(true);
@@ -4972,6 +4996,7 @@ export default function FacultyDashboardPage() {
                                 </p>
                                 <div className="ml-2 flex items-center gap-2 flex-shrink-0">
                                   <button
+                                    disabled={csvImporting}
                                     onClick={() => startEditingQuestion(q)}
                                     className="text-purple-400 hover:text-purple-600"
                                     title="Edit question"
@@ -4979,6 +5004,7 @@ export default function FacultyDashboardPage() {
                                     <Edit3 className="w-4 h-4" />
                                   </button>
                                   <button
+                                    disabled={csvImporting}
                                     onClick={() => deleteQuestion(q.id)}
                                     className="text-red-400 hover:text-red-600"
                                     title="Delete question"
