@@ -18,16 +18,16 @@ export interface FacultyProfile {
 export const facultyProfiles: FacultyProfile[] = [
   {
     id: 1,
-    name: "Ms. Sadhana",
+    name: "Ms. Rashmi Verma",
     title:
       "Assistant Professor (English) | UGC-NET Expert | Author | Competitive Exam Mentor",
     designation:
       "Assistant Professor (English) | UGC-NET Expert | Author | Competitive Exam Mentor",
-    image: "/sadhana_faculty1.jpeg",
+    image: "/rashmiverma.jpeg",
     shortBio:
       "Assistant Professor (English), UGC-NET Expert, Author, and Competitive Exam Mentor",
     fullBio:
-      "Ms. Sadhana is a passionate educator and Assistant Professor of English with multidisciplinary knowledge and in-depth expertise in English Literature. She brings rich teaching experience and a proven track record of guiding students toward success in competitive examinations and academic pursuits. Ms. Sadhana has taught LT Grade students with excellent results and is currently a faculty member for NTA UGC-NET. She has also authored and published a collection of poetry. Her multidisciplinary approach combined with strong command over English Literature enables her to guide students effectively in both literature and competitive exam preparation. Ms. Sadhana's extensive qualifications, teaching experience, and authorship make her a valuable faculty member for courses on English Literature, research writing, thesis development, and UGC-NET preparation.",
+      "Ms. Rashmi Verma is a passionate educator and Assistant Professor of English with multidisciplinary knowledge and in-depth expertise in English Literature. She brings rich teaching experience and a proven track record of guiding students toward success in competitive examinations and academic pursuits. Ms. Rashmi Verma has taught LT Grade students with excellent results and is currently a faculty member for NTA UGC-NET. She has also authored and published a collection of poetry. Her multidisciplinary approach combined with strong command over English Literature enables her to guide students effectively in both literature and competitive exam preparation. Ms. Rashmi Verma's extensive qualifications, teaching experience, and authorship make her a valuable faculty member for courses on English Literature, research writing, thesis development, and UGC-NET preparation.",
     qualifications: [
       "M.A. in English Literature",
       "B.A. (Hons) English Literature from Delhi University (DU)",
