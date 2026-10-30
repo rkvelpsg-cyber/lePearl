@@ -33,6 +33,23 @@ npm run lint
 npm run build
 ```
 
+## PGT faculty handover
+
+PGT now routes to **Dr Prem Shankar Pandey**, batch **PGT-Pandey-A**.
+TGT and PGT + TGT retain their existing assignments.
+
+Before deploying this mapping, apply
+`supabase/migrations/20261030_reassign_pgt_batch_to_pandey.sql` to the database.
+The migration creates a separate PGT course and PGT-Pandey-A batch if missing,
+or verifies that an existing target batch has the expected course and faculty.
+The existing PGT-TGT-Sadhana-A batch linked to TGT (production batch 86) is
+left unchanged. No existing students or academic content are transferred.
+The migration is transactional and repeatable; it fails explicitly on missing
+or ambiguous faculty records, duplicate courses/batches, and conflicting targets.
+Deploy only after confirming the new batch and faculty assignment in the database.
+Future PGT enrollment routing uses this separate batch; moving existing students
+requires a separately reviewed transfer.
+
 ## Faculty MCQ CSV import
 
 Manual question entry remains available. To add questions in bulk:

@@ -244,7 +244,9 @@ function fmtCurrency(n: number) {
 function getDefaultFacultyByCourse(courseName: string) {
   const normalized = courseName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-  if (normalized.includes("upgdc")) return "Dr. Prem Shankar Pandey";
+  if (normalized === "pgt" || normalized.includes("upgdc")) {
+    return "Dr. Prem Shankar Pandey";
+  }
   if (
     normalized.includes("uphesc") ||
     normalized.includes("communicationskills") ||
